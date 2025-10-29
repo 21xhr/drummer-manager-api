@@ -182,3 +182,22 @@ model Stream {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// MISSIONS TABLE (from database structure - Missions (future enhancement).csv)
+model Mission {
+  missionId                     Int       @id @default(autoincrement()) @map("mission_id")
+  title                         String?   @map("title") // Optional
+  description                   String    @map("description")
+  
+  // Goal Tracking
+  targetType                    String    @map("target_type") // e.g., NUMBERS_SPENT_ON_SUGGESTION
+  targetValue                   Int       @map("target_value")
+  currentValue                  Int       @map("current_value") @default(0)
+  
+  // Status and Timestamps
+  isExecuting                   Boolean   @map("is_executing") @default(false)
+  dateCreated                   DateTime  @map("date_created")
+  dateCompleted                 DateTime? @map("date_completed") // Nullable when incomplete
+
+  @@map("missions") // Set the table name explicitly
+}
+
