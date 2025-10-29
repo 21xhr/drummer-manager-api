@@ -15,3 +15,42 @@ datasource db {
 }
 
 // Next step is to define the data models below.
+// USER TABLE (from database structure - User.csv)
+model User {
+  // Primary Key and ID
+  id                          Int       @id @default(autoincrement()) @map("user_id") // Maps to 'user_id'
+  platformId                  String    @unique @map("user_platform_id") // Maps to 'user_platform_id' - Unique identifier on the source platform
+  platformName                String    @map("platform_name")
+  
+  // Balance and Activity Tracking
+  lastKnownBalance            Int       @map("last_known_balance") @default(0) // Local cache of NUMBERS balance
+  lastBalanceUpdate           DateTime? @map("last_balance_update")
+  lastActivityTimestamp       DateTime? @map("last_activity_timestamp")
+  lastLiveActivityTimestamp   DateTime? @map("last_live_activity_timestamp")
+  
+  // Game/Stream Stats
+  lastSeenStreamDay           Int       @map("last_seen_stream_day") @default(0)
+  activeOfflineDaysCount      Int       @map("active_offline_days_count") @default(0)
+  activeStreamDaysCount       Int       @map("active_stream_days_count") @default(0)
+  dailyChallengeCount         Int       @map("daily_challenge_count") @default(0) // Used for quadratic submission cost N
+  dailyChallengeResetAt       DateTime  @map("daily_challenge_reset_at")
+  totalNumbersSpentGameWide   Int       @map("total_numbers_spent_game_wide") @default(0)
+  totalChallengesSubmitted    Int       @map("total_challenges_submitted") @default(0)
+
+  // Relations (one-to-many) - Define these for Prisma
+  challenges                  Challenge[] @relation("Proposer") // Challenges proposed by this user
+  pushes                      Push[]
+  tempQuotes                  TempQuote[]
+
+  @@map("users") // Set the table name explicitly
+}
+
+
+// STREAM STATS TABLE (from database structure - Stream Stats.csv)
+model StreamStat {
+  id                          Int       @id @default(autoincrement()) // Only one record is needed for the global counter
+  streamDaysSinceInception    Int       @map("stream_days_since_inception") @default(0)
+  
+  // Set the table name explicitly
+  @@map("stream_stats") 
+}
