@@ -54,3 +54,45 @@ model StreamStat {
   // Set the table name explicitly
   @@map("stream_stats") 
 }
+
+// CHALLENGES TABLE (from database structure - Challenges.csv)
+model Challenge {
+  // Primary Key and ID
+  challengeId                   Int       @id @default(autoincrement()) @map("challenge_id")
+  challengeText                 String    @map("challenge_text")
+  category                      String    @map("category")
+  durationType                  String    @map("duration_type") // e.g., ONE_OFF, RECURRING
+  
+  // Relations: Foreign Key to User
+  proposerUserId                Int       @map("proposer_user_id")
+  proposer                      User      @relation("Proposer", fields: [proposerUserId], references: [id])
+  
+  // Status and Tracking
+  status                        String    @map("status") // e.g., Active, In Progress, Completed, Archived
+  isExecuting                   Boolean   @map("is_executing") @default(false)
+  hasBeenAuctioned              Boolean   @map("has_been_auctioned") @default(false)
+  hasBeenDiggedOut              Boolean   @map("has_been_digged_out") @default(false)
+
+  // Financials and Metrics
+  auctionCost                   Int       @map("auction_cost")
+  pushPrice                     Int       @map("push_price")
+  disruptCount                  Int       @map("disrupt_count") @default(0)
+  numbersRaised                 Int       @map("numbers_raised") @default(0)
+  totalNumbersSpent             Int       @map("total_numbers_spent") @default(0)
+  totalPush                     Int       @map("total_push") @default(0)
+  
+  // Clocks and Timestamps
+  streamDaysSinceActivation     Int       @map("stream_days_since_activation") @default(0) // The 21-Day Clock
+  timestampSubmitted            DateTime  @map("timestamp_submitted")
+  timestampLastActivation       DateTime  @map("timestamp_last_activation")
+  timestampCompleted            DateTime? @map("timestamp_completed") // Nullable
+
+  // Calculated Metrics (Prisma doesn't support calculated fields, so this is tracked)
+  uniquePusher                  Int       @map("unique_pusher") @default(0)
+
+  // Relations (one-to-many) - Define these for Prisma
+  pushes                        Push[]
+  tempQuotes                    TempQuote[]
+
+  @@map("challenges") // Set the table name explicitly
+}
