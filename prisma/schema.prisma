@@ -15,6 +15,8 @@ datasource db {
 }
 
 // Next step is to define the data models below.
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // USER TABLE (from database structure - User.csv)
 model User {
   // Primary Key and ID
@@ -45,7 +47,8 @@ model User {
   @@map("users") // Set the table name explicitly
 }
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // STREAM STATS TABLE (from database structure - Stream Stats.csv)
 model StreamStat {
   id                          Int       @id @default(autoincrement()) // Only one record is needed for the global counter
@@ -55,6 +58,8 @@ model StreamStat {
   @@map("stream_stats") 
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CHALLENGES TABLE (from database structure - Challenges.csv)
 model Challenge {
   // Primary Key and ID
@@ -95,4 +100,47 @@ model Challenge {
   tempQuotes                    TempQuote[]
 
   @@map("challenges") // Set the table name explicitly
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// PUSHES TABLE (from database structure - Pushes.csv)
+model Push {
+  pushId                        Int       @id @default(autoincrement()) @map("push_id")
+
+  // Relations: Foreign Keys
+  challengeId                   Int       @map("challenge_id")
+  challenge                     Challenge @relation(fields: [challengeId], references: [challengeId])
+
+  userId                        Int       @map("user_id")
+  user                          User      @relation(fields: [userId], references: [id])
+  
+  // Transaction Data
+  cost                          Int       @map("cost") // The final NUMBERS cost paid
+  timestamp                     DateTime  @map("timestamp")
+
+  @@map("pushes") // Set the table name explicitly
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// TEMP QUOTES TABLE (from database structure - Temp Quotes.csv)
+model TempQuote {
+  // Primary Key
+  quoteId                       String    @id @map("quote_id") // Using String for UUID/Text-based ID if preferred over Int
+  
+  // Relations: Foreign Keys
+  userId                        Int       @map("user_id")
+  user                          User      @relation(fields: [userId], references: [id])
+
+  challengeId                   Int       @map("challenge_id")
+  challenge                     Challenge @relation(fields: [challengeId], references: [challengeId])
+
+  // Quote Data
+  quantity                      Int       @map("quantity") // The N value for the transaction
+  quotedCost                    Int       @map("quoted_cost") // The exact quadratic cost
+  timestampCreated              DateTime  @map("timestamp_created") @map("timestamp_created") // Used for 30-second expiration
+  isLocked                      Boolean   @map("is_locked") @default(false) // Race condition protection
+
+  @@map("temp_quotes") // Set the table name explicitly
 }
