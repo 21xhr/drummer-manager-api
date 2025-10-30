@@ -1,9 +1,11 @@
 // src/routes/userRoutes.ts
-//dedicated router file to hold all your API routes, keeping src/index.ts clean.
-import { Router } from 'express';
+import { Router } from 'express'; // <-- Ensure Router is in curly braces { }
 import { findOrCreateUser } from '../services/userService';
+import { processDigout } from '../services/challengeService';
 
 const router = Router();
+
+
 
 // -----------------------------------------------------------
 // NOTE: This is a placeholder for a generic command processing route.
@@ -44,6 +46,53 @@ router.post('/process', async (req, res) => {
       lastActivity: user.lastActivityTimestamp
     }
   });
+});
+
+
+
+
+// -----------------------------------------------------------
+// CORE GAME COMMANDS
+// -----------------------------------------------------------
+
+/**
+ * POST /api/v1/user/digout
+ * Handles the execution of the !digout [ID] command.
+ * Request Body: { platformId: string, platformName: string, targetId: number }
+ */
+router.post('/digout', async (req, res) => {
+  const { platformId, platformName, targetId } = req.body;
+
+  if (!platformId || !platformName || typeof targetId !== 'number') {
+    return res.status(400).json({ error: "Missing platformId, platformName, or targetId (Challenge ID)." });
+  }
+
+  // 1. Ensure the User exists in the database
+  const user = await findOrCreateUser({ platformId, platformName });
+
+  try {
+    // 2. Execute the !digout business logic
+    const { updatedChallenge, cost } = await processDigout(user.id, targetId);
+
+    // 3. Success Response
+    return res.status(200).json({
+      message: `Challenge #${updatedChallenge.challengeId} was successfully dug out!`,
+      action: 'digout_success',
+      details: {
+        challengeId: updatedChallenge.challengeId,
+        status: updatedChallenge.status,
+        cost: cost,
+        totalNumbersSpentGameWide: (user.totalNumbersSpentGameWide + cost) // MOCK: this is not perfect as user is not updated here, but sufficient for now
+      }
+    });
+  } catch (error) {
+    // 4. Error Response (based on error thrown by the service)
+    return res.status(400).json({
+      message: 'Digout failed.',
+      error: error instanceof Error ? error.message : 'An unknown error occurred.',
+      action: 'digout_failure',
+    });
+  }
 });
 
 
