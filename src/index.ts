@@ -1,7 +1,8 @@
-// src/index.ts
+// src/index.ts (Updated to include userRoutes)
 import 'express-async-errors'; 
 import express, { Request, Response } from 'express';
-import prisma from './prisma'; // Import the shared Prisma client
+import prisma from './prisma'; 
+import userRoutes from './routes/userRoutes'; // <-- NEW
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,9 +10,12 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(express.json());
 
-// Basic Health Check Route
+// Application Routers (All game logic lives here)
+app.use('/api/v1/user', userRoutes); // <-- NEW: Mount user routes
+
+// Basic Health Check Route (Moved to the end)
 app.get('/', async (req: Request, res: Response) => {
-  // Test the database connection on health check
+  // ... (rest of the health check logic remains the same)
   try {
     await prisma.$connect();
     res.status(200).json({
@@ -21,7 +25,7 @@ app.get('/', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error("Database connection failed:", error);
+    // ... (error handling remains the same)
     res.status(500).json({
       message: "Drummer Manager API is running, but database connection failed.",
       status: "ERROR",
