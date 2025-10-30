@@ -143,7 +143,7 @@ model TempQuote {
   // Quote Data
   quantity                      Int       @map("quantity") // The N value for the transaction
   quotedCost                    Int       @map("quoted_cost") // The exact quadratic cost
-  timestampCreated              DateTime  @map("timestamp_created") @map("timestamp_created") // Used for 30-second expiration
+  timestampCreated              DateTime  @map("timestamp_created") // Used for 30-second expiration
   isLocked                      Boolean   @map("is_locked") @default(false) // Race condition protection
 
   @@map("temp_quotes") // Set the table name explicitly
