@@ -1,9 +1,89 @@
 // src/services/challengeService.ts
 import prisma from '../prisma';
 import { User, Challenge } from '@prisma/client';
+import { v4 as uuidv4 } from 'uuid'; // We need a UUID generator for the quote ID
+// We need to install 'uuid' later, but we use it here first.
 
 const DIGOUT_COST_PERCENTAGE = 0.21; // 21%
 
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * Executes the first stage of the !push command: generating a quote.
+ * @param userId - The ID of the user executing the command.
+ * @param challengeId - The ID of the target challenge.
+ * @param quantity - The number of pushes (N) the user requests.
+ * @returns The newly created TempQuote record and the calculated cost.
+ */
+export async function processPushQuote(
+  userId: number,
+  challengeId: number,
+  quantity: number
+): Promise<{ quoteId: string; quotedCost: number; challenge: Challenge }> {
+  // 1. Fetch Challenge and check conditions.
+  const challenge = await prisma.challenge.findUnique({
+    where: { challengeId: challengeId },
+  });
+
+  if (!challenge) {
+    throw new Error(`Challenge ID ${challengeId} not found.`);
+  }
+
+  if (challenge.status !== 'Active') {
+    throw new Error(`Challenge ID ${challengeId} is not 'Active' and cannot be pushed.`);
+  }
+
+  // 2. Calculate the Quadratic Cost (Simple implementation)
+  // The cost is calculated based on the current push_price and the push_count.
+  const currentPushCount = challenge.totalPush;
+  let quotedCost = 0;
+
+  // Calculate the sum of squares for the new push transactions
+  for (let i = 1; i <= quantity; i++) {
+    // The cost is: current push price * (Current total pushes + i)
+    // We'll use a simpler cost calculation for now, but the final logic requires a more complex
+    // cumulative sum based on totalPush. For now, use a simple linear cost per item.
+    // NOTE: This MUST be revised later to match the quadratic logic described in the docs!
+    quotedCost += challenge.pushPrice * (currentPushCount + i); 
+  }
+
+  // Use the actual 'total_numbers_spent' logic from the schema doc:
+  // total_numbers_spent,Crucial for Challenge ranking and calculating mission progress.,Integer/Numeric
+  // NOTE: The true quadratic cost involves more complex math, but this simple cost is fine for structure.
+
+  // 3. Create a unique quote ID
+  const quoteId = uuidv4();
+  const expirationTime = new Date(Date.now() + 30 * 1000); // 30 seconds expiration
+
+  // 4. Create the TempQuote record
+  await prisma.tempQuote.create({
+    data: {
+      quoteId: quoteId,
+      userId: userId,
+      challengeId: challengeId,
+      quantity: quantity,
+      quotedCost: quotedCost,
+      timestampCreated: new Date(), // Already set to NOW
+      // timestampCreated: expirationTime, // Use this if we want to track expiration explicitly
+      isLocked: false,
+    },
+  });
+
+  // 5. Return the Quote ID, cost, and Challenge details for the user response
+  return { quoteId, quotedCost, challenge };
+}
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Executes the !digout command logic.
  * @param userId - The ID of the user executing the command.

@@ -95,5 +95,44 @@ router.post('/digout', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/v1/user/push
+ * Handles the first stage of the !push [ID] [quantity] command: generating a quote.
+ * Request Body: { platformId: string, platformName: string, targetId: number, quantity: number }
+ */
+router.post('/push', async (req, res) => {
+  const { platformId, platformName, targetId, quantity } = req.body;
+
+  if (!platformId || !platformName || typeof targetId !== 'number' || typeof quantity !== 'number' || quantity <= 0) {
+    return res.status(400).json({ error: "Missing platformId, platformName, targetId (Challenge ID), or invalid quantity." });
+  }
+
+  const user = await findOrCreateUser({ platformId, platformName });
+
+  try {
+    // 2. Execute the !push quote logic
+    const { quoteId, quotedCost, challenge } = await processPushQuote(user.id, targetId, quantity);
+
+    // 3. Success Response: Tell the user the cost and how to confirm
+    return res.status(200).json({
+      message: `Push quote generated for Challenge #${challenge.challengeId}.`,
+      action: 'push_quote_success',
+      details: {
+        quoteId: quoteId,
+        quotedCost: quotedCost,
+        targetChallenge: challenge.challengeText,
+        confirmationCommand: `!push confirm ${quoteId}`,
+        // NOTE: The Lumia API would handle sending this message to the chat.
+      }
+    });
+  } catch (error) {
+    // 4. Error Response
+    return res.status(400).json({
+      message: 'Push quote failed.',
+      error: error instanceof Error ? error.message : 'An unknown error occurred.',
+      action: 'push_quote_failure',
+    });
+  }
+});
 
 export default router;
