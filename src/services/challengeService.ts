@@ -80,6 +80,110 @@ export async function processPushQuote(
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * Executes the second stage of the !push command: confirming the quote and executing the push.
+ * @param userId - The ID of the user executing the command.
+ * @param quoteId - The UUID of the temporary quote record.
+ * @returns The updated Challenge record and details of the transaction.
+ */
+export async function processPushConfirm(
+  userId: number,
+  quoteId: string
+): Promise<{ updatedChallenge: Challenge; transactionCost: number; quantity: number }> {
+  const EXPIRATION_TIMEOUT_MS = 30 * 1000; // 30 seconds
+
+  // Use a transaction to ensure atomicity for the database updates
+  return prisma.$transaction(async (tx) => {
+    // 1. Fetch TempQuote and apply lock
+    const quote = await tx.tempQuote.findUnique({
+      where: { quoteId: quoteId },
+    });
+
+    if (!quote || quote.userId !== userId) {
+      throw new Error('Quote not found or does not belong to this user.');
+    }
+
+    if (quote.isLocked) {
+      throw new Error('This quote is currently being processed by another transaction.');
+    }
+
+    // 2. Check Expiration
+    const age = Date.now() - quote.timestampCreated.getTime();
+    if (age > EXPIRATION_TIMEOUT_MS) {
+      // Immediately delete the expired quote
+      await tx.tempQuote.delete({ where: { quoteId: quoteId } });
+      throw new Error('The quote has expired (30-second window exceeded).');
+    }
+
+    // 3. Lock the quote to prevent double-spend attempts
+    await tx.tempQuote.update({
+      where: { quoteId: quoteId },
+      data: { isLocked: true },
+    });
+
+    // 4. Fetch the target Challenge
+    const challenge = await tx.challenge.findUnique({
+      where: { challengeId: quote.challengeId },
+    });
+
+    if (!challenge || challenge.status !== 'Active') {
+      // Clean up the quote since the condition is now invalid
+      await tx.tempQuote.delete({ where: { quoteId: quoteId } });
+      throw new Error(`Challenge ID ${quote.challengeId} is no longer 'Active' and cannot be pushed.`);
+    }
+
+    // --- CRITICAL LOGIC ---
+    // 5. (MOCK) Deduct NUMBERS from user via external API (Lumia/Chatbot)
+    const cost = quote.quotedCost;
+    // In a real system:
+    // const deductionSuccess = await callLumiaApiDeduct(user.platformId, cost);
+    // if (!deductionSuccess) { 
+    //   // Do NOT delete the quote if the external system failed; keep it locked for audit/retry
+    //   throw new Error("External NUMBERS deduction failed. Check your balance."); 
+    // }
+    // ----------------------
+
+    // 6. Execute Database Updates (Only runs if the MOCK deduction above is considered successful)
+
+    // A. Update Challenge
+    const updatedChallenge = await tx.challenge.update({
+      where: { challengeId: challenge.challengeId },
+      data: {
+        totalPush: { increment: quote.quantity },
+        totalNumbersSpent: { increment: cost },
+        // Unique pusher logic would be complex here, often deferred to a separate count query or another table
+      },
+    });
+
+    // B. Create records in Pushes table (one transaction entry for the total cost)
+    await tx.push.create({
+        data: {
+            challengeId: challenge.challengeId,
+            userId: userId,
+            cost: cost,
+            quantity: quote.quantity, // Add quantity to Push model if you want this detail
+        }
+    });
+
+    // C. Update User Stats (Update total NUMBERS spent game-wide)
+    await tx.user.update({
+        where: { id: userId },
+        data: {
+          totalNumbersSpentGameWide: { increment: cost },
+          lastActivityTimestamp: new Date(),
+        },
+    });
+
+    // 7. Clean up TempQuote
+    await tx.tempQuote.delete({ where: { quoteId: quoteId } });
+
+    // 8. Return results
+    return { updatedChallenge, transactionCost: cost, quantity: quote.quantity };
+  });
+}
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////

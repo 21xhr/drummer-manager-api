@@ -1,7 +1,8 @@
 // src/routes/userRoutes.ts
 import { Router } from 'express'; // <-- Ensure Router is in curly braces { }
 import { findOrCreateUser } from '../services/userService';
-import { processDigout } from '../services/challengeService';
+import { processDigout, processPushQuote, processPushConfirm} from '../services/challengeService';
+
 
 const router = Router();
 
@@ -131,6 +132,45 @@ router.post('/push', async (req, res) => {
       message: 'Push quote failed.',
       error: error instanceof Error ? error.message : 'An unknown error occurred.',
       action: 'push_quote_failure',
+    });
+  }
+});
+
+/**
+ * POST /api/v1/user/push/confirm
+ * Handles the second stage of the !push confirm [UUID] command: executes the transaction.
+ * Request Body: { platformId: string, platformName: string, quoteId: string }
+ */
+router.post('/push/confirm', async (req, res) => {
+  const { platformId, platformName, quoteId } = req.body;
+
+  if (!platformId || !platformName || !quoteId || typeof quoteId !== 'string') {
+    return res.status(400).json({ error: "Missing platformId, platformName, or quoteId (UUID) in request." });
+  }
+
+  const user = await findOrCreateUser({ platformId, platformName });
+
+  try {
+    // 2. Execute the !push confirmation logic
+    const { updatedChallenge, transactionCost, quantity } = await processPushConfirm(user.id, quoteId);
+
+    // 3. Success Response: Confirms the transaction is complete
+    return res.status(200).json({
+      message: `Push confirmed! ${quantity} pushes applied to Challenge #${updatedChallenge.challengeId}.`,
+      action: 'push_confirm_success',
+      details: {
+        challengeId: updatedChallenge.challengeId,
+        totalPush: updatedChallenge.totalPush,
+        cost: transactionCost,
+        quantity: quantity,
+      }
+    });
+  } catch (error) {
+    // 4. Error Response
+    return res.status(400).json({
+      message: 'Push confirmation failed.',
+      error: error instanceof Error ? error.message : 'An unknown error occurred.',
+      action: 'push_confirm_failure',
     });
   }
 });
