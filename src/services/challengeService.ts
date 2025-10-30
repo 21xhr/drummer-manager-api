@@ -38,19 +38,24 @@ export async function processPushQuote(
     throw new Error(`Challenge ID ${challengeId} is not 'Active' and cannot be pushed.`);
   }
 
-  // 2. Calculate the Quadratic Cost (Simple implementation)
-  // The cost is calculated based on the current push_price and the push_count.
-  const currentPushCount = challenge.totalPush;
-  let quotedCost = 0;
+// 2. Calculate the Quadratic Cost (CORRECT IMPLEMENTATION)
+// Get the current user's total pushes for this specific challenge
+const userPushRecord = await prisma.push.aggregate({
+  _sum: { quantity: true },
+  where: { 
+    userId: userId, 
+    challengeId: challengeId 
+  },
+});
 
-  // Calculate the sum of squares for the new push transactions
-  for (let i = 1; i <= quantity; i++) {
-    // The cost is: current push price * (Current total pushes + i)
-    // We'll use a simpler cost calculation for now, but the final logic requires a more complex
-    // cumulative sum based on totalPush. For now, use a simple linear cost per item.
-    // NOTE: This MUST be revised later to match the quadratic logic described in the docs!
-    quotedCost += challenge.pushPrice * (currentPushCount + i); 
-  }
+const currentUserPushCount = userPushRecord._sum.quantity || 0; // The N value in the formula
+let quotedCost = 0;
+
+// Calculate the sum of squares based on the user's specific push count
+for (let i = 1; i <= quantity; i++) {
+  // Cost = challenge.pushPrice * (User's Current Pushes + i)
+  quotedCost += challenge.pushPrice * (currentUserPushCount + i); 
+}
 
   // Use the actual 'total_numbers_spent' logic from the schema doc:
   // total_numbers_spent,Crucial for Challenge ranking and calculating mission progress.,Integer/Numeric
@@ -90,31 +95,33 @@ export async function processPushConfirm(
   userId: number,
   quoteId: string
 ): Promise<{ updatedChallenge: Challenge; transactionCost: number; quantity: number }> {
-  const EXPIRATION_TIMEOUT_MS = 30 * 1000; // 30 seconds
-
+  
   // Use a transaction to ensure atomicity for the database updates
   return prisma.$transaction(async (tx) => {
-    // 1. Fetch TempQuote and apply lock
+    const EXPIRATION_TIMEOUT_MS = 30 * 1000; // 30 seconds
+// 1. Fetch TempQuote and check ownership
     const quote = await tx.tempQuote.findUnique({
-      where: { quoteId: quoteId },
+        where: { quoteId: quoteId },
     });
 
     if (!quote || quote.userId !== userId) {
-      throw new Error('Quote not found or does not belong to this user.');
+        // This covers Quote Not Found and Wrong User
+        throw new Error('Quote ID is invalid or does not belong to this user.'); 
     }
-
-    if (quote.isLocked) {
-      throw new Error('This quote is currently being processed by another transaction.');
-    }
-
+    
     // 2. Check Expiration
     const age = Date.now() - quote.timestampCreated.getTime();
     if (age > EXPIRATION_TIMEOUT_MS) {
-      // Immediately delete the expired quote
-      await tx.tempQuote.delete({ where: { quoteId: quoteId } });
-      throw new Error('The quote has expired (30-second window exceeded).');
+        // Clean up and throw specific error
+        await tx.tempQuote.delete({ where: { quoteId: quoteId } });
+        throw new Error('The push quote has expired. Please run !push [ID] [N] again.');
     }
 
+    if (quote.isLocked) {
+        throw new Error('This quote is currently being processed by another transaction.');
+    }
+
+    
     // 3. Lock the quote to prevent double-spend attempts
     await tx.tempQuote.update({
       where: { quoteId: quoteId },

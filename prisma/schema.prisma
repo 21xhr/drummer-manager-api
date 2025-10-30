@@ -81,7 +81,7 @@ model Challenge {
   hasBeenDiggedOut              Boolean   @map("has_been_digged_out") @default(false)
 
   // Financials and Metrics
-  auctionCost                   Int       @map("auction_cost")
+  auctionCost                   Int       @map("auction_cost") @default(0)
   pushPrice                     Int       @map("push_price")
   disruptCount                  Int       @map("disrupt_count") @default(0)
   numbersRaised                 Int       @map("numbers_raised") @default(0)
