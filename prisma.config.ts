@@ -1,9 +1,9 @@
 // prisma.config.ts
-import { defineConfig } from "@prisma/client";
-import * as dotenv from 'dotenv'; // Import dotenv
+
+// Use require syntax since imports can be tricky with the execution environment
+const dotenv = require('dotenv');
 
 // Load environment variables from .env file
 dotenv.config();
 
-// The rest of your Prisma configuration remains empty or uses defaults
-export default defineConfig({});
+// The file doesn't need to export anything for a basic setup
