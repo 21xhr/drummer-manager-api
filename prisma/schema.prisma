@@ -121,7 +121,7 @@ model Push {
   // Transaction Data
   cost                          Int       @map("cost") // The final NUMBERS cost paid
   quantity                      Int       @default(1) @map("quantity")
-  timestamp                     DateTime  @map("timestamp")
+  timestamp                     DateTime  @map("timestamp") @default(now())
 
   @@map("pushes") // Set the table name explicitly
 }
