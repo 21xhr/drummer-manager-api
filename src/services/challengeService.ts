@@ -53,8 +53,10 @@ let quotedCost = 0;
 
 // Calculate the sum of squares based on the user's specific push count
 for (let i = 1; i <= quantity; i++) {
-  // Cost = challenge.pushPrice * (User's Current Pushes + i)
-  quotedCost += challenge.pushPrice * (currentUserPushCount + i); 
+  const incrementalCount = currentUserPushCount + i;
+  // Cost = pushPrice * (current pushes + i)^2
+  // We use multiplication instead of **2 for wider compatibility
+  quotedCost += challenge.pushPrice * (incrementalCount * incrementalCount); 
 }
 
   // Use the actual 'total_numbers_spent' logic from the schema doc:
