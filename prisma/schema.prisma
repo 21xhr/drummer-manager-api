@@ -82,7 +82,7 @@ model Challenge {
 
   // Financials and Metrics
   auctionCost                   Int       @map("auction_cost") @default(0)
-  pushPrice                     Int       @map("push_price")
+  pushBaseCost                  Int       @map("push_base_cost") @default(21)
   disruptCount                  Int       @map("disrupt_count") @default(0)
   numbersRaised                 Int       @map("numbers_raised") @default(0)
   totalNumbersSpent             Int       @map("total_numbers_spent") @default(0)
