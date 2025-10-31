@@ -73,7 +73,8 @@ router.post('/digout', async (req, res) => {
 
   try {
     // 2. Execute the !digout business logic
-    const { updatedChallenge, cost } = await processDigout(user.id, targetId);
+    // CAPTURE THE UPDATED USER HERE:
+    const { updatedChallenge, updatedUser, cost } = await processDigout(user.id, targetId); 
 
     // 3. Success Response
     return res.status(200).json({
@@ -83,7 +84,8 @@ router.post('/digout', async (req, res) => {
         challengeId: updatedChallenge.challengeId,
         status: updatedChallenge.status,
         cost: cost,
-        totalNumbersSpentGameWide: (user.totalNumbersSpentGameWide + cost) // MOCK: this is not perfect as user is not updated here, but sufficient for now
+        // USE THE TRULY UPDATED VALUE FROM THE TRANSACTION RESULT
+        totalNumbersSpentGameWide: updatedUser.totalNumbersSpentGameWide 
       }
     });
   } catch (error) {

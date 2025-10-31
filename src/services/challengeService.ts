@@ -206,7 +206,7 @@ export async function processPushConfirm(
 export async function processDigout(
   userId: number,
   challengeId: number
-): Promise<{ updatedChallenge: Challenge; cost: number }> {
+): Promise<{ updatedChallenge: Challenge; updatedUser: User; cost: number }> {
   // Use a transaction to ensure atomicity: read challenge, check user, update challenge.
   return prisma.$transaction(async (tx) => {
     // 1. Fetch Challenge and check conditions (pessimistic locking is ideal but complex for Prisma,
@@ -248,9 +248,9 @@ export async function processDigout(
       },
     });
 
-    // 5. Update User Stats (Update total NUMBERS spent game-wide)
-    // This is crucial for the leaderboard/audit
-    await tx.user.update({
+// 5. Update User Stats (Update total NUMBERS spent game-wide)
+    // CAPTURE THE UPDATED USER OBJECT HERE:
+    const updatedUser = await tx.user.update({ // <--- CAPTURE THE RESULT
       where: { id: userId },
       data: {
         totalNumbersSpentGameWide: {
@@ -260,8 +260,8 @@ export async function processDigout(
       },
     });
 
-    // 6. Return the result
-    return { updatedChallenge, cost };
+    // 6. Return the result - NOW includes updatedUser
+    return { updatedChallenge, updatedUser, cost }; // <--- RETURN updatedUser
   });
 }
 
