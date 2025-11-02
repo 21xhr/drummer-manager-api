@@ -175,42 +175,79 @@ export async function processPushConfirm(
 ////////////////////////////////////////////////////////////////////////////////////////
 // PROCESS DIGOUT
 ////////////////////////////////////////////////////////////////////////////////////////
-export async function processDigout(
-  userId: number,
-  challengeId: number
-): Promise<{ updatedChallenge: Challenge; updatedUser: User; cost: number }> {
-  
-  return prisma.$transaction(async (tx) => {
-    const challenge = await tx.challenge.findUnique({ where: { challengeId: challengeId } });
-
-    if (!challenge || challenge.status !== 'Archived' || challenge.hasBeenDiggedOut) {
-      throw new Error(`Digout failed. Status is not 'Archived' or already dug out.`);
-    }
-
-    let cost = Math.ceil(challenge.totalNumbersSpent * DIGOUT_COST_PERCENTAGE);
+/**
+ * Revives an 'Archived' challenge, deducting 21% of its total spent cost from the user.
+ * @param userId - The ID of the user executing the command.
+ * @param challengeId - The ID of the challenge to dig out.
+ * @returns The updated Challenge and User records.
+ */
+export async function processDigout(userId: number, challengeId: number) {
     
-    cost = applyLiveDiscount(cost);
+    return prisma.$transaction(async (tx) => {
+        // 1. Fetch Challenge and User for validation
+        const challenge = await tx.challenge.findUnique({
+            where: { challengeId: challengeId },
+        });
 
-    const updatedChallenge = await tx.challenge.update({
-      where: { challengeId: challengeId },
-      data: {
-        status: 'Active', 
-        hasBeenDiggedOut: true, 
-        streamDaysSinceActivation: 0, 
-        timestampLastActivation: new Date(), 
-      },
+        const user = await tx.user.findUnique({ // TypeScript thinks 'user' here could be null
+            where: { id: userId },
+        });
+
+        if (!challenge) {
+            throw new Error(`Challenge ID ${challengeId} not found.`);
+        }
+        
+        // --- ADDED NULL CHECK FOR USER TO BE SAFE (Though middleware handles it)
+        if (!user) {
+             // This case should ideally never be reached due to the middleware, but adding it for safety.
+            throw new Error(`User ID ${userId} not found during transaction.`);
+        }
+
+        if (challenge.status !== 'Archived') {
+            throw new Error(`Challenge #${challengeId} cannot be dug out: Status is '${challenge.status}'.`);
+        }
+
+        if (challenge.hasBeenDiggedOut) {
+            throw new Error(`Challenge #${challengeId} has already been dug out once and cannot be revived again.`);
+        }
+
+        // 2. Calculate Cost (21% of total_numbers_spent, rounded up)
+        const digoutCost = Math.ceil(challenge.totalNumbersSpent * 0.21);
+
+        // FIX: Use non-null assertion on user.lastKnownBalance
+        if (user.lastKnownBalance! < digoutCost) { 
+            throw new Error(`Insufficient balance. Digout costs ${digoutCost} NUMBERS.`);
+        }
+
+        // 3. Execute Transaction: Deduct cost, update user, and update challenge
+        
+        // Deduct cost from user balance
+        const updatedUser = await tx.user.update({
+            where: { id: userId },
+            data: {
+                lastKnownBalance: { decrement: digoutCost },
+                totalNumbersSpentGameWide: { increment: digoutCost },
+            },
+        });
+
+        // Revive Challenge and reset clock
+        const updatedChallenge = await tx.challenge.update({
+            where: { challengeId: challengeId },
+            data: {
+                status: 'Active', // CHANGE STATUS
+                streamDaysSinceActivation: 0, // RESET CLOCK
+                timestampLastActivation: new Date(), // UPDATE ACTIVATION TIME
+                hasBeenDiggedOut: true, // SET DIGOUT FLAG (can only be done once)
+            },
+        });
+
+        // 4. Return results
+        return { 
+            updatedChallenge, 
+            updatedUser, 
+            cost: digoutCost 
+        };
     });
-
-    const updatedUser = await tx.user.update({
-      where: { id: userId },
-      data: {
-        totalNumbersSpentGameWide: { increment: cost },
-        lastActivityTimestamp: new Date(),
-      },
-    });
-
-    return { updatedChallenge, updatedUser, cost };
-  });
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
