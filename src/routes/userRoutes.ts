@@ -1,180 +1,207 @@
 // src/routes/userRoutes.ts
-import { Router } from 'express'; // <-- Ensure Router is in curly braces { }
-import { findOrCreateUser } from '../services/userService';
-import { processDigout, processPushQuote, processPushConfirm} from '../services/challengeService';
-
+import { Router } from 'express'; 
+import * as challengeService from '../services/challengeService'; 
+import { findOrCreateUser } from '../services/userService'; // <-- NEW IMPORT
 
 const router = Router();
 
+// Middleware to standardize user input and ensure user registration
+// This extracts the platform data and ensures we get a valid internal user ID (userId)
+const authenticateUser = async (req: any, res: any, next: any) => {
+    const { platformId, platformName } = req.body;
 
-
-// -----------------------------------------------------------
-// NOTE: This is a placeholder for a generic command processing route.
-// In a real scenario, you'd have specific endpoints for !push, !digout, etc.
-// We're using a generic /user/process route to test the core logic.
-// -----------------------------------------------------------
-
-/**
- * POST /api/v1/user/process
- * Simulates receiving data from an external platform (Lumia Stream, Chatbot)
- * to process a command that requires a database user record.
- *
- * Request Body Example:
- * {
- * "platformId": "twitch-user-12345",
- * "platformName": "Twitch",
- * "command": "!mystats",
- * "args": []
- * }
- */
-router.post('/process', async (req, res) => {
-  const { platformId, platformName, command, args } = req.body;
-
-  if (!platformId || !platformName) {
-    return res.status(400).json({ error: "Missing platformId or platformName in request." });
-  }
-
-  // 1. Find or Create the User (Core Logic Test)
-  const user = await findOrCreateUser({ platformId, platformName });
-
-  // 2. Respond with the user data and simulated command context
-  return res.status(200).json({
-    message: `User record for ${user.platformName} user ${user.platformId} successfully processed.`,
-    action: `Ready to execute command: ${command}`,
-    userData: {
-      dbId: user.id,
-      platformId: user.platformId,
-      lastActivity: user.lastActivityTimestamp
+    if (!platformId || !platformName) {
+        return res.status(400).json({ error: "Missing platformId or platformName in request body." });
     }
-  });
+
+    try {
+        const user = await findOrCreateUser({ platformId, platformName });
+        // Attach the internal user ID and the external platform name/ID to the request object for later use
+        req.userId = user.id; 
+        req.platformId = user.platformId; // Optional, for logging/debugging
+        req.platformName = user.platformName; // Optional, for logging/debugging
+        next();
+    } catch (error) {
+        console.error('User Authentication Error:', error);
+        return res.status(500).json({ 
+            message: 'Failed to find or create user.',
+            error: error instanceof Error ? error.message : 'An unknown error occurred.',
+        });
+    }
+};
+
+// -----------------------------------------------------------
+// 1. CHALLENGE SUBMISSION
+// POST /api/v1/user/submit - Command: !challengesubmit
+// -----------------------------------------------------------
+router.post('/submit', authenticateUser, async (req: any, res) => {
+    const { challengeText } = req.body;
+    const userId = req.userId; // Retrieved from authenticateUser middleware
+
+    if (!challengeText) {
+        return res.status(400).json({ error: "Missing challengeText." });
+    }
+
+    try {
+        const { newChallenge, cost } = await challengeService.processNewChallengeSubmission(
+            userId, 
+            challengeText
+        );
+
+        return res.status(200).json({
+            message: `Challenge #${newChallenge.challengeId} submitted successfully for a cost of ${cost} NUMBERS.`,
+            action: 'submission_success',
+            details: {
+                challengeId: newChallenge.challengeId,
+                cost: cost,
+                challengeText: newChallenge.challengeText,
+                status: newChallenge.status
+            }
+        });
+    } catch (error) {
+        console.error('Challenge Submission Error:', error);
+        return res.status(500).json({
+            message: 'Challenge submission failed.',
+            action: 'submission_failure',
+            error: error instanceof Error ? error.message : 'An unknown error occurred.',
+        });
+    }
 });
-
-
 
 
 // -----------------------------------------------------------
-// CORE GAME COMMANDS
+// 2. PUSH QUOTE
+// POST /api/v1/user/push/quote - Command: !push [ID] [N]
 // -----------------------------------------------------------
+router.post('/push/quote', authenticateUser, async (req: any, res) => {
+    const { challengeId, quantity } = req.body;
+    const userId = req.userId; // Retrieved from authenticateUser middleware
 
-/**
- * POST /api/v1/user/digout
- * Handles the execution of the !digout [ID] command.
- * Request Body: { platformId: string, platformName: string, targetId: number }
- */
-router.post('/digout', async (req, res) => {
-  const { platformId, platformName, targetId } = req.body;
+    if (challengeId === undefined || quantity === undefined || isNaN(parseInt(challengeId)) || isNaN(parseInt(quantity))) {
+        return res.status(400).json({ error: "Missing or invalid challengeId or quantity." });
+    }
 
-  if (!platformId || !platformName || typeof targetId !== 'number') {
-    return res.status(400).json({ error: "Missing platformId, platformName, or targetId (Challenge ID)." });
-  }
+    try {
+        const { quoteId, quotedCost, challenge } = await challengeService.processPushQuote(
+            userId,
+            parseInt(challengeId),
+            parseInt(quantity)
+        );
 
-  // 1. Ensure the User exists in the database
-  const user = await findOrCreateUser({ platformId, platformName });
-
-  try {
-    // 2. Execute the !digout business logic
-    // CAPTURE THE UPDATED USER HERE:
-    const { updatedChallenge, updatedUser, cost } = await processDigout(user.id, targetId); 
-
-    // 3. Success Response
-    return res.status(200).json({
-      message: `Challenge #${updatedChallenge.challengeId} was successfully dug out!`,
-      action: 'digout_success',
-      details: {
-        challengeId: updatedChallenge.challengeId,
-        status: updatedChallenge.status,
-        cost: cost,
-        // USE THE TRULY UPDATED VALUE FROM THE TRANSACTION RESULT
-        totalNumbersSpentGameWide: updatedUser.totalNumbersSpentGameWide 
-      }
-    });
-  } catch (error) {
-    // 4. Error Response (based on error thrown by the service)
-    return res.status(400).json({
-      message: 'Digout failed.',
-      error: error instanceof Error ? error.message : 'An unknown error occurred.',
-      action: 'digout_failure',
-    });
-  }
+        return res.status(200).json({
+            message: `Quote generated for Challenge #${challenge.challengeId}. Cost: ${quotedCost} NUMBERS. Confirm with !push confirm ${quoteId.slice(0, 8)}`,
+            action: 'quote_success',
+            details: {
+                quoteId: quoteId,
+                challengeId: challenge.challengeId,
+                quotedCost: quotedCost,
+                quantity: quantity
+            }
+        });
+    } catch (error) {
+        console.error('Push Quote Error:', error);
+        return res.status(500).json({
+            message: 'Push quote failed.',
+            action: 'quote_failure',
+            error: error instanceof Error ? error.message : 'An unknown error occurred.',
+        });
+    }
 });
 
-/**
- * POST /api/v1/user/push
- * Handles the first stage of the !push [ID] [quantity] command: generating a quote.
- * Request Body: { platformId: string, platformName: string, targetId: number, quantity: number }
- */
-router.post('/push', async (req, res) => {
-  const { platformId, platformName, targetId, quantity } = req.body;
 
-  if (!platformId || !platformName || typeof targetId !== 'number' || typeof quantity !== 'number' || quantity <= 0) {
-    return res.status(400).json({ error: "Missing platformId, platformName, targetId (Challenge ID), or invalid quantity." });
-  }
+// -----------------------------------------------------------
+// 3. PUSH CONFIRM
+// POST /api/v1/user/push/confirm - Command: !push confirm [UUID]
+// -----------------------------------------------------------
+router.post('/push/confirm', authenticateUser, async (req: any, res) => {
+    const { quoteId } = req.body; 
+    const userId = req.userId; // Retrieved from authenticateUser middleware
 
-  const user = await findOrCreateUser({ platformId, platformName });
+    try {
+        const { updatedChallenge, transactionCost, quantity } = await challengeService.processPushConfirm(
+            userId,
+            quoteId // quoteId can be undefined if user uses !push confirm without UUID
+        );
 
-  try {
-    // 2. Execute the !push quote logic
-    const { quoteId, quotedCost, challenge } = await processPushQuote(user.id, targetId, quantity);
-
-    // 3. Success Response: Tell the user the cost and how to confirm
-    return res.status(200).json({
-      message: `Push quote generated for Challenge #${challenge.challengeId}.`,
-      action: 'push_quote_success',
-      details: {
-        quoteId: quoteId,
-        quotedCost: quotedCost,
-        targetChallenge: challenge.challengeText,
-        confirmationCommand: `!push confirm ${quoteId}`,
-        // NOTE: The Lumia API would handle sending this message to the chat.
-      }
-    });
-  } catch (error) {
-    // 4. Error Response
-    return res.status(400).json({
-      message: 'Push quote failed.',
-      error: error instanceof Error ? error.message : 'An unknown error occurred.',
-      action: 'push_quote_failure',
-    });
-  }
+        return res.status(200).json({
+            message: `Push confirmed! ${quantity} pushes applied to Challenge #${updatedChallenge.challengeId}.`,
+            action: 'push_confirm_success',
+            details: {
+                challengeId: updatedChallenge.challengeId,
+                totalPush: updatedChallenge.totalPush,
+                cost: transactionCost,
+                quantity: quantity
+            }
+        });
+    } catch (error) {
+        console.error('Push Confirmation Error:', error);
+        return res.status(500).json({
+            message: 'Push confirmation failed.',
+            action: 'push_confirm_failure',
+            error: error instanceof Error ? error.message : 'An unknown error occurred.',
+        });
+    }
 });
 
-/**
- * POST /api/v1/user/push/confirm
- * Handles the second stage of the !push confirm [UUID] command: executes the transaction.
- * Request Body: { platformId: string, platformName: string, quoteId: string }
- */
-router.post('/push/confirm', async (req, res) => {
-  const { platformId, platformName, quoteId } = req.body;
 
-  if (!platformId || !platformName || !quoteId || typeof quoteId !== 'string') {
-    return res.status(400).json({ error: "Missing platformId, platformName, or quoteId (UUID) in request." });
-  }
+// -----------------------------------------------------------
+// 4. DIGOUT
+// POST /api/v1/user/digout - Command: !digout [ID]
+// -----------------------------------------------------------
+router.post('/digout', authenticateUser, async (req: any, res) => {
+    const { challengeId } = req.body; 
+    const userId = req.userId; // Retrieved from authenticateUser middleware
 
-  const user = await findOrCreateUser({ platformId, platformName });
+    if (challengeId === undefined || isNaN(parseInt(challengeId))) {
+        return res.status(400).json({ error: "Missing or invalid challengeId." });
+    }
 
-  try {
-    // 2. Execute the !push confirmation logic
-    const { updatedChallenge, transactionCost, quantity } = await processPushConfirm(user.id, quoteId);
+    try {
+        const { updatedChallenge, updatedUser, cost } = await challengeService.processDigout(
+            userId,
+            parseInt(challengeId)
+        );
 
-    // 3. Success Response: Confirms the transaction is complete
-    return res.status(200).json({
-      message: `Push confirmed! ${quantity} pushes applied to Challenge #${updatedChallenge.challengeId}.`,
-      action: 'push_confirm_success',
-      details: {
-        challengeId: updatedChallenge.challengeId,
-        totalPush: updatedChallenge.totalPush,
-        cost: transactionCost,
-        quantity: quantity,
-      }
-    });
-  } catch (error) {
-    // 4. Error Response
-    return res.status(400).json({
-      message: 'Push confirmation failed.',
-      error: error instanceof Error ? error.message : 'An unknown error occurred.',
-      action: 'push_confirm_failure',
-    });
-  }
+        return res.status(200).json({
+            message: `Challenge #${updatedChallenge.challengeId} has been dug out for a cost of ${cost} NUMBERS!`,
+            action: 'digout_success',
+            details: {
+                challengeId: updatedChallenge.challengeId,
+                cost: cost,
+                status: updatedChallenge.status,
+                newBalance: updatedUser.lastKnownBalance // Assuming lastKnownBalance is updated or returned correctly
+            }
+        });
+    } catch (error) {
+        console.error('Digout Error:', error);
+        return res.status(500).json({
+            message: 'Digout failed.',
+            action: 'digout_failure',
+            error: error instanceof Error ? error.message : 'An unknown error occurred.',
+        });
+    }
+});
+
+// -----------------------------------------------------------
+// 5. GET ACTIVE CHALLENGES
+// GET /api/v1/user/challenges/active
+// -----------------------------------------------------------
+router.get('/challenges/active', async (req, res) => {
+    try {
+        const challenges = await challengeService.getActiveChallenges();
+        
+        return res.status(200).json({
+            message: `${challenges.length} active challenges retrieved.`,
+            action: 'challenges_retrieved',
+            data: challenges
+        });
+    } catch (error) {
+        console.error('Get Active Challenges Error:', error);
+        return res.status(500).json({
+            message: 'Failed to retrieve active challenges.',
+            error: error instanceof Error ? error.message : 'An unknown error occurred.',
+        });
+    }
 });
 
 export default router;

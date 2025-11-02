@@ -1,8 +1,9 @@
-// src/index.ts (Updated to include userRoutes)
+// src/index.ts (Updated to include streamRoutes)
 import 'express-async-errors'; 
 import express, { Request, Response } from 'express';
 import prisma from './prisma'; 
-import userRoutes from './routes/userRoutes'; // <-- NEW
+import userRoutes from './routes/userRoutes'; 
+import streamRoutes from './routes/streamRoutes'; // <--- NEW IMPORT
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,7 +12,8 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 // Application Routers (All game logic lives here)
-app.use('/api/v1/user', userRoutes); // <-- NEW: Mount user routes
+app.use('/api/v1/user', userRoutes); 
+app.use('/api/v1/stream', streamRoutes); // <--- NEW: Mount stream routes for webhooks
 
 // Basic Health Check Route (Moved to the end)
 app.get('/', async (req: Request, res: Response) => {
