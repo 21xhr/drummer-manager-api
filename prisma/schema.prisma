@@ -30,14 +30,20 @@ model User {
   lastActivityTimestamp       DateTime? @map("last_activity_timestamp")
   lastLiveActivityTimestamp   DateTime? @map("last_live_activity_timestamp")
   
-  // Game/Stream Stats
+  // Game/Stream Stats/// Per-User Stats
   lastSeenStreamDay           Int       @map("last_seen_stream_day") @default(0)
   activeOfflineDaysCount      Int       @map("active_offline_days_count") @default(0)
   activeStreamDaysCount       Int       @map("active_stream_days_count") @default(0)
   dailyChallengeCount         Int       @map("daily_challenge_count") @default(0) // Used for quadratic submission cost N
   dailyChallengeResetAt       DateTime  @map("daily_challenge_reset_at")
-  totalNumbersSpentGameWide   Int       @map("total_numbers_spent_game_wide") @default(0)
   totalChallengesSubmitted    Int       @map("total_challenges_submitted") @default(0)
+  totalRemovalsExecuted       Int       @map("total_removals_executed") @default(0) // <-- NEW FIELD
+  totalNumbersSpent           Int       @map("total_numbers_spent") @default(0) // <-- NEW FIELD!
+  totalReceivedFromRemovals   Int       @map("total_received_from_removals") @default(0) // <-- NEW FIELD!
+
+  // Global Ledger (ID 1)
+  totalNumbersReturnedFromRemovalsGameWide Int @map("total_numbers_returned_from_removals_game_wide") @default(0) 
+  totalNumbersSpentGameWide   Int       @map("total_numbers_spent_game_wide") @default(0)
 
   // Relations (one-to-many) - Define these for Prisma
   challenges                  Challenge[] @relation("Proposer") // Challenges proposed by this user
@@ -173,6 +179,9 @@ model Stream {
   totalDisruptsInSession          Int       @map("total_disrupts_in_session") @default(0)
   totalNumbersSpentOnDisrupt      Int       @map("total_numbers_spent_on_disrupt") @default(0)
   totalNumbersSpentInSession      Int       @map("total_numbers_spent_in_session") @default(0)
+  totalRemovalsInSession          Int       @map("total_removals_in_session") @default(0) // <-- NEW FIELD
+  totalNumbersReturnedFromRemovalsInSession Int @map("total_numbers_returned_from_removals_in_session") @default(0) // <-- NEW FIELD
+  totalChallengesSubmittedInSession Int @map("total_challenges_submitted_in_session") @default(0) // <-- NEW FIELD
   
   // Status
   hasBeenProcessed                Boolean   @map("has_been_processed") @default(false)

@@ -23,9 +23,11 @@ const authenticateUser = async (req: any, res: any, next: any) => {
         next();
     } catch (error) {
         console.error('User Authentication Error:', error);
+        // FIX: Type narrowing applied here too
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
         return res.status(500).json({ 
             message: 'Failed to find or create user.',
-            error: error instanceof Error ? error.message : 'An unknown error occurred.',
+            error: errorMessage,
         });
     }
 };
@@ -60,10 +62,12 @@ router.post('/submit', authenticateUser, async (req: any, res) => {
         });
     } catch (error) {
         console.error('Challenge Submission Error:', error);
+        // FIX: Type narrowing applied
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
         return res.status(500).json({
             message: 'Challenge submission failed.',
             action: 'submission_failure',
-            error: error instanceof Error ? error.message : 'An unknown error occurred.',
+            error: errorMessage,
         });
     }
 });
@@ -100,10 +104,12 @@ router.post('/push/quote', authenticateUser, async (req: any, res) => {
         });
     } catch (error) {
         console.error('Push Quote Error:', error);
+        // FIX: Type narrowing applied
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
         return res.status(500).json({
             message: 'Push quote failed.',
             action: 'quote_failure',
-            error: error instanceof Error ? error.message : 'An unknown error occurred.',
+            error: errorMessage,
         });
     }
 });
@@ -135,10 +141,12 @@ router.post('/push/confirm', authenticateUser, async (req: any, res) => {
         });
     } catch (error) {
         console.error('Push Confirmation Error:', error);
+        // FIX: Type narrowing applied
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
         return res.status(500).json({
             message: 'Push confirmation failed.',
             action: 'push_confirm_failure',
-            error: error instanceof Error ? error.message : 'An unknown error occurred.',
+            error: errorMessage,
         });
     }
 });
@@ -174,10 +182,12 @@ router.post('/digout', authenticateUser, async (req: any, res) => {
         });
     } catch (error) {
         console.error('Digout Error:', error);
+        // FIX: Type narrowing applied
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
         return res.status(500).json({
             message: 'Digout failed.',
             action: 'digout_failure',
-            error: error instanceof Error ? error.message : 'An unknown error occurred.',
+            error: errorMessage,
         });
     }
 });
@@ -197,9 +207,53 @@ router.get('/challenges/active', async (req, res) => {
         });
     } catch (error) {
         console.error('Get Active Challenges Error:', error);
+        // FIX: Type narrowing applied
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
         return res.status(500).json({
             message: 'Failed to retrieve active challenges.',
-            error: error instanceof Error ? error.message : 'An unknown error occurred.',
+            error: errorMessage,
+        });
+    }
+});
+
+// -----------------------------------------------------------
+// 6. REMOVE CHALLENGE
+// POST /api/v1/user/challenges/remove
+// Triggered by: !remove [ID]
+// -----------------------------------------------------------
+router.post('/challenges/remove', authenticateUser, async (req: any, res) => {
+    const { challengeId } = req.body;
+    // FIX: Retrieve the userId correctly from the req object (where the middleware placed it)
+    const authorUserId = req.userId; 
+
+    if (challengeId === undefined || isNaN(parseInt(challengeId))) {
+        return res.status(400).json({ message: 'Missing or invalid challengeId parameter.' });
+    }
+
+    try {
+        const result = await challengeService.processRemove(authorUserId, parseInt(challengeId));
+        
+        return res.status(200).json({
+            message: `Challenge #${challengeId} removed successfully. ${result.refundsProcessed} pushers refunded a total of ${result.totalRefundsAmount} NUMBERS.`,
+            action: 'challenge_removed',
+            data: result.updatedChallenge,
+            refundDetails: {
+                totalRefunds: result.totalRefundsAmount,
+                count: result.refundsProcessed
+            }
+        });
+    } catch (error) {
+        console.error('Remove Challenge Error:', error);
+        
+        // FIX: Type narrowing applied
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+        
+        // Using 403 for authorization error, 400 for general failure/validation
+        const status = (errorMessage.includes("author") || errorMessage.includes("status")) ? 403 : 400;
+
+        return res.status(status).json({
+            message: errorMessage,
+            error: errorMessage,
         });
     }
 });

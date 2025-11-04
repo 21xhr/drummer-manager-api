@@ -169,3 +169,9 @@ export async function processStreamOfflineEvent(streamEndTime: Date): Promise<vo
     });
 }
 
+/**
+ * Returns the ID of the currently active stream session from the in-memory state.
+ */
+export function getCurrentStreamSessionId(): number | null {
+  return currentStreamSessionId;
+}
