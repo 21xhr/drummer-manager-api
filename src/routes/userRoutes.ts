@@ -45,7 +45,7 @@ router.post('/submit', authenticateUser, async (req: any, res) => {
     }
 
     try {
-        const { newChallenge, cost } = await challengeService.processNewChallengeSubmission(
+        const { newChallenge, cost } = await challengeService.processChallengeSubmission(
             userId, 
             challengeText
         );
