@@ -1,7 +1,7 @@
 // src/services/streamService.ts
 // This new service contains the core logic for advancing the 21-day clock on all active challenges, ensuring it only happens once per calendar day, regardless of how many times you stream. It also contains the official source of truth for the isStreamLive() check.
 import prisma from '../prisma';
-import { archiveExpiredChallenges } from './challengeService'; // <-- NEW IMPORT
+import { archiveExpiredChallenges, finalizeExecutingChallenge} from './challengeService'; // <-- NEW IMPORT
 
 // Use string literals for better state management and scaling (e.g., 'BREAK', 'PRE-STREAM' later)
 type StreamStatus = 'OFFLINE' | 'LIVE';
@@ -160,8 +160,13 @@ export async function processStreamOfflineEvent(streamEndTime: Date): Promise<vo
         const archivedCount = await archiveExpiredChallenges();
         console.log(`[StreamService] Challenge archival complete. ${archivedCount} challenges archived.`);
 
+        // 3. FINALIZE CURRENTLY EXECUTING CHALLENGE (New Step)
+        const completedChallenge = await finalizeExecutingChallenge();
+        if (completedChallenge) {
+            console.log(`[StreamService] Challenge #${completedChallenge.challengeId} completed upon stream end.`);
+        }
 
-        // 3. Reset In-Memory Status (same as before)
+        // 4. Reset In-Memory Status (same as before)
         currentStreamStatus = 'OFFLINE';
         currentStreamStartTime = null;
         currentStreamSessionId = null;

@@ -296,7 +296,7 @@ export async function processDigout(userId: number, challengeId: number) {
 ////////////////////////////////////////////////////////////////////////////////////////
 // PROCESS CHALLENGE SUBMISSION
 ////////////////////////////////////////////////////////////////////////////////////////
-export async function processNewChallengeSubmission(
+export async function processChallengeSubmission(
   userId: number,
   challengeText: string
 ): Promise<{ newChallenge: Challenge, cost: number }> {
@@ -395,6 +395,48 @@ export async function archiveExpiredChallenges(): Promise<number> {
 
     console.log(`[ChallengeService] Archived ${result} challenges.`);
     return result;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
+// FINALIZE EXECUTING CHALLENGE
+////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * Finds the currently executing challenge (Status: 'In Progress') and sets its status to 'Completed'
+ * when the stream goes offline.
+ * @returns The completed Challenge record, or null if none was executing.
+ */
+export async function finalizeExecutingChallenge(): Promise<Challenge | null> {
+    
+    // This runs outside a transaction, using the standard Prisma client, similar to archiveExpiredChallenges.
+    
+    // 1. Find the currently executing challenge
+    const executingChallenge = await prisma.challenge.findFirst({
+        where: { 
+            status: 'In Progress', 
+            isExecuting: true 
+        },
+    });
+
+    if (!executingChallenge) {
+        console.log("[ChallengeService] No challenge found in 'In Progress' status to finalize.");
+        return null;
+    }
+
+    // 2. Update its status to 'Completed', set isExecuting to false, and record the completion time.
+    const completedChallenge = await prisma.challenge.update({
+        where: { challengeId: executingChallenge.challengeId },
+        data: {
+            status: 'Completed',
+            isExecuting: false,
+            timestampCompleted: new Date(), // Set completion timestamp
+        }
+    });
+
+    console.log(`[ChallengeService] Challenge #${completedChallenge.challengeId} finalized as 'Completed'.`);
+    
+    // Future reward/metric logic would go here.
+
+    return completedChallenge;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -533,6 +575,7 @@ export async function processRemove(authorUserId: number, challengeId: number) {
             console.error(`[LUMIA REFUND FAILED] Failed to refund ${refundDetail.refundAmount} to User ID ${refundDetail.userId}. Manual review needed.`);
         }
     }
+
 
     // --- STEP 4: FINAL RESPONSE ---
     return {

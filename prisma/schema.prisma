@@ -1,10 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
-// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,204 +7,140 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Next step is to define the data models below.
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// USER TABLE (from database structure - User.csv)
+/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 model User {
-  // Primary Key and ID
-  id                          Int       @id @default(autoincrement()) @map("user_id") // Maps to 'user_id'
-  platformId                  String    @map("user_platform_id") // Maps to 'user_platform_id'
-  platformName                String    @map("platform_name")
-  
-  // Balance and Activity Tracking
-  lastKnownBalance            Int       @map("last_known_balance") @default(0) // Local cache of NUMBERS balance
-  lastBalanceUpdate           DateTime? @map("last_balance_update")
-  lastActivityTimestamp       DateTime? @map("last_activity_timestamp")
-  lastLiveActivityTimestamp   DateTime? @map("last_live_activity_timestamp")
-  
-  // Game/Stream Stats/// Per-User Stats
-  lastSeenStreamDay           Int       @map("last_seen_stream_day") @default(0)
-  activeOfflineDaysCount      Int       @map("active_offline_days_count") @default(0)
-  activeStreamDaysCount       Int       @map("active_stream_days_count") @default(0)
-  dailyChallengeCount         Int       @map("daily_challenge_count") @default(0) // Used for quadratic submission cost N
-  dailyChallengeResetAt       DateTime  @map("daily_challenge_reset_at")
-  totalChallengesSubmitted    Int       @map("total_challenges_submitted") @default(0)
-  totalRemovalsExecuted       Int       @map("total_removals_executed") @default(0) // <-- NEW FIELD
-  totalNumbersSpent           Int       @map("total_numbers_spent") @default(0) // <-- NEW FIELD!
-  totalReceivedFromRemovals   Int       @map("total_received_from_removals") @default(0) // <-- NEW FIELD!
+  id                                       Int         @id @default(autoincrement()) @map("user_id")
+  platformId                               String      @map("user_platform_id")
+  platformName                             String      @map("platform_name")
+  lastKnownBalance                         Int         @default(0) @map("last_known_balance")
+  lastBalanceUpdate                        DateTime?   @map("last_balance_update")
+  lastActivityTimestamp                    DateTime?   @map("last_activity_timestamp")
+  lastLiveActivityTimestamp                DateTime?   @map("last_live_activity_timestamp")
+  lastSeenStreamDay                        Int         @default(0) @map("last_seen_stream_day")
+  activeOfflineDaysCount                   Int         @default(0) @map("active_offline_days_count")
+  activeStreamDaysCount                    Int         @default(0) @map("active_stream_days_count")
+  dailyChallengeCount                      Int         @default(0) @map("daily_challenge_count")
+  dailyChallengeResetAt                    DateTime    @map("daily_challenge_reset_at")
+  totalNumbersSpentGameWide                Int         @default(0) @map("total_numbers_spent_game_wide")
+  totalChallengesSubmitted                 Int         @default(0) @map("total_challenges_submitted")
+  totalNumbersReturnedFromRemovalsGameWide Int         @default(0) @map("total_numbers_returned_from_removals_game_wide")
+  totalNumbersSpent                        Int         @default(0) @map("total_numbers_spent")
+  totalReceivedFromRemovals                Int         @default(0) @map("total_received_from_removals")
+  totalRemovalsExecuted                    Int         @default(0) @map("total_removals_executed")
+  challenges                               Challenge[] @relation("Proposer")
+  pushes                                   Push[]
+  tempQuotes                               TempQuote[]
 
-  // Global Ledger (ID 1)
-  totalNumbersReturnedFromRemovalsGameWide Int @map("total_numbers_returned_from_removals_game_wide") @default(0) 
-  totalNumbersSpentGameWide   Int       @map("total_numbers_spent_game_wide") @default(0)
-
-  // Relations (one-to-many) - Define these for Prisma
-  challenges                  Challenge[] @relation("Proposer") // Challenges proposed by this user
-  pushes                      Push[]
-  tempQuotes                  TempQuote[]
-
-  // Constraints
-  @@unique([platformId, platformName]) // TO ENFORCE UNIQUENESS ON THE COMBINATION OF BOTH FIELDS
-
-  // Set the table name explicitly
-  @@map("users") 
+  @@unique([platformId, platformName])
+  @@map("users")
 }
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// STREAM STATS TABLE (from database structure - Stream Stats.csv)
+/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 model StreamStat {
-  id                          Int       @id @default(autoincrement()) // Only one record is needed for the global counter
-  streamDaysSinceInception    Int       @map("stream_days_since_inception") @default(0)
-  
-  // Set the table name explicitly
-  @@map("stream_stats") 
+  id                       Int @id @default(autoincrement())
+  streamDaysSinceInception Int @default(0) @map("stream_days_since_inception")
+
+  @@map("stream_stats")
 }
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// CHALLENGES TABLE (from database structure - Challenges.csv)
+/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 model Challenge {
-  // Primary Key and ID
-  challengeId                   Int       @id @default(autoincrement()) @map("challenge_id")
-  challengeText                 String    @map("challenge_text")
-  category                      String    @map("category")
-  durationType                  String    @map("duration_type") // e.g., ONE_OFF, RECURRING
-  
-  // Relations: Foreign Key to User
-  proposerUserId                Int       @map("proposer_user_id")
-  proposer                      User      @relation("Proposer", fields: [proposerUserId], references: [id])
-  
-  // Status and Tracking
-  status                        String    @map("status") // e.g., Active, In Progress, Completed, Archived
-  isExecuting                   Boolean   @map("is_executing") @default(false)
-  hasBeenAuctioned              Boolean   @map("has_been_auctioned") @default(false)
-  hasBeenDiggedOut              Boolean   @map("has_been_digged_out") @default(false)
+  challengeId               Int         @id @default(autoincrement()) @map("challenge_id")
+  challengeText             String      @map("challenge_text")
+  category                  String      @map("category")
+  durationType              String      @map("duration_type")
+  proposerUserId            Int         @map("proposer_user_id")
+  status                    String      @map("status")
+  isExecuting               Boolean     @default(false) @map("is_executing")
+  hasBeenAuctioned          Boolean     @default(false) @map("has_been_auctioned")
+  hasBeenDiggedOut          Boolean     @default(false) @map("has_been_digged_out")
+  auctionCost               Int         @default(0) @map("auction_cost")
+  disruptCount              Int         @default(0) @map("disrupt_count")
+  numbersRaised             Int         @default(0) @map("numbers_raised")
+  totalNumbersSpent         Int         @default(0) @map("total_numbers_spent")
+  totalPush                 Int         @default(0) @map("total_push")
+  streamDaysSinceActivation Int         @default(0) @map("stream_days_since_activation")
+  timestampSubmitted        DateTime    @map("timestamp_submitted")
+  timestampLastActivation   DateTime    @map("timestamp_last_activation")
+  timestampCompleted        DateTime?   @map("timestamp_completed")
+  uniquePusher              Int         @default(0) @map("unique_pusher")
+  pushBaseCost              Int         @default(21) @map("push_base_cost")
+  proposer                  User        @relation("Proposer", fields: [proposerUserId], references: [id])
+  pushes                    Push[]
+  tempQuotes                TempQuote[]
 
-  // Financials and Metrics
-  auctionCost                   Int       @map("auction_cost") @default(0)
-  pushBaseCost                  Int       @map("push_base_cost") @default(21)
-  disruptCount                  Int       @map("disrupt_count") @default(0)
-  numbersRaised                 Int       @map("numbers_raised") @default(0)
-  totalNumbersSpent             Int       @map("total_numbers_spent") @default(0)
-  totalPush                     Int       @map("total_push") @default(0)
-  
-  // Clocks and Timestamps
-  streamDaysSinceActivation     Int       @map("stream_days_since_activation") @default(0) // The 21-Day Clock
-  timestampSubmitted            DateTime  @map("timestamp_submitted")
-  timestampLastActivation       DateTime  @map("timestamp_last_activation")
-  timestampCompleted            DateTime? @map("timestamp_completed") // Nullable
-
-  // Calculated Metrics (Prisma doesn't support calculated fields, so this is tracked)
-  uniquePusher                  Int       @map("unique_pusher") @default(0)
-
-  // Relations (one-to-many) - Define these for Prisma
-  pushes                        Push[]
-  tempQuotes                    TempQuote[]
-
-  @@map("challenges") // Set the table name explicitly
+  @@map("challenges")
 }
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// PUSHES TABLE (from database structure - Pushes.csv)
+/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 model Push {
-  pushId                        Int       @id @default(autoincrement()) @map("push_id")
+  pushId      Int       @id @default(autoincrement()) @map("push_id")
+  challengeId Int       @map("challenge_id")
+  userId      Int       @map("user_id")
+  cost        Int       @map("cost")
+  timestamp   DateTime  @default(now()) @map("timestamp")
+  quantity    Int       @default(1) @map("quantity")
+  challenge   Challenge @relation(fields: [challengeId], references: [challengeId])
+  user        User      @relation(fields: [userId], references: [id])
 
-  // Relations: Foreign Keys
-  challengeId                   Int       @map("challenge_id")
-  challenge                     Challenge @relation(fields: [challengeId], references: [challengeId])
-
-  userId                        Int       @map("user_id")
-  user                          User      @relation(fields: [userId], references: [id])
-  
-  // Transaction Data
-  cost                          Int       @map("cost") // The final NUMBERS cost paid
-  quantity                      Int       @default(1) @map("quantity")
-  timestamp                     DateTime  @map("timestamp") @default(now())
-
-  @@map("pushes") // Set the table name explicitly
+  @@map("pushes")
 }
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// TEMP QUOTES TABLE (from database structure - Temp Quotes.csv)
+/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 model TempQuote {
-  // Primary Key
-  quoteId                       String    @id @map("quote_id") // Using String for UUID/Text-based ID if preferred over Int
-  
-  // Relations: Foreign Keys
-  userId                        Int       @map("user_id")
-  user                          User      @relation(fields: [userId], references: [id])
+  quoteId          String    @id @map("quote_id")
+  userId           Int       @map("user_id")
+  challengeId      Int       @map("challenge_id")
+  quantity         Int       @map("quantity")
+  quotedCost       Int       @map("quoted_cost")
+  timestampCreated DateTime  @map("timestamp_created")
+  isLocked         Boolean   @default(false) @map("is_locked")
+  challenge        Challenge @relation(fields: [challengeId], references: [challengeId])
+  user             User      @relation(fields: [userId], references: [id])
 
-  challengeId                   Int       @map("challenge_id")
-  challenge                     Challenge @relation(fields: [challengeId], references: [challengeId])
-
-  // Quote Data
-  quantity                      Int       @map("quantity") // The N value for the transaction
-  quotedCost                    Int       @map("quoted_cost") // The exact quadratic cost
-  timestampCreated              DateTime  @map("timestamp_created") // Used for 30-second expiration
-  isLocked                      Boolean   @map("is_locked") @default(false) // Race condition protection
-
-  @@map("temp_quotes") // Set the table name explicitly
+  @@map("temp_quotes")
 }
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// STREAMS TABLE (from database structure - Streams.csv)
+/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 model Stream {
-  streamSessionId                 Int       @id @default(autoincrement()) @map("stream_session_id")
+  streamSessionId                           Int       @id @default(autoincrement()) @map("stream_session_id")
+  currentStreamNumber                       Int       @map("current_stream_number")
+  startTimestamp                            DateTime  @map("start_timestamp")
+  endTimestamp                              DateTime? @map("end_timestamp")
+  durationMinutes                           Int?      @map("duration_minutes")
+  totalPushesInSession                      Int       @default(0) @map("total_pushes_in_session")
+  totalNumbersSpentOnPush                   Int       @default(0) @map("total_numbers_spent_on_push")
+  totalDigoutsInSession                     Int       @default(0) @map("total_digouts_in_session")
+  totalNumbersSpentOnDigout                 Int       @default(0) @map("total_numbers_spent_on_digout")
+  totalDisruptsInSession                    Int       @default(0) @map("total_disrupts_in_session")
+  totalNumbersSpentOnDisrupt                Int       @default(0) @map("total_numbers_spent_on_disrupt")
+  totalNumbersSpentInSession                Int       @default(0) @map("total_numbers_spent_in_session")
+  hasBeenProcessed                          Boolean   @default(false) @map("has_been_processed")
+  totalChallengesSubmittedInSession         Int       @default(0) @map("total_challenges_submitted_in_session")
+  totalNumbersReturnedFromRemovalsInSession Int       @default(0) @map("total_numbers_returned_from_removals_in_session")
+  totalRemovalsInSession                    Int       @default(0) @map("total_removals_in_session")
 
-  // Relations: Foreign Key to StreamStat (Global Counter)
-  currentStreamNumber             Int       @map("current_stream_number") // Links to Stream_Stats.stream_days_since_inception
-  
-  // Timestamps and Metrics
-  startTimestamp                  DateTime  @map("start_timestamp")
-  endTimestamp                    DateTime? @map("end_timestamp") // Nullable if stream is ongoing
-  durationMinutes                 Int?      @map("duration_minutes") // Nullable
-
-  // Session Stats (Accumulated during the session)
-  totalPushesInSession            Int       @map("total_pushes_in_session") @default(0)
-  totalNumbersSpentOnPush         Int       @map("total_numbers_spent_on_push") @default(0)
-  totalDigoutsInSession           Int       @map("total_digouts_in_session") @default(0)
-  totalNumbersSpentOnDigout       Int       @map("total_numbers_spent_on_digout") @default(0)
-  totalDisruptsInSession          Int       @map("total_disrupts_in_session") @default(0)
-  totalNumbersSpentOnDisrupt      Int       @map("total_numbers_spent_on_disrupt") @default(0)
-  totalNumbersSpentInSession      Int       @map("total_numbers_spent_in_session") @default(0)
-  totalRemovalsInSession          Int       @map("total_removals_in_session") @default(0) // <-- NEW FIELD
-  totalNumbersReturnedFromRemovalsInSession Int @map("total_numbers_returned_from_removals_in_session") @default(0) // <-- NEW FIELD
-  totalChallengesSubmittedInSession Int @map("total_challenges_submitted_in_session") @default(0) // <-- NEW FIELD
-  
-  // Status
-  hasBeenProcessed                Boolean   @map("has_been_processed") @default(false)
-
-  @@map("streams") // Set the table name explicitly
+  @@map("streams")
 }
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// MISSIONS TABLE (from database structure - Missions (future enhancement).csv)
+/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 model Mission {
-  missionId                     Int       @id @default(autoincrement()) @map("mission_id")
-  title                         String?   @map("title") // Optional
-  description                   String    @map("description")
-  
-  // Goal Tracking
-  targetType                    String    @map("target_type") // e.g., NUMBERS_SPENT_ON_SUGGESTION
-  targetValue                   Int       @map("target_value")
-  currentValue                  Int       @map("current_value") @default(0)
-  
-  // Status and Timestamps
-  isExecuting                   Boolean   @map("is_executing") @default(false)
-  dateCreated                   DateTime  @map("date_created")
-  dateCompleted                 DateTime? @map("date_completed") // Nullable when incomplete
+  missionId     Int       @id @default(autoincrement()) @map("mission_id")
+  title         String?   @map("title")
+  description   String    @map("description")
+  targetType    String    @map("target_type")
+  targetValue   Int       @map("target_value")
+  currentValue  Int       @default(0) @map("current_value")
+  isExecuting   Boolean   @default(false) @map("is_executing")
+  dateCreated   DateTime  @map("date_created")
+  dateCompleted DateTime? @map("date_completed")
 
-  @@map("missions") // Set the table name explicitly
+  @@map("missions")
 }
-
