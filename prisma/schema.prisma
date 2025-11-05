@@ -7,6 +7,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ChallengeStatus {
+  Active
+  Archived
+  Auctioning
+  InProgress
+  Completed
+  Removed
+}
+
 /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 model User {
@@ -53,7 +62,7 @@ model Challenge {
   category                  String      @map("category")
   durationType              String      @map("duration_type")
   proposerUserId            Int         @map("proposer_user_id")
-  status                    String      @map("status")
+  status                ChallengeStatus @map("status")
   isExecuting               Boolean     @default(false) @map("is_executing")
   hasBeenAuctioned          Boolean     @default(false) @map("has_been_auctioned")
   hasBeenDiggedOut          Boolean     @default(false) @map("has_been_digged_out")

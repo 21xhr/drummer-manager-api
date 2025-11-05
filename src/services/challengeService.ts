@@ -401,7 +401,7 @@ export async function archiveExpiredChallenges(): Promise<number> {
 // FINALIZE EXECUTING CHALLENGE
 ////////////////////////////////////////////////////////////////////////////////////////
 /**
- * Finds the currently executing challenge (Status: 'In Progress') and sets its status to 'Completed'
+ * Finds the currently executing challenge (Status: 'InProgress') and sets its status to 'Completed'
  * when the stream goes offline.
  * @returns The completed Challenge record, or null if none was executing.
  */
@@ -412,13 +412,13 @@ export async function finalizeExecutingChallenge(): Promise<Challenge | null> {
     // 1. Find the currently executing challenge
     const executingChallenge = await prisma.challenge.findFirst({
         where: { 
-            status: 'In Progress', 
+            status: 'InProgress', 
             isExecuting: true 
         },
     });
 
     if (!executingChallenge) {
-        console.log("[ChallengeService] No challenge found in 'In Progress' status to finalize.");
+        console.log("[ChallengeService] No challenge found in 'InProgress' status to finalize.");
         return null;
     }
 
@@ -484,7 +484,7 @@ export async function processRemove(authorUserId: number, challengeId: number) {
             throw new Error(`Challenge #${challengeId} can only be removed by the author.`);
         }
 
-        if (['Archived', 'Auctioning','In Progress', 'Completed', 'Removed'].includes(challenge.status)) { 
+        if (['Archived', 'Auctioning','InProgress', 'Completed', 'Removed'].includes(challenge.status)) { 
              throw new Error(`Challenge #${challengeId} cannot be removed while in status: ${challenge.status}.`);
         }  
         

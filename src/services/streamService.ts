@@ -9,6 +9,7 @@ let currentStreamStatus: StreamStatus = 'OFFLINE';
 let currentStreamStartTime: Date | null = null;
 let currentStreamSessionId: number | null = null; // ID of the currently active 'streams' table record
 
+
 /**
  * Returns the global stream status. Used by challengeService to apply the 21% discount.
  */
@@ -44,6 +45,9 @@ async function getOrCreateGlobalStreamStat(tx: any): Promise<{ statId: number, c
     };
 }
 
+////////////////////////////////////////////////////////////////////////////////////////
+// HANDLES THE STREAM LIVE WEBHOOK EVENT
+////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Handles the 'stream live' webhook event to start the clock and advance challenge counters.
  * @param streamStartTime - The timestamp of the 'Go Live' event.
@@ -123,6 +127,9 @@ export async function processStreamLiveEvent(streamStartTime: Date): Promise<voi
     });
 }
 
+////////////////////////////////////////////////////////////////////////////////////////
+// HANDLES THE STREAM OFFLINE WEBHOOK EVENT
+////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Handles the 'stream offline' webhook event to reset the stream status and finalize the session.
  * @param streamEndTime - The timestamp of the 'Go Offline' event.
