@@ -20,7 +20,13 @@ export async function findOrCreateUser(platformUser: PlatformUser): Promise<User
   const { platformId, platformName } = platformUser;
 
   const user = await prisma.user.upsert({
-    where: { platformId: platformId },
+    // 👇 CORRECT WHERE CLAUSE: Uses the composite field name
+    where: { 
+      platformId_platformName: { // Prisma generates this name based on @@unique([platformId, platformName])
+        platformId: platformId,
+        platformName: platformName,
+      }
+    }, 
     update: {
       // Update activity timestamps when an existing user performs a command
       lastActivityTimestamp: new Date(),
@@ -31,9 +37,7 @@ export async function findOrCreateUser(platformUser: PlatformUser): Promise<User
       platformName: platformName,
       lastActivityTimestamp: new Date(),
       dailyChallengeResetAt: new Date(new Date().setHours(24, 0, 0, 0)), // Default reset to tomorrow midnight
-
-      // Default values are handled by the model, but we can set them explicitly here too
-      lastKnownBalance: 0,
+      lastKnownBalance: 0, // Default values are handled by the model, but we can set them explicitly here too
     },
   });
 

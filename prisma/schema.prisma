@@ -21,7 +21,7 @@ datasource db {
 model User {
   // Primary Key and ID
   id                          Int       @id @default(autoincrement()) @map("user_id") // Maps to 'user_id'
-  platformId                  String    @unique @map("user_platform_id") // Maps to 'user_platform_id' - Unique identifier on the source platform
+  platformId                  String    @map("user_platform_id") // Maps to 'user_platform_id'
   platformName                String    @map("platform_name")
   
   // Balance and Activity Tracking
@@ -50,7 +50,11 @@ model User {
   pushes                      Push[]
   tempQuotes                  TempQuote[]
 
-  @@map("users") // Set the table name explicitly
+  // Constraints
+  @@unique([platformId, platformName]) // TO ENFORCE UNIQUENESS ON THE COMBINATION OF BOTH FIELDS
+
+  // Set the table name explicitly
+  @@map("users") 
 }
 
 

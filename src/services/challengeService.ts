@@ -184,13 +184,21 @@ export async function processPushConfirm(
         }
     });
 
-    // C. Update User: Increment the user's game-wide spending statistics.
+    // C. Update User: Update the individual user's spending.
     await tx.user.update({
         where: { id: userId },
         data: {
-          totalNumbersSpentGameWide: { increment: cost },
+          totalNumbersSpent: { increment: cost }, // <-- CORRECT: User's individual spending
           lastActivityTimestamp: new Date(),
         },
+    });
+
+    // D. Update Global Ledger (User ID 1): Increment the community's game-wide spending.
+    await tx.user.updateMany({
+        where: { id: 1 }, 
+        data: {
+            totalNumbersSpentGameWide: { increment: cost }, // <-- CORRECT: Global spending ledger
+        }
     });
 
     // --- 5. CLEANUP ---
@@ -218,7 +226,7 @@ export async function processDigout(userId: number, challengeId: number) {
             where: { challengeId: challengeId },
         });
 
-        const user = await tx.user.findUnique({ // TypeScript thinks 'user' here could be null
+        const user = await tx.user.findUnique({
             where: { id: userId },
         });
 
@@ -226,9 +234,7 @@ export async function processDigout(userId: number, challengeId: number) {
             throw new Error(`Challenge ID ${challengeId} not found.`);
         }
         
-        // --- ADDED NULL CHECK FOR USER TO BE SAFE (Though middleware handles it)
         if (!user) {
-             // This case should ideally never be reached due to the middleware, but adding it for safety.
             throw new Error(`User ID ${userId} not found during transaction.`);
         }
 
@@ -243,21 +249,29 @@ export async function processDigout(userId: number, challengeId: number) {
         // 2. Calculate Cost (21% of total_numbers_spent, rounded up)
         const digoutCost = Math.ceil(challenge.totalNumbersSpent * 0.21);
 
-        // FIX: Use non-null assertion on user.lastKnownBalance
-        if (user.lastKnownBalance! < digoutCost) { 
+        if (user.lastKnownBalance < digoutCost) { 
             throw new Error(`Insufficient balance. Digout costs ${digoutCost} NUMBERS.`);
         }
 
         // 3. Execute Transaction: Deduct cost, update user, and update challenge
         
-        // Deduct cost from user balance
+        // Deduct cost from user balance and update individual spending
         const updatedUser = await tx.user.update({
             where: { id: userId },
             data: {
                 lastKnownBalance: { decrement: digoutCost },
-                totalNumbersSpentGameWide: { increment: digoutCost },
+                totalNumbersSpent: { increment: digoutCost }, // <-- CORRECT: User's individual spending
             },
         });
+
+        // Update Global Ledger (User ID 1): Increment the community's game-wide spending.
+        await tx.user.updateMany({
+            where: { id: 1 }, 
+            data: {
+                totalNumbersSpentGameWide: { increment: digoutCost }, // <-- CORRECT: Global spending ledger
+            }
+        });
+
 
         // Revive Challenge and reset clock
         const updatedChallenge = await tx.challenge.update({
@@ -291,7 +305,6 @@ export async function processNewChallengeSubmission(
         // 1. Fetch User's Submission Count for Today
         const user = await tx.user.findUnique({
             where: { id: userId },
-            // Need to select the reset timestamp to calculate the daily count
             select: { dailyChallengeResetAt: true } 
         });
 
@@ -300,11 +313,10 @@ export async function processNewChallengeSubmission(
         }
 
         // We count challenges submitted since the daily reset time.
-        // FIX: Renamed 'authorId' to the correct schema field 'proposerUserId'
         const submittedToday = await tx.challenge.count({
             where: {
-                proposerUserId: userId, // <--- CORRECTED FIELD NAME
-                timestampSubmitted: { // Use the 'timestampSubmitted' field from your schema
+                proposerUserId: userId,
+                timestampSubmitted: {
                     gte: user.dailyChallengeResetAt, 
                 },
             },
@@ -324,7 +336,6 @@ export async function processNewChallengeSubmission(
                 pushBaseCost: 21,
                 status: 'Active',
                 streamDaysSinceActivation: 0,
-                // These fields are required by your schema but not in the original call data:
                 category: "General", // Default value
                 durationType: "ONE_OFF", // Default value
                 timestampSubmitted: new Date(), // Set submission time
@@ -336,13 +347,22 @@ export async function processNewChallengeSubmission(
         await tx.user.update({
             where: { id: userId },
             data: {
-                totalNumbersSpentGameWide: { increment: cost },
-                totalChallengesSubmitted: { increment: 1 }, // Also increment the total challenges submitted
+                totalNumbersSpent: { increment: cost }, // <-- CORRECT: User's individual spending
+                totalChallengesSubmitted: { increment: 1 },
                 lastActivityTimestamp: new Date(),
             },
         });
 
-        // 6. Return the result
+        // 6. Update Global Ledger (User ID 1): Increment the community's game-wide spending.
+        await tx.user.updateMany({
+            where: { id: 1 }, 
+            data: {
+                totalNumbersSpentGameWide: { increment: cost }, // <-- CORRECT: Global spending ledger
+            }
+        });
+
+
+        // 7. Return the result
         return { newChallenge, cost };
     });
 }
@@ -442,7 +462,7 @@ export async function processRemove(authorUserId: number, challengeId: number) {
                 refundsToProcess.push({ userId: contribution.userId, refundAmount: refund });
             }
         }
-        
+
         // --- 3. UPDATE LEDGERS (Transaction Totals) ---
         
         // 3a. Update Global Ledger (ID 1): Track Gross Refund
@@ -503,7 +523,7 @@ export async function processRemove(authorUserId: number, challengeId: number) {
                 where: { id: refundDetail.userId },
                 data: {
                     lastKnownBalance: { increment: refundDetail.refundAmount },
-                    // 🚨 USING THE NEW FIELD NAME: totalReceivedFromRemovals
+                    // 🚨 USING THE CORRECT FIELD NAME: totalReceivedFromRemovals
                     totalReceivedFromRemovals: { increment: refundDetail.refundAmount } 
                 },
             });
@@ -513,7 +533,6 @@ export async function processRemove(authorUserId: number, challengeId: number) {
             console.error(`[LUMIA REFUND FAILED] Failed to refund ${refundDetail.refundAmount} to User ID ${refundDetail.userId}. Manual review needed.`);
         }
     }
-
 
     // --- STEP 4: FINAL RESPONSE ---
     return {
