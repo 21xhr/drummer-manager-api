@@ -211,6 +211,7 @@ export async function processPushConfirm(
             lastKnownBalance: { decrement: cost }, // Deduct cost from balance
             totalNumbersSpent: { increment: cost }, // User's individual spending
             lastActivityTimestamp: new Date().toISOString(),
+            totalPushesExecuted: { increment: quote.quantity },
         },
     });
 
