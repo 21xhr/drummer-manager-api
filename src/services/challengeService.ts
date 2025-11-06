@@ -302,7 +302,7 @@ export async function processDigout(userId: number, challengeId: number) {
             data: {
                 status: 'Active', // CHANGE STATUS
                 streamDaysSinceActivation: 0, // RESET CLOCK
-                timestampLastActivation: new Date(), // UPDATE ACTIVATION TIME
+                timestampLastActivation: new Date().toISOString(), // UPDATE ACTIVATION TIME
                 hasBeenDiggedOut: true, // SET DIGOUT FLAG (can only be done once)
             },
         });
@@ -384,8 +384,8 @@ export async function processChallengeSubmission(
                 streamDaysSinceActivation: 0,
                 category: "General", // Default value
                 durationType: "ONE_OFF", // Default value
-                timestampSubmitted: new Date(),
-                timestampLastActivation: new Date(),
+                timestampSubmitted: new Date().toISOString(),
+                timestampLastActivation: new Date().toISOString(),
             }
         });
 
@@ -475,7 +475,7 @@ export async function finalizeExecutingChallenge(): Promise<Challenge | null> {
         data: {
             status: 'Completed',
             isExecuting: false,
-            timestampCompleted: new Date(), // Set completion timestamp
+            timestampCompleted: new Date().toISOString(), 
         }
     });
 
