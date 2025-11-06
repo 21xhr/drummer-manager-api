@@ -32,11 +32,15 @@ model User {
   dailyChallengeCount                      Int         @default(0) @map("daily_challenge_count")
   dailyChallengeResetAt                    DateTime    @map("daily_challenge_reset_at")
   totalNumbersSpentGameWide                Int         @default(0) @map("total_numbers_spent_game_wide")
-  totalChallengesSubmitted                 Int         @default(0) @map("total_challenges_submitted")
   totalNumbersReturnedFromRemovalsGameWide Int         @default(0) @map("total_numbers_returned_from_removals_game_wide")
-  totalNumbersSpent                        Int         @default(0) @map("total_numbers_spent")
-  totalReceivedFromRemovals                Int         @default(0) @map("total_received_from_removals")
+  
+  // Game Metrics (User)
+  totalChallengesSubmitted                 Int         @default(0) @map("total_challenges_submitted")
   totalRemovalsExecuted                    Int         @default(0) @map("total_removals_executed")
+  totalReceivedFromRemovals                Int         @default(0) @map("total_received_from_removals")
+  totalNumbersSpent                        Int         @default(0) @map("total_numbers_spent")
+  totalDigoutsExecuted                     Int         @map("total_digouts_executed") @default(0)
+
   challenges                               Challenge[] @relation("Proposer")
   pushes                                   Push[]
   tempQuotes                               TempQuote[]

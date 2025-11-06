@@ -7,6 +7,8 @@ const router = Router();
 
 // Middleware to standardize user input and ensure user registration
 // This extracts the platform data and ensures we get a valid internal user ID (userId)
+// Its purpose is to securely map an external user (from Twitch, Kick, etc.) to an internal database ID (userId).
+// This ensures that only the authorized user is performing the action.
 const authenticateUser = async (req: any, res: any, next: any) => {
     const { platformId, platformName } = req.body;
 

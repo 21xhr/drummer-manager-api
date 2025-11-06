@@ -14,6 +14,26 @@ const SUBMISSION_BASE_COST = 210; // Base cost for challenge submission
 // ------------------------------------------------------------------
 
 /**
+ * Calculates the next 21:00 UTC time that is in the future.
+ * If 21:00 UTC today has passed, it returns 21:00 UTC tomorrow.
+ * @returns Date object representing the next 21:00 UTC reset time.
+ */
+function getNextDailyResetTime(): Date {
+    const now = new Date();
+    
+    // 1. Start with today's date and set the time to 21:00:00.000 UTC
+    const nextReset = new Date(now.getTime());
+    nextReset.setUTCHours(21, 0, 0, 0);
+
+    // 2. If 21:00 UTC today has already passed, advance to the next day
+    if (nextReset <= now) {
+        nextReset.setUTCDate(nextReset.getUTCDate() + 1);
+    }
+    
+    return nextReset;
+}
+
+/**
  * Calculates the quadratic cost for submitting a new challenge, based on the user's
  * daily submission count. Applies live stream discount if applicable.
  */
@@ -188,8 +208,9 @@ export async function processPushConfirm(
     await tx.user.update({
         where: { id: userId },
         data: {
-          totalNumbersSpent: { increment: cost }, // <-- CORRECT: User's individual spending
-          lastActivityTimestamp: new Date(),
+            lastKnownBalance: { decrement: cost }, // Deduct cost from balance
+            totalNumbersSpent: { increment: cost }, // User's individual spending
+            lastActivityTimestamp: new Date(),
         },
     });
 
@@ -197,7 +218,7 @@ export async function processPushConfirm(
     await tx.user.updateMany({
         where: { id: 1 }, 
         data: {
-            totalNumbersSpentGameWide: { increment: cost }, // <-- CORRECT: Global spending ledger
+            totalNumbersSpentGameWide: { increment: cost }, // Global spending ledger
         }
     });
 
@@ -260,7 +281,8 @@ export async function processDigout(userId: number, challengeId: number) {
             where: { id: userId },
             data: {
                 lastKnownBalance: { decrement: digoutCost },
-                totalNumbersSpent: { increment: digoutCost }, // <-- CORRECT: User's individual spending
+                totalNumbersSpent: { increment: digoutCost }, // User's individual spending
+                totalDigoutsExecuted: { increment: 1 },
             },
         });
 
@@ -268,7 +290,7 @@ export async function processDigout(userId: number, challengeId: number) {
         await tx.user.updateMany({
             where: { id: 1 }, 
             data: {
-                totalNumbersSpentGameWide: { increment: digoutCost }, // <-- CORRECT: Global spending ledger
+                totalNumbersSpentGameWide: { increment: digoutCost }, // Global spending ledger
             }
         });
 
@@ -296,13 +318,15 @@ export async function processDigout(userId: number, challengeId: number) {
 ////////////////////////////////////////////////////////////////////////////////////////
 // PROCESS CHALLENGE SUBMISSION
 ////////////////////////////////////////////////////////////////////////////////////////
+// src/services/challengeService.ts (Updated processChallengeSubmission)
+
 export async function processChallengeSubmission(
   userId: number,
   challengeText: string
 ): Promise<{ newChallenge: Challenge, cost: number }> {
 
     return prisma.$transaction(async (tx) => {
-        // 1. Fetch User's Submission Count for Today
+        // 1. Fetch User's Reset Time
         const user = await tx.user.findUnique({
             where: { id: userId },
             select: { dailyChallengeResetAt: true } 
@@ -311,24 +335,45 @@ export async function processChallengeSubmission(
         if (!user) {
             throw new Error("User not found during submission process.");
         }
+        
+        // --- CONDITIONAL RESET LOGIC ---
+        let currentResetTime = user.dailyChallengeResetAt;
+        const now = new Date();
 
-        // We count challenges submitted since the daily reset time.
+        if (now > currentResetTime) {
+            // The daily window has expired. Calculate and update the new reset time.
+            const nextReset = getNextDailyResetTime();
+
+            // Update the user's record with the new reset time.
+            const updatedUser = await tx.user.update({
+                where: { id: userId },
+                data: {
+                    dailyChallengeResetAt: nextReset,
+                },
+                select: { dailyChallengeResetAt: true }
+                // ensures the freshly written timestamp is immediately retrieved 
+                // and used correctly for the quadratic cost calculation later in the transaction.
+            });
+            currentResetTime = updatedUser.dailyChallengeResetAt;
+        }
+
+        // 2. Count Challenges Submitted since the latest Reset Time.
         const submittedToday = await tx.challenge.count({
             where: {
                 proposerUserId: userId,
                 timestampSubmitted: {
-                    gte: user.dailyChallengeResetAt, 
+                    gte: currentResetTime, 
                 },
             },
         });
 
-        // 2. Calculate Cost (Quadratic logic acts as the limit)
+        // 3. Calculate Cost (Quadratic logic acts as the limit)
         const cost = calculateSubmissionCost(submittedToday);
         
-        // 3. (MOCK) Deduct NUMBERS from user via external API (Lumia/Chatbot)
+        // 4. (MOCK) Deduct NUMBERS from user via external API (Lumia/Chatbot)
         // ... success assumed ...
 
-        // 4. Create the new Challenge record
+        // 5. Create the new Challenge record
         const newChallenge = await tx.challenge.create({
             data: {
                 challengeText: challengeText,
@@ -338,31 +383,32 @@ export async function processChallengeSubmission(
                 streamDaysSinceActivation: 0,
                 category: "General", // Default value
                 durationType: "ONE_OFF", // Default value
-                timestampSubmitted: new Date(), // Set submission time
-                timestampLastActivation: new Date(), // Set activation time
+                timestampSubmitted: new Date(),
+                timestampLastActivation: new Date(),
             }
         });
 
-        // 5. Update User Stats: Update spending and total submitted count
+        // 6. Update User Stats: Deduct balance, update spending, and submission count
         await tx.user.update({
             where: { id: userId },
             data: {
-                totalNumbersSpent: { increment: cost }, // <-- CORRECT: User's individual spending
+                lastKnownBalance: { decrement: cost }, // Deduct cost from balance
+                totalNumbersSpent: { increment: cost }, // User's individual spending
                 totalChallengesSubmitted: { increment: 1 },
                 lastActivityTimestamp: new Date(),
             },
         });
 
-        // 6. Update Global Ledger (User ID 1): Increment the community's game-wide spending.
+        // 7. Update Global Ledger (User ID 1): Increment the community's game-wide spending.
         await tx.user.updateMany({
             where: { id: 1 }, 
             data: {
-                totalNumbersSpentGameWide: { increment: cost }, // <-- CORRECT: Global spending ledger
+                totalNumbersSpentGameWide: { increment: cost }, // Global spending ledger
             }
         });
 
 
-        // 7. Return the result
+        // 8. Return the result
         return { newChallenge, cost };
     });
 }

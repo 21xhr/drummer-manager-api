@@ -87,7 +87,7 @@ export async function processStreamLiveEvent(streamStartTime: Date): Promise<voi
             console.log(`[StreamService] Global Stream Day Counter advanced to Day ${newGlobalDay}.`);
         }
 
-        // 2. Update Challenge Clocks (21-Day Counter) (Logic remains the same)
+        // 2. Update Challenge Clocks (21-Day Counter) 
         const activeChallenges = await tx.challenge.findMany({
             where: {
                 status: 'Active',
@@ -161,19 +161,19 @@ export async function processStreamOfflineEvent(streamEndTime: Date): Promise<vo
             }
         });
 
-        // 2. ARCHIVE EXPIRED CHALLENGES (The new step)
+        // 2. ARCHIVE EXPIRED CHALLENGES
         // Note: Because this is an external function, we call the imported service function, 
         // which uses its own prisma client, but runs *after* the stream record is updated.
         const archivedCount = await archiveExpiredChallenges();
         console.log(`[StreamService] Challenge archival complete. ${archivedCount} challenges archived.`);
 
-        // 3. FINALIZE CURRENTLY EXECUTING CHALLENGE (New Step)
+        // 3. FINALIZE CURRENTLY EXECUTING CHALLENGE
         const completedChallenge = await finalizeExecutingChallenge();
         if (completedChallenge) {
             console.log(`[StreamService] Challenge #${completedChallenge.challengeId} completed upon stream end.`);
         }
 
-        // 4. Reset In-Memory Status (same as before)
+        // 4. Reset In-Memory Status
         currentStreamStatus = 'OFFLINE';
         currentStreamStartTime = null;
         currentStreamSessionId = null;
