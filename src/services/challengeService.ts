@@ -18,7 +18,7 @@ const SUBMISSION_BASE_COST = 210; // Base cost for challenge submission
  * If 21:00 UTC today has passed, it returns 21:00 UTC tomorrow.
  * @returns Date object representing the next 21:00 UTC reset time.
  */
-function getNextDailyResetTime(): Date {
+export function getNextDailyResetTime(): Date {
     const now = new Date();
     
     // 1. Start with today's date and set the time to 21:00:00.000 UTC
@@ -109,7 +109,7 @@ export async function processPushQuote(
       challengeId: challengeId,
       quantity: quantity,
       quotedCost: quotedCost,
-      timestampCreated: new Date(), 
+      timestampCreated: new Date().toISOString(), 
       isLocked: false,
     },
   });
@@ -210,7 +210,7 @@ export async function processPushConfirm(
         data: {
             lastKnownBalance: { decrement: cost }, // Deduct cost from balance
             totalNumbersSpent: { increment: cost }, // User's individual spending
-            lastActivityTimestamp: new Date(),
+            lastActivityTimestamp: new Date().toISOString(),
         },
     });
 
@@ -283,6 +283,7 @@ export async function processDigout(userId: number, challengeId: number) {
                 lastKnownBalance: { decrement: digoutCost },
                 totalNumbersSpent: { increment: digoutCost }, // User's individual spending
                 totalDigoutsExecuted: { increment: 1 },
+                lastActivityTimestamp: new Date().toISOString(), 
             },
         });
 
@@ -395,7 +396,7 @@ export async function processChallengeSubmission(
                 lastKnownBalance: { decrement: cost }, // Deduct cost from balance
                 totalNumbersSpent: { increment: cost }, // User's individual spending
                 totalChallengesSubmitted: { increment: 1 },
-                lastActivityTimestamp: new Date(),
+                lastActivityTimestamp: new Date().toISOString(),
             },
         });
 
@@ -578,7 +579,7 @@ export async function processRemove(authorUserId: number, challengeId: number) {
             where: { id: authorUserId },
             data: {
                 totalRemovalsExecuted: { increment: 1 },
-                lastActivityTimestamp: new Date(),
+                lastActivityTimestamp: new Date().toISOString(),
             }
         });
 

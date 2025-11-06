@@ -2,6 +2,7 @@
 // centralize all database interactions related to the User model into a dedicated service file.
 import prisma from '../prisma';
 import { User } from '@prisma/client';
+import { getNextDailyResetTime } from './challengeService'; // <-- NEW IMPORT
 
 // Type definition for the user data coming from the external platform
 interface PlatformUser {
@@ -20,7 +21,7 @@ export async function findOrCreateUser(platformUser: PlatformUser): Promise<User
   const { platformId, platformName } = platformUser;
 
   const user = await prisma.user.upsert({
-    // 👇 CORRECT WHERE CLAUSE: Uses the composite field name
+    // WHERE CLAUSE: Uses the composite field name
     where: { 
       platformId_platformName: { // Prisma generates this name based on @@unique([platformId, platformName])
         platformId: platformId,
@@ -36,7 +37,7 @@ export async function findOrCreateUser(platformUser: PlatformUser): Promise<User
       platformId: platformId,
       platformName: platformName,
       lastActivityTimestamp: new Date(),
-      dailyChallengeResetAt: new Date(new Date().setHours(24, 0, 0, 0)), // Default reset to tomorrow midnight
+      dailyChallengeResetAt: getNextDailyResetTime(), // Use the standardized 21:00 UTC reset time from the helper
       lastKnownBalance: 0, // Default values are handled by the model, but we can set them explicitly here too
     },
   });
