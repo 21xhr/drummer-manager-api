@@ -2,7 +2,7 @@
 // centralize all database interactions related to the User model into a dedicated service file.
 import prisma from '../prisma';
 import { User } from '@prisma/client';
-import { getNextDailyResetTime } from './challengeService'; // <-- NEW IMPORT
+import { getNextDailyResetTime } from './challengeService';
 
 // Type definition for the user data coming from the external platform
 interface PlatformUser {
