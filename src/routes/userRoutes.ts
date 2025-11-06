@@ -1,14 +1,42 @@
 // src/routes/userRoutes.ts
 import { Router } from 'express'; 
 import * as challengeService from '../services/challengeService'; 
-import { findOrCreateUser } from '../services/userService'; // <-- NEW IMPORT
+import { findOrCreateUser } from '../services/userService'; 
+import logger from '../logger'; // Winston Logger
 
 const router = Router();
 
+// --- Centralized Error Status Helper ---
+function getServiceErrorStatus(errorMessage: string): number {
+    // 400 Bad Request (Client did something wrong: not found, invalid state, insufficient balance)
+    if (
+        errorMessage.includes("Challenge ID") || 
+        errorMessage.includes("not found") || 
+        errorMessage.includes("Status is") ||
+        errorMessage.includes("Insufficient balance") || 
+        errorMessage.includes("Quote has expired") || 
+        errorMessage.includes("Multiple active quotes") ||
+        errorMessage.includes("cannot be dug out") ||
+        errorMessage.includes("already been digged out") || // Corrected spelling for robustness
+        errorMessage.includes("currently being processed")
+    ) {
+        return 400;
+    }
+    
+    // 403 Forbidden (Unauthorized action)
+    if (
+        errorMessage.includes("only be removed by the author") || 
+        errorMessage.includes("cannot be removed while in status")
+    ) {
+         return 403;
+    }
+    
+    // 500 Internal Server Error (Something unexpected happened)
+    return 500;
+}
+// ---------------------------------------
+
 // Middleware to standardize user input and ensure user registration
-// This extracts the platform data and ensures we get a valid internal user ID (userId)
-// Its purpose is to securely map an external user (from Twitch, Kick, etc.) to an internal database ID (userId).
-// This ensures that only the authorized user is performing the action.
 const authenticateUser = async (req: any, res: any, next: any) => {
     const { platformId, platformName } = req.body;
 
@@ -18,14 +46,12 @@ const authenticateUser = async (req: any, res: any, next: any) => {
 
     try {
         const user = await findOrCreateUser({ platformId, platformName });
-        // Attach the internal user ID and the external platform name/ID to the request object for later use
         req.userId = user.id; 
-        req.platformId = user.platformId; // Optional, for logging/debugging
-        req.platformName = user.platformName; // Optional, for logging/debugging
+        req.platformId = user.platformId;
+        req.platformName = user.platformName;
         next();
     } catch (error) {
-        console.error('User Authentication Error:', error);
-        // FIX: Type narrowing applied here too
+        logger.error('User Authentication Error:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
         return res.status(500).json({ 
             message: 'Failed to find or create user.',
@@ -36,11 +62,10 @@ const authenticateUser = async (req: any, res: any, next: any) => {
 
 // -----------------------------------------------------------
 // 1. CHALLENGE SUBMISSION
-// POST /api/v1/user/submit - Command: !challengesubmit
 // -----------------------------------------------------------
 router.post('/submit', authenticateUser, async (req: any, res) => {
     const { challengeText } = req.body;
-    const userId = req.userId; // Retrieved from authenticateUser middleware
+    const userId = req.userId;
 
     if (!challengeText) {
         return res.status(400).json({ error: "Missing challengeText." });
@@ -51,7 +76,18 @@ router.post('/submit', authenticateUser, async (req: any, res) => {
             userId, 
             challengeText
         );
+        
+        // AUDIT LOG (Success)
+        logger.info(`SUBMIT Success: #${newChallenge.challengeId} by User ${userId}`, {
+            challengeId: newChallenge.challengeId,
+            cost: cost,
+            proposerUserId: userId,
+            platformId: req.platformId,
+            platformName: req.platformName,
+            action: 'submission_success'
+        });
 
+        // RETURN RESPONSE
         return res.status(200).json({
             message: `Challenge #${newChallenge.challengeId} submitted successfully for a cost of ${cost} NUMBERS.`,
             action: 'submission_success',
@@ -62,12 +98,14 @@ router.post('/submit', authenticateUser, async (req: any, res) => {
                 status: newChallenge.status
             }
         });
+        
     } catch (error) {
-        console.error('Challenge Submission Error:', error);
-        // FIX: Type narrowing applied
+        logger.error('Challenge Submission Error:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-        return res.status(500).json({
-            message: 'Challenge submission failed.',
+        const status = getServiceErrorStatus(errorMessage); 
+        
+        return res.status(status).json({
+            message: status === 500 ? 'Challenge submission failed due to a server error.' : errorMessage,
             action: 'submission_failure',
             error: errorMessage,
         });
@@ -77,11 +115,10 @@ router.post('/submit', authenticateUser, async (req: any, res) => {
 
 // -----------------------------------------------------------
 // 2. PUSH QUOTE
-// POST /api/v1/user/push/quote - Command: !push [ID] [N]
 // -----------------------------------------------------------
 router.post('/push/quote', authenticateUser, async (req: any, res) => {
     const { challengeId, quantity } = req.body;
-    const userId = req.userId; // Retrieved from authenticateUser middleware
+    const userId = req.userId;
 
     if (challengeId === undefined || quantity === undefined || isNaN(parseInt(challengeId)) || isNaN(parseInt(quantity))) {
         return res.status(400).json({ error: "Missing or invalid challengeId or quantity." });
@@ -93,7 +130,18 @@ router.post('/push/quote', authenticateUser, async (req: any, res) => {
             parseInt(challengeId),
             parseInt(quantity)
         );
+        
+        // AUDIT LOG (Success)
+        logger.info(`QUOTE Success: #${challenge.challengeId} for ${quantity} by User ${userId}`, {
+            quoteId: quoteId,
+            challengeId: challenge.challengeId,
+            quotedCost: quotedCost,
+            quantity: quantity,
+            platformId: req.platformId,
+            action: 'quote_success'
+        });
 
+        // RETURN RESPONSE
         return res.status(200).json({
             message: `Quote generated for Challenge #${challenge.challengeId}. Cost: ${quotedCost} NUMBERS. Confirm with !push confirm ${quoteId.slice(0, 8)}`,
             action: 'quote_success',
@@ -105,11 +153,12 @@ router.post('/push/quote', authenticateUser, async (req: any, res) => {
             }
         });
     } catch (error) {
-        console.error('Push Quote Error:', error);
-        // FIX: Type narrowing applied
+        logger.error('Push Quote Error:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-        return res.status(500).json({
-            message: 'Push quote failed.',
+        const status = getServiceErrorStatus(errorMessage); 
+        
+        return res.status(status).json({
+            message: status === 500 ? 'Push quote failed due to a server error.' : errorMessage,
             action: 'quote_failure',
             error: errorMessage,
         });
@@ -119,18 +168,27 @@ router.post('/push/quote', authenticateUser, async (req: any, res) => {
 
 // -----------------------------------------------------------
 // 3. PUSH CONFIRM
-// POST /api/v1/user/push/confirm - Command: !push confirm [UUID]
 // -----------------------------------------------------------
 router.post('/push/confirm', authenticateUser, async (req: any, res) => {
     const { quoteId } = req.body; 
-    const userId = req.userId; // Retrieved from authenticateUser middleware
+    const userId = req.userId;
 
     try {
         const { updatedChallenge, transactionCost, quantity } = await challengeService.processPushConfirm(
             userId,
-            quoteId // quoteId can be undefined if user uses !push confirm without UUID
+            quoteId
         );
+        
+        // AUDIT LOG (Success)
+        logger.info(`PUSH CONFIRM Success: ${quantity} pushes on #${updatedChallenge.challengeId} for User ${userId}`, {
+            challengeId: updatedChallenge.challengeId,
+            cost: transactionCost,
+            quantity: quantity,
+            platformId: req.platformId,
+            action: 'push_confirm_success'
+        });
 
+        // RETURN RESPONSE
         return res.status(200).json({
             message: `Push confirmed! ${quantity} pushes applied to Challenge #${updatedChallenge.challengeId}.`,
             action: 'push_confirm_success',
@@ -142,11 +200,12 @@ router.post('/push/confirm', authenticateUser, async (req: any, res) => {
             }
         });
     } catch (error) {
-        console.error('Push Confirmation Error:', error);
-        // FIX: Type narrowing applied
+        logger.error('Push Confirmation Error:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-        return res.status(500).json({
-            message: 'Push confirmation failed.',
+        const status = getServiceErrorStatus(errorMessage); 
+        
+        return res.status(status).json({
+            message: status === 500 ? 'Push confirmation failed due to a server error.' : errorMessage,
             action: 'push_confirm_failure',
             error: errorMessage,
         });
@@ -156,11 +215,10 @@ router.post('/push/confirm', authenticateUser, async (req: any, res) => {
 
 // -----------------------------------------------------------
 // 4. DIGOUT
-// POST /api/v1/user/digout - Command: !digout [ID]
 // -----------------------------------------------------------
 router.post('/digout', authenticateUser, async (req: any, res) => {
     const { challengeId } = req.body; 
-    const userId = req.userId; // Retrieved from authenticateUser middleware
+    const userId = req.userId;
 
     if (challengeId === undefined || isNaN(parseInt(challengeId))) {
         return res.status(400).json({ error: "Missing or invalid challengeId." });
@@ -171,7 +229,17 @@ router.post('/digout', authenticateUser, async (req: any, res) => {
             userId,
             parseInt(challengeId)
         );
+        
+        // AUDIT LOG (Success)
+        logger.info(`DIGOUT Success: #${updatedChallenge.challengeId} cost ${cost} by User ${userId}`, {
+            challengeId: updatedChallenge.challengeId,
+            cost: cost,
+            newBalance: updatedUser.lastKnownBalance,
+            platformId: req.platformId,
+            action: 'digout_success'
+        });
 
+        // RETURN RESPONSE
         return res.status(200).json({
             message: `Challenge #${updatedChallenge.challengeId} has been dug out for a cost of ${cost} NUMBERS!`,
             action: 'digout_success',
@@ -179,15 +247,16 @@ router.post('/digout', authenticateUser, async (req: any, res) => {
                 challengeId: updatedChallenge.challengeId,
                 cost: cost,
                 status: updatedChallenge.status,
-                newBalance: updatedUser.lastKnownBalance // Assuming lastKnownBalance is updated or returned correctly
+                newBalance: updatedUser.lastKnownBalance
             }
         });
     } catch (error) {
-        console.error('Digout Error:', error);
-        // FIX: Type narrowing applied
+        logger.error('Digout Error:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-        return res.status(500).json({
-            message: 'Digout failed.',
+        const status = getServiceErrorStatus(errorMessage); 
+        
+        return res.status(status).json({
+            message: status === 500 ? 'Digout failed due to a server error.' : errorMessage,
             action: 'digout_failure',
             error: errorMessage,
         });
@@ -195,24 +264,30 @@ router.post('/digout', authenticateUser, async (req: any, res) => {
 });
 
 // -----------------------------------------------------------
-// 5. GET ACTIVE CHALLENGES
-// GET /api/v1/user/challenges/active
+// 5. GET ACTIVE CHALLENGES (No auth required)
 // -----------------------------------------------------------
 router.get('/challenges/active', async (req, res) => {
     try {
         const challenges = await challengeService.getActiveChallenges();
         
+        // AUDIT LOG (Success) - Logging read operations is less critical, but good for tracking API usage.
+        logger.info(`READ Success: Retrieved ${challenges.length} active challenges.`, {
+            count: challenges.length,
+            action: 'challenges_retrieved'
+        });
+
+        // RETURN RESPONSE
         return res.status(200).json({
             message: `${challenges.length} active challenges retrieved.`,
             action: 'challenges_retrieved',
             data: challenges
         });
     } catch (error) {
-        console.error('Get Active Challenges Error:', error);
-        // FIX: Type narrowing applied
+        logger.error('Get Active Challenges Error:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+        
         return res.status(500).json({
-            message: 'Failed to retrieve active challenges.',
+            message: 'Failed to retrieve active challenges due to a server error.',
             error: errorMessage,
         });
     }
@@ -220,12 +295,9 @@ router.get('/challenges/active', async (req, res) => {
 
 // -----------------------------------------------------------
 // 6. REMOVE CHALLENGE
-// POST /api/v1/user/challenges/remove
-// Triggered by: !remove [ID]
 // -----------------------------------------------------------
 router.post('/challenges/remove', authenticateUser, async (req: any, res) => {
     const { challengeId } = req.body;
-    // FIX: Retrieve the userId correctly from the req object (where the middleware placed it)
     const authorUserId = req.userId; 
 
     if (challengeId === undefined || isNaN(parseInt(challengeId))) {
@@ -235,6 +307,17 @@ router.post('/challenges/remove', authenticateUser, async (req: any, res) => {
     try {
         const result = await challengeService.processRemove(authorUserId, parseInt(challengeId));
         
+        // AUDIT LOG (Success)
+        logger.info(`REMOVE Success: #${challengeId} removed by User ${authorUserId}. Refunds: ${result.totalRefundsAmount}`, {
+            challengeId: challengeId,
+            authorUserId: authorUserId,
+            totalRefundsAmount: result.totalRefundsAmount,
+            refundsProcessed: result.refundsProcessed,
+            platformId: req.platformId,
+            action: 'challenge_removed'
+        });
+
+        // RETURN RESPONSE
         return res.status(200).json({
             message: `Challenge #${challengeId} removed successfully. ${result.refundsProcessed} pushers refunded a total of ${result.totalRefundsAmount} NUMBERS.`,
             action: 'challenge_removed',
@@ -245,16 +328,13 @@ router.post('/challenges/remove', authenticateUser, async (req: any, res) => {
             }
         });
     } catch (error) {
-        console.error('Remove Challenge Error:', error);
-        
-        // FIX: Type narrowing applied
+        logger.error('Remove Challenge Error:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+        const status = getServiceErrorStatus(errorMessage); 
         
-        // Using 403 for authorization error, 400 for general failure/validation
-        const status = (errorMessage.includes("author") || errorMessage.includes("status")) ? 403 : 400;
-
         return res.status(status).json({
-            message: errorMessage,
+            message: status === 500 ? 'Challenge removal failed due to a server error.' : errorMessage,
+            action: 'challenge_removal_failure',
             error: errorMessage,
         });
     }
