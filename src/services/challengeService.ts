@@ -378,69 +378,51 @@ export async function processChallengeSubmission(
   userId: number,
   challengeText: string
 ): Promise<{ newChallenge: Challenge, cost: number }> {
-    // 1. Fetch Session ID before transaction (Correct location)
     const currentStreamSessionId = getCurrentStreamSessionId(); 
+    const transactionTimestamp = new Date().toISOString(); 
 
     return prisma.$transaction(async (tx) => {
-        // 1. Fetch User's Reset Time
+        // 1. Fetch User data including counter and reset time
         const user = await tx.user.findUnique({
             where: { id: userId },
-            select: { dailyChallengeResetAt: true } 
+            select: { dailyChallengeResetAt: true, dailySubmissionCount: true, lastKnownBalance: true } // <-- ADD dailySubmissionCount
         });
 
-        if (!user) {
-            throw new Error("User not found during submission process.");
-        }
+        if (!user) { throw new Error("User not found during submission process."); }
         
         // --- CONDITIONAL RESET LOGIC ---
         let currentResetTime = user.dailyChallengeResetAt;
+        let N = user.dailySubmissionCount; // <-- Use the atomic counter
         const now = new Date();
 
         if (now > currentResetTime) {
-            // The daily window has expired. Calculate and update the new reset time.
+            // The daily window has expired. Reset the counter and time.
             const nextReset = getNextDailyResetTime();
 
-            // Update the user's record with the new reset time.
             const updatedUser = await tx.user.update({
                 where: { id: userId },
                 data: {
                     dailyChallengeResetAt: nextReset,
+                    dailySubmissionCount: 0, // <-- RESET COUNTER HERE
                 },
-                select: { dailyChallengeResetAt: true }
+                select: { dailyChallengeResetAt: true, dailySubmissionCount: true }
             });
             currentResetTime = updatedUser.dailyChallengeResetAt;
+            N = updatedUser.dailySubmissionCount; // N is now 0
         }
-
+        
         // 2. Count Challenges Submitted since the latest Reset Time.
-        const submittedToday = await tx.challenge.count({
-            where: {
-                proposerUserId: userId,
-                timestampSubmitted: {
-                    gte: currentResetTime, 
-                },
-            },
-        });
+        // **ELIMINATED THE SLOW tx.challenge.count QUERY.**
 
-        // 3. Calculate Cost (Quadratic logic acts as the limit)
-        const submissionCost = calculateSubmissionCost(submittedToday); // Renamed for clarity
+        // 3. Calculate Cost: N is the count *before* this submission.
+        const submissionCost = calculateSubmissionCost(N); 
 
-        // --- 3.5. CRITICAL: BALANCE CHECK ---
-        const currentUser = await tx.user.findUnique({
-            where: { id: userId },
-            select: { lastKnownBalance: true } 
-        });
-
-        if (!currentUser) {
-            throw new Error(`User ID ${userId} not found during submission process.`);
-        }
-
-        if (currentUser.lastKnownBalance < submissionCost) { // Use new name
-            // Throw the error to abort the transaction.
+        // 3.5. CRITICAL: BALANCE CHECK (using the user object fetched above)
+        if (user.lastKnownBalance < submissionCost) {
             throw new Error(`Insufficient balance. Challenge submission costs ${submissionCost} NUMBERS.`);
         }
         
-        // 4. (MOCK) Deduct NUMBERS from user via external API (Lumia/Chatbot)
-        // ... success assumed ...
+        // 4. (MOCK) Deduction...
 
         // 5. Create the new Challenge record
         const newChallenge = await tx.challenge.create({
@@ -450,10 +432,10 @@ export async function processChallengeSubmission(
                 pushBaseCost: 21,
                 status: 'Active',
                 streamDaysSinceActivation: 0,
-                category: "General", // Default value
-                durationType: "ONE_OFF", // Default value
-                timestampSubmitted: new Date().toISOString(),
-                timestampLastActivation: new Date().toISOString(),
+                category: "General", 
+                durationType: "ONE_OFF", 
+                timestampSubmitted: transactionTimestamp, 
+                timestampLastActivation: transactionTimestamp,
             }
         });
 
@@ -461,35 +443,24 @@ export async function processChallengeSubmission(
         await tx.user.update({
             where: { id: userId },
             data: {
-                lastKnownBalance: { decrement: submissionCost }, // Use new name
-                totalNumbersSpent: { increment: submissionCost }, // Use new name
+                lastKnownBalance: { decrement: submissionCost }, 
+                totalNumbersSpent: { increment: submissionCost }, 
                 totalChallengesSubmitted: { increment: 1 },
                 lastActivityTimestamp: new Date().toISOString(),
+                dailySubmissionCount: { increment: 1 }, // <-- ATOMIC INCREMENT FIX
             },
         });
 
-        // 7. Update Global Ledger (User ID 1): Increment the community's game-wide spending.
-        await tx.user.updateMany({
-            where: { id: 1 }, 
-            data: {
-                totalNumbersSpentGameWide: { increment: submissionCost }, // Use new name
-            }
-        });
-
-        // 8. Update Stream Session Metrics (Conditional)
+        // 7., 8. Update Global Ledger and Stream Session Metrics (Unchanged)
+        await tx.user.updateMany({ where: { id: 1 }, data: { totalNumbersSpentGameWide: { increment: submissionCost } } });
         if (currentStreamSessionId) {
             await tx.stream.update({
                 where: { streamSessionId: currentStreamSessionId },
-                data: {
-                    totalNumbersSpentInSession: { increment: submissionCost }, // Use new name
-                    totalChallengesSubmittedInSession: { increment: 1 },
-                }
+                data: { totalNumbersSpentInSession: { increment: submissionCost }, totalChallengesSubmittedInSession: { increment: 1 } }
             });
         }
 
-
-        // 9. Return the result
-        return { newChallenge, cost: submissionCost }; // Return new name
+        return { newChallenge, cost: submissionCost }; 
     });
 }
 

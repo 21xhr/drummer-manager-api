@@ -34,6 +34,7 @@ model User {
   totalNumbersReturnedFromRemovalsGameWide Int         @default(0) @map("total_numbers_returned_from_removals_game_wide")
   
   // Game Metrics (User)
+  dailySubmissionCount                     Int       @default(0) @map("daily_submission_count")
   totalChallengesSubmitted                 Int         @default(0) @map("total_challenges_submitted")
   totalRemovalsExecuted                    Int         @default(0) @map("total_removals_executed")
   totalReceivedFromRemovals                Int         @default(0) @map("total_received_from_removals")
