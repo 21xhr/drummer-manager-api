@@ -186,9 +186,39 @@ export async function processStreamOfflineEvent(streamEndTime: Date): Promise<vo
     });
 }
 
+////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Returns the ID of the currently active stream session from the in-memory state.
  */
 export function getCurrentStreamSessionId(): number | null {
   return currentStreamSessionId;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
+// SERVER STARTUP / STATE RECOVERY
+////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * Loads the last active stream session from the database into memory
+ * upon server startup, ensuring the in-memory state is synchronized.
+ * This prevents the isStreamLive() check from returning false after a server restart.
+ */
+export async function initializeStreamState(): Promise<void> {
+  // Look for the most recent stream session that has not yet been processed (i.e., still LIVE)
+  const lastActiveStream = await prisma.stream.findFirst({
+    where: { hasBeenProcessed: false },
+    orderBy: { streamSessionId: 'desc' },
+  });
+
+  if (lastActiveStream) {
+    // Synchronize the in-memory state with the database record
+    currentStreamStatus = 'LIVE';
+    currentStreamStartTime = lastActiveStream.startTimestamp;
+    currentStreamSessionId = lastActiveStream.streamSessionId;
+
+    console.log(`[StreamService] State recovered: Stream Session #${lastActiveStream.streamSessionId} loaded as LIVE.`);
+  } else {
+    console.log(`[StreamService] State initialized: No active stream session found in DB. Status is OFFLINE.`);
+  }
 }

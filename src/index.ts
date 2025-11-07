@@ -12,6 +12,9 @@ import prisma from './prisma';
 import userRoutes from './routes/userRoutes'; 
 import streamRoutes from './routes/streamRoutes';
 
+// Initialize Stream State once when the API server process starts.
+import { initializeStreamState } from './services/streamService'; // <-- REQUIRED IMPORT
+
 // --- Server Setup ---
 const app = express();
 const PORT = process.env.PORT || 3000; // Use port 3000 unless a different one is specified in the environment.
@@ -50,8 +53,21 @@ app.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// --- Start the server ---
-app.listen(PORT, () => {
-  console.log(`\n🚀 Drummer Manager API is live at http://localhost:${PORT}`);
-  console.log(`Mode: ${process.env.NODE_ENV || 'development'}`);
-});
+
+// --- Start the server Function ---
+/**
+ * Executes state initialization before starting the HTTP listener.
+ */
+async function startServer() {
+  // 🚨 State Initialization: Must run and await before the server listens for requests.
+  await initializeStreamState(); 
+
+  // --- Start the server ---
+  app.listen(PORT, () => {
+    console.log(`\n🚀 Drummer Manager API is live at http://localhost:${PORT}`);
+    console.log(`Mode: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
+
+// Call the async function to begin the startup sequence.
+startServer();
