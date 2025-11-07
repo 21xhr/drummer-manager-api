@@ -124,7 +124,8 @@ export async function processPushConfirm(
   userId: number,
   quoteId?: string // Optional UUID provided by the user via chat command (!push confirm [UUID])
 ): Promise<{ updatedChallenge: Challenge; transactionCost: number; quantity: number }> {
-  
+    const currentStreamSessionId = getCurrentStreamSessionId(); 
+
   // Start an atomic database transaction. This ensures that all steps—
   // from validation to updates—either fully succeed or fully fail.
   return prisma.$transaction(async (tx) => {
@@ -223,6 +224,17 @@ export async function processPushConfirm(
         }
     });
 
+    // E. Update Stream Session Metrics (Only if a stream is active)
+    if (currentStreamSessionId) {
+        await tx.stream.update({
+            where: { streamSessionId: currentStreamSessionId },
+            data: {
+                totalNumbersSpentInSession: { increment: cost },
+                totalPushesInSession: { increment: quote.quantity } // Also track pushes in session
+            }
+        });
+    }
+
     // --- 5. CLEANUP ---
     // Delete the temporary quote now that the transaction is successfully recorded.
     await tx.tempQuote.delete({ where: { quoteId: quote.quoteId } });
@@ -241,7 +253,7 @@ export async function processPushConfirm(
  * @returns The updated Challenge and User records.
  */
 export async function processDigout(userId: number, challengeId: number) {
-    
+    const currentStreamSessionId = getCurrentStreamSessionId();
     return prisma.$transaction(async (tx) => {
         // 1. Fetch Challenge and User for validation
         const challenge = await tx.challenge.findUnique({
@@ -296,6 +308,16 @@ export async function processDigout(userId: number, challengeId: number) {
             }
         });
 
+        // New Stream Session Metrics Update
+        if (currentStreamSessionId) {
+            await tx.stream.update({
+                where: { streamSessionId: currentStreamSessionId },
+                data: {
+                    totalNumbersSpentInSession: { increment: digoutCost },
+                    totalDigoutsInSession: { increment: 1 } // Also track digouts in session
+                }
+            });
+        }
 
         // Revive Challenge and reset clock
         const updatedChallenge = await tx.challenge.update({
@@ -326,6 +348,8 @@ export async function processChallengeSubmission(
   userId: number,
   challengeText: string
 ): Promise<{ newChallenge: Challenge, cost: number }> {
+    // 1. Fetch Session ID before transaction (Correct location)
+    const currentStreamSessionId = getCurrentStreamSessionId(); // <--- ADDED
 
     return prisma.$transaction(async (tx) => {
         // 1. Fetch User's Reset Time
@@ -353,8 +377,6 @@ export async function processChallengeSubmission(
                     dailyChallengeResetAt: nextReset,
                 },
                 select: { dailyChallengeResetAt: true }
-                // ensures the freshly written timestamp is immediately retrieved 
-                // and used correctly for the quadratic cost calculation later in the transaction.
             });
             currentResetTime = updatedUser.dailyChallengeResetAt;
         }
@@ -409,8 +431,19 @@ export async function processChallengeSubmission(
             }
         });
 
+        // 8. Update Stream Session Metrics (Conditional) <--- NEW LOGIC
+        if (currentStreamSessionId) {
+            await tx.stream.update({
+                where: { streamSessionId: currentStreamSessionId },
+                data: {
+                    totalNumbersSpentInSession: { increment: cost },
+                    totalChallengesSubmittedInSession: { increment: 1 },
+                }
+            });
+        }
 
-        // 8. Return the result
+
+        // 9. Return the result
         return { newChallenge, cost };
     });
 }

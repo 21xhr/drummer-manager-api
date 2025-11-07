@@ -74,7 +74,9 @@ export async function processStreamLiveEvent(streamStartTime: Date): Promise<voi
         
         let newGlobalDay = currentDay;
 
-        // Check if the current stream start date is different from the last stream's end date
+        // Check if the current stream start date is different from the last stream's end date.
+        // Prevents the global streamDaysSinceInception counter from advancing if the current stream 
+        // started on the same calendar day as the last processed stream session's end time.
         if (!lastStream || lastStream.endTimestamp!.toDateString() !== streamStartTime.toDateString()) {
             newGlobalDay = currentDay + 1;
             // Update the single global stat record
@@ -96,10 +98,13 @@ export async function processStreamLiveEvent(streamStartTime: Date): Promise<voi
         });
 
         for (const challenge of activeChallenges) {
-            const lastActivationDate = challenge.timestampLastActivation.toDateString(); 
-            const streamEventDate = streamStartTime.toDateString(); 
+            // CRITICAL Archival Clock Logic: Check if this Challenge's counter has already been advanced
+            // on the current UTC CALENDAR DAY (YYYY-MM-DD UTC). This ensures the logic is consistent
+            // with other UTC-based calculations like daily resets.
+            const lastActivationDateUTC = challenge.timestampLastActivation.toISOString().substring(0, 10);
+            const streamEventDateUTC = streamStartTime.toISOString().substring(0, 10);
 
-            if (streamEventDate !== lastActivationDate) {
+            if (streamEventDateUTC !== lastActivationDateUTC) {
                 await tx.challenge.update({
                     where: { challengeId: challenge.challengeId },
                     data: {
