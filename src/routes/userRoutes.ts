@@ -17,7 +17,7 @@ function getServiceErrorStatus(errorMessage: string): number {
         errorMessage.includes("Quote has expired") || 
         errorMessage.includes("Multiple active quotes") ||
         errorMessage.includes("cannot be dug out") ||
-        errorMessage.includes("already been digged out") || // Corrected spelling for robustness
+        errorMessage.includes("already been digged out") ||
         errorMessage.includes("currently being processed")
     ) {
         return 400;
@@ -264,7 +264,45 @@ router.post('/digout', authenticateUser, async (req: any, res) => {
 });
 
 // -----------------------------------------------------------
-// 5. GET ACTIVE CHALLENGES (No auth required)
+// 5. DISRUPT (Placeholder for future chaos)
+// -----------------------------------------------------------
+router.post('/disrupt', authenticateUser, async (req: any, res) => {
+    const userId = req.userId; // AuthenticateUser middleware handles finding/creating the user
+
+    try {
+        // Calls the placeholder function created earlier
+        const message = await challengeService.processDisrupt(userId);
+        
+        // AUDIT LOG (Success)
+        logger.info(`DISRUPT Success: Cost 2100 by User ${userId}`, {
+            cost: 2100,
+            platformId: req.platformId,
+            action: 'disrupt_success'
+        });
+
+        // RETURN RESPONSE (Uses the unique message from processDisrupt)
+        return res.status(200).json({
+            message: message,
+            action: 'disrupt_success',
+            details: {
+                cost: 2100,
+            }
+        });
+    } catch (error) {
+        logger.error('Disrupt Error:', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+        const status = getServiceErrorStatus(errorMessage); 
+        
+        return res.status(status).json({
+            message: status === 500 ? 'Disrupt failed due to a server error.' : errorMessage,
+            action: 'disrupt_failure',
+            error: errorMessage,
+        });
+    }
+});
+
+// -----------------------------------------------------------
+// GET ACTIVE CHALLENGES (No auth required)
 // -----------------------------------------------------------
 router.get('/challenges/active', async (req, res) => {
     try {
@@ -294,7 +332,7 @@ router.get('/challenges/active', async (req, res) => {
 });
 
 // -----------------------------------------------------------
-// 6. REMOVE CHALLENGE
+// REMOVE CHALLENGE
 // -----------------------------------------------------------
 router.post('/challenges/remove', authenticateUser, async (req: any, res) => {
     const { challengeId } = req.body;

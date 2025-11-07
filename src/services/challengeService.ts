@@ -4,10 +4,11 @@ import { User, Challenge } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import { isStreamLive, getCurrentStreamSessionId} from './streamService';
 
+// --- GLOBAL CONFIGURATION (SCREAMING_SNAKE_CASE) ---
 const DIGOUT_COST_PERCENTAGE = 0.21; // 21%
 const LIVE_DISCOUNT_MULTIPLIER = 0.79; // 1 - 0.21
 const SUBMISSION_BASE_COST = 210; // Base cost for challenge submission
-
+const DISRUPT_COST = 2100; // Fixed cost for Disrupt
 
 // ------------------------------------------------------------------
 // CORE COST CALCULATIONS
@@ -60,7 +61,7 @@ function applyLiveDiscount(cost: number): number {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
-// PROCESS PUSH QUOTE
+// PROCESS PUSH QUOTE (MODIFIED)
 ////////////////////////////////////////////////////////////////////////////////////////
 export async function processPushQuote(
   userId: number,
@@ -77,20 +78,16 @@ export async function processPushQuote(
   }
   
   // 2. Determine the user's current push count for THIS challenge.
-  // This is CRITICAL for the per-user quadratic scaling.
   const userPushRecord = await prisma.push.aggregate({
     _sum: { quantity: true },
     where: { userId: userId, challengeId: challengeId },
   });
 
-  // 'currentUserPushCount' is the N-value for the last push this user made.
   const currentUserPushCount = userPushRecord._sum.quantity ?? 0; 
   let quotedCost = 0;
 
   // 3. Calculate the new quadratic cost for the requested quantity.
-  // The loop calculates the cost for the N+1, N+2, ... pushes.
   for (let i = 1; i <= quantity; i++) {
-    // 'incrementalCount' is the index (1st, 2nd, 3rd...) of the push this user is making.
     const incrementalCount = currentUserPushCount + i;
     // Cost formula: Base Cost * (User's Push Index)^2
     quotedCost += challenge.pushBaseCost * (incrementalCount * incrementalCount); 
@@ -99,9 +96,24 @@ export async function processPushQuote(
   // 4. Apply 21% discount if the stream is currently live.
   quotedCost = applyLiveDiscount(quotedCost);
 
+  // --- 4.5. CRITICAL: BALANCE PRE-CHECK (New Logic) ---
+  const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { lastKnownBalance: true } 
+  });
+  
+  if (!user) {
+      throw new Error(`User ID ${userId} not found during push quote generation.`);
+  }
+
+  // Optimistic check: if the user's current known balance is less than the quote, fail fast.
+  if (user.lastKnownBalance < quotedCost) {
+      throw new Error(`Insufficient balance. Quoted push cost is ${quotedCost} NUMBERS.`);
+  }
+
+  // --- 5. Save the generated quote to the temporary quote table.
   const quoteId = uuidv4();
 
-  // 5. Save the generated quote to the temporary quote table.
   await prisma.tempQuote.create({
     data: {
       quoteId: quoteId,
@@ -126,24 +138,20 @@ export async function processPushConfirm(
 ): Promise<{ updatedChallenge: Challenge; transactionCost: number; quantity: number }> {
     const currentStreamSessionId = getCurrentStreamSessionId(); 
 
-  // Start an atomic database transaction. This ensures that all steps—
-  // from validation to updates—either fully succeed or fully fail.
+  // Start an atomic database transaction.
   return prisma.$transaction(async (tx) => {
     const EXPIRATION_TIMEOUT_MS = 30 * 1000; // 30-second quote validity
     let quote;
 
     // --- 1. QUOTE RETRIEVAL & LOOKUP LOGIC ---
     if (quoteId) {
-        // If a UUID is provided, fetch that specific quote.
         quote = await tx.tempQuote.findUnique({ where: { quoteId: quoteId } });
     } else {
-        // If no UUID is provided, attempt to find the most recent, active quote for this user.
         const allUserQuotes = await tx.tempQuote.findMany({
             where: { userId: userId },
             orderBy: { timestampCreated: 'desc' },
         });
 
-        // Filter for quotes that are still within the 30-second window.
         const activeQuotes = allUserQuotes.filter(q => (Date.now() - q.timestampCreated.getTime()) <= EXPIRATION_TIMEOUT_MS);
         
         if (activeQuotes.length === 1) {
@@ -151,7 +159,6 @@ export async function processPushConfirm(
         } else if (activeQuotes.length === 0) {
             throw new Error('No active or unexpired quote found. Please run !push [ID] [N] again.');
         } else {
-            // Safety check: Prevents ambiguity if a user somehow generates multiple quotes quickly.
             throw new Error('Multiple active quotes found. Please confirm using the full command: !push confirm [UUID].');
         }
     }
@@ -161,37 +168,50 @@ export async function processPushConfirm(
         throw new Error('Quote is invalid or does not belong to this user.'); 
     }
     
-    // Concurrency lock: Check if the quote is already being processed.
     if (quote.isLocked) {
         throw new Error('This quote is currently being processed by another transaction.');
     }
     
-    // Expiration check: If the quote is older than 30 seconds, delete it and fail the transaction.
     if ((Date.now() - quote.timestampCreated.getTime()) > EXPIRATION_TIMEOUT_MS) {
         await tx.tempQuote.delete({ where: { quoteId: quote.quoteId } });
         throw new Error('The push quote has expired. Please run !push [ID] [N] again.');
     }
 
     // --- 3. LOCK QUOTE & CHALLENGE VALIDATION ---
-    // Acquire the lock to prevent a race condition where two requests confirm the same quote.
     await tx.tempQuote.update({ where: { quoteId: quote.quoteId }, data: { isLocked: true } });
 
-    // Ensure the challenge is still active before applying pushes.
     const challenge = await tx.challenge.findUnique({ where: { challengeId: quote.challengeId } });
     if (!challenge || challenge.status !== 'Active') {
-      await tx.tempQuote.delete({ where: { quoteId: quote.quoteId } }); // Clean up the quote
+      await tx.tempQuote.delete({ where: { quoteId: quote.quoteId } }); 
       throw new Error(`Challenge ID ${quote.challengeId} is no longer 'Active' and cannot be pushed.`);
     }
 
-    // --- 4. ATOMIC DATABASE UPDATES ---
-    const cost = quote.quotedCost;
+    // --- 3.5. CRITICAL: BALANCE CHECK ---
+    const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { lastKnownBalance: true } 
+    });
+    
+    if (!user) {
+        throw new Error(`User ID ${userId} not found during push confirmation.`);
+    }
+    
+    const pushTransactionCost = quote.quotedCost; // Renamed for clarity
 
+    if (user.lastKnownBalance < pushTransactionCost) {
+        // IMPORTANT: Unlock/Delete the quote before throwing the error.
+        await tx.tempQuote.delete({ where: { quoteId: quote.quoteId } });
+        throw new Error(`Insufficient balance. Push costs ${pushTransactionCost} NUMBERS.`);
+    }
+
+    // --- 4. ATOMIC DATABASE UPDATES ---
+    
     // A. Update Challenge: Increment total push count and total cost spent on the challenge.
     const updatedChallenge = await tx.challenge.update({
       where: { challengeId: challenge.challengeId },
       data: {
         totalPush: { increment: quote.quantity },
-        totalNumbersSpent: { increment: cost },
+        totalNumbersSpent: { increment: pushTransactionCost }, // Use new name
       },
     });
 
@@ -200,7 +220,7 @@ export async function processPushConfirm(
         data: {
             challengeId: challenge.challengeId,
             userId: userId,
-            cost: cost,
+            cost: pushTransactionCost, // Use new name
             quantity: quote.quantity,
         }
     });
@@ -209,8 +229,8 @@ export async function processPushConfirm(
     await tx.user.update({
         where: { id: userId },
         data: {
-            lastKnownBalance: { decrement: cost }, // Deduct cost from balance
-            totalNumbersSpent: { increment: cost }, // User's individual spending
+            lastKnownBalance: { decrement: pushTransactionCost }, // Use new name
+            totalNumbersSpent: { increment: pushTransactionCost }, // Use new name
             lastActivityTimestamp: new Date().toISOString(),
             totalPushesExecuted: { increment: quote.quantity },
         },
@@ -220,7 +240,7 @@ export async function processPushConfirm(
     await tx.user.updateMany({
         where: { id: 1 }, 
         data: {
-            totalNumbersSpentGameWide: { increment: cost }, // Global spending ledger
+            totalNumbersSpentGameWide: { increment: pushTransactionCost }, // Use new name
         }
     });
 
@@ -229,17 +249,17 @@ export async function processPushConfirm(
         await tx.stream.update({
             where: { streamSessionId: currentStreamSessionId },
             data: {
-                totalNumbersSpentInSession: { increment: cost },
-                totalPushesInSession: { increment: quote.quantity } // Also track pushes in session
+                totalNumbersSpentInSession: { increment: pushTransactionCost }, // Use new name
+                totalPushesInSession: { increment: quote.quantity },
+                totalNumbersSpentOnPush: { increment: pushTransactionCost } // Use new name
             }
         });
     }
 
     // --- 5. CLEANUP ---
-    // Delete the temporary quote now that the transaction is successfully recorded.
     await tx.tempQuote.delete({ where: { quoteId: quote.quoteId } });
 
-    return { updatedChallenge, transactionCost: cost, quantity: quote.quantity };
+    return { updatedChallenge, transactionCost: pushTransactionCost, quantity: quote.quantity }; // Return new name
   });
 }
 
@@ -281,10 +301,10 @@ export async function processDigout(userId: number, challengeId: number) {
         }
 
         // 2. Calculate Cost (21% of total_numbers_spent, rounded up)
-        const digoutCost = Math.ceil(challenge.totalNumbersSpent * 0.21);
+        const digoutTransactionCost = Math.ceil(challenge.totalNumbersSpent * DIGOUT_COST_PERCENTAGE); // Renamed for clarity
 
-        if (user.lastKnownBalance < digoutCost) { 
-            throw new Error(`Insufficient balance. Digout costs ${digoutCost} NUMBERS.`);
+        if (user.lastKnownBalance < digoutTransactionCost) { 
+            throw new Error(`Insufficient balance. Digout costs ${digoutTransactionCost} NUMBERS.`);
         }
 
         // 3. Execute Transaction: Deduct cost, update user, and update challenge
@@ -293,8 +313,8 @@ export async function processDigout(userId: number, challengeId: number) {
         const updatedUser = await tx.user.update({
             where: { id: userId },
             data: {
-                lastKnownBalance: { decrement: digoutCost },
-                totalNumbersSpent: { increment: digoutCost }, // User's individual spending
+                lastKnownBalance: { decrement: digoutTransactionCost }, // Use new name
+                totalNumbersSpent: { increment: digoutTransactionCost }, // Use new name
                 totalDigoutsExecuted: { increment: 1 },
                 lastActivityTimestamp: new Date().toISOString(), 
             },
@@ -304,7 +324,7 @@ export async function processDigout(userId: number, challengeId: number) {
         await tx.user.updateMany({
             where: { id: 1 }, 
             data: {
-                totalNumbersSpentGameWide: { increment: digoutCost }, // Global spending ledger
+                totalNumbersSpentGameWide: { increment: digoutTransactionCost }, // Use new name
             }
         });
 
@@ -313,8 +333,9 @@ export async function processDigout(userId: number, challengeId: number) {
             await tx.stream.update({
                 where: { streamSessionId: currentStreamSessionId },
                 data: {
-                    totalNumbersSpentInSession: { increment: digoutCost },
-                    totalDigoutsInSession: { increment: 1 } // Also track digouts in session
+                    totalNumbersSpentInSession: { increment: digoutTransactionCost }, // Use new name
+                    totalDigoutsInSession: { increment: 1 },
+                    totalNumbersSpentOnDigout: { increment: digoutTransactionCost } // Use new name
                 }
             });
         }
@@ -334,7 +355,7 @@ export async function processDigout(userId: number, challengeId: number) {
         return { 
             updatedChallenge, 
             updatedUser, 
-            cost: digoutCost 
+            cost: digoutTransactionCost // Use new name
         };
     });
 }
@@ -342,14 +363,12 @@ export async function processDigout(userId: number, challengeId: number) {
 ////////////////////////////////////////////////////////////////////////////////////////
 // PROCESS CHALLENGE SUBMISSION
 ////////////////////////////////////////////////////////////////////////////////////////
-// src/services/challengeService.ts (Updated processChallengeSubmission)
-
 export async function processChallengeSubmission(
   userId: number,
   challengeText: string
 ): Promise<{ newChallenge: Challenge, cost: number }> {
     // 1. Fetch Session ID before transaction (Correct location)
-    const currentStreamSessionId = getCurrentStreamSessionId(); // <--- ADDED
+    const currentStreamSessionId = getCurrentStreamSessionId(); 
 
     return prisma.$transaction(async (tx) => {
         // 1. Fetch User's Reset Time
@@ -392,7 +411,22 @@ export async function processChallengeSubmission(
         });
 
         // 3. Calculate Cost (Quadratic logic acts as the limit)
-        const cost = calculateSubmissionCost(submittedToday);
+        const submissionCost = calculateSubmissionCost(submittedToday); // Renamed for clarity
+
+        // --- 3.5. CRITICAL: BALANCE CHECK ---
+        const currentUser = await tx.user.findUnique({
+            where: { id: userId },
+            select: { lastKnownBalance: true } 
+        });
+
+        if (!currentUser) {
+            throw new Error(`User ID ${userId} not found during submission process.`);
+        }
+
+        if (currentUser.lastKnownBalance < submissionCost) { // Use new name
+            // Throw the error to abort the transaction.
+            throw new Error(`Insufficient balance. Challenge submission costs ${submissionCost} NUMBERS.`);
+        }
         
         // 4. (MOCK) Deduct NUMBERS from user via external API (Lumia/Chatbot)
         // ... success assumed ...
@@ -416,8 +450,8 @@ export async function processChallengeSubmission(
         await tx.user.update({
             where: { id: userId },
             data: {
-                lastKnownBalance: { decrement: cost }, // Deduct cost from balance
-                totalNumbersSpent: { increment: cost }, // User's individual spending
+                lastKnownBalance: { decrement: submissionCost }, // Use new name
+                totalNumbersSpent: { increment: submissionCost }, // Use new name
                 totalChallengesSubmitted: { increment: 1 },
                 lastActivityTimestamp: new Date().toISOString(),
             },
@@ -427,16 +461,16 @@ export async function processChallengeSubmission(
         await tx.user.updateMany({
             where: { id: 1 }, 
             data: {
-                totalNumbersSpentGameWide: { increment: cost }, // Global spending ledger
+                totalNumbersSpentGameWide: { increment: submissionCost }, // Use new name
             }
         });
 
-        // 8. Update Stream Session Metrics (Conditional) <--- NEW LOGIC
+        // 8. Update Stream Session Metrics (Conditional)
         if (currentStreamSessionId) {
             await tx.stream.update({
                 where: { streamSessionId: currentStreamSessionId },
                 data: {
-                    totalNumbersSpentInSession: { increment: cost },
+                    totalNumbersSpentInSession: { increment: submissionCost }, // Use new name
                     totalChallengesSubmittedInSession: { increment: 1 },
                 }
             });
@@ -444,12 +478,12 @@ export async function processChallengeSubmission(
 
 
         // 9. Return the result
-        return { newChallenge, cost };
+        return { newChallenge, cost: submissionCost }; // Return new name
     });
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
-// HANDLES ARCHIVAL LOGIC
+// HANDLES ARCHIVAL LOGIC (No changes needed)
 ////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Archives challenges that have been active for 21 or more stream days.
@@ -479,7 +513,7 @@ export async function archiveExpiredChallenges(): Promise<number> {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
-// FINALIZE EXECUTING CHALLENGE
+// FINALIZE EXECUTING CHALLENGE (No changes needed)
 ////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Finds the currently executing challenge (Status: 'InProgress') and sets its status to 'Completed'
@@ -521,7 +555,7 @@ export async function finalizeExecutingChallenge(): Promise<Challenge | null> {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
-// FETCH ACTIVE CHALLENGES
+// FETCH ACTIVE CHALLENGES (No changes needed)
 ////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Fetches all challenges that are currently 'Active'.
@@ -534,7 +568,7 @@ export async function getActiveChallenges() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
-// PROCESS CHALLENGES REMOVAL
+// PROCESS CHALLENGES REMOVAL (No changes needed)
 ////////////////////////////////////////////////////////////////////////////////////////
  /**
  * Allows the Challenge author to remove their Challenge, refunding 21% of
@@ -665,4 +699,74 @@ export async function processRemove(authorUserId: number, challengeId: number) {
         totalRefundsAmount: result.totalRefundsAmount,
         failedRefunds: result.refundsToProcess.length - successfulRefunds.length
     };
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
+// PROCESS DISRUPT (Placeholder for Future Chaos) (No changes needed)
+////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * Executes a placeholder 'Disrupt' command, applying a fixed cost while tracking metrics.
+ * Actual disrupt logic will be implemented post-launch.
+ */
+export async function processDisrupt(userId: number): Promise<string> {
+    
+    const currentStreamSessionId = getCurrentStreamSessionId();
+    
+    return prisma.$transaction(async (tx) => {
+        // 1. Fetch User and check balance
+        const user = await tx.user.findUnique({
+            where: { id: userId },
+        });
+
+        if (!user) {
+            throw new Error(`User ID ${userId} not found during transaction.`);
+        }
+
+        if (user.lastKnownBalance < DISRUPT_COST) {
+            throw new Error(`Insufficient balance. Disrupt costs ${DISRUPT_COST} NUMBERS.`);
+        }
+
+        // 2. Execute Transaction: Deduct cost and update metrics
+        
+        // A. Update User Stats
+        await tx.user.update({
+            where: { id: userId },
+            data: {
+                lastKnownBalance: { decrement: DISRUPT_COST },
+                totalNumbersSpent: { increment: DISRUPT_COST }, // User's individual spending
+                totalDisruptsExecuted: { increment: 1 }, // Track execution count (New field)
+                lastActivityTimestamp: new Date().toISOString(),
+            },
+        });
+
+        // B. Update Global Ledger (User ID 1)
+        await tx.user.updateMany({
+            where: { id: 1 }, 
+            data: {
+                totalNumbersSpentGameWide: { increment: DISRUPT_COST }, // Global spending ledger
+            }
+        });
+
+        // C. Update Stream Session Metrics (Conditional)
+        if (currentStreamSessionId) {
+            await tx.stream.update({
+                where: { streamSessionId: currentStreamSessionId },
+                data: {
+                    totalNumbersSpentInSession: { increment: DISRUPT_COST },
+                    totalDisruptsInSession: { increment: 1 }, // Track disrupt count
+                    totalNumbersSpentOnDisrupt: { increment: DISRUPT_COST } // Track spending breakdown
+                }
+            });
+        }
+
+        // 3. Return placeholder success message (handled outside the transaction block for clarity)
+        return "Disrupt successful.";
+    }).then(() => {
+        // Return the required launch message upon successful transaction commit
+        return (
+            "Congratulations, you just paid 2100 NUMBERS to commit pre-release performance art. " +
+            "You've disrupted exactly nothing, but your commitment to chaos is noted. " +
+            "We promise to make it hurt later. (Maybe.)"
+        );
+    });
 }

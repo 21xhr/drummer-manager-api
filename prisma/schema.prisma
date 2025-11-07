@@ -40,6 +40,7 @@ model User {
   totalNumbersSpent                        Int         @default(0) @map("total_numbers_spent")
   totalDigoutsExecuted                     Int         @map("total_digouts_executed") @default(0)
   totalPushesExecuted                      Int         @default(0) // Tracks total number of *pushes* (quantity) made by the user.
+  totalDisruptsExecuted Int @default(0) // Tracks total disrupt commands run by the user.
 
   challenges                               Challenge[] @relation("Proposer")
   pushes                                   Push[]
