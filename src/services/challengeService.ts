@@ -61,7 +61,7 @@ function applyLiveDiscount(cost: number): number {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
-// PROCESS PUSH QUOTE (MODIFIED)
+// PROCESS PUSH QUOTE
 ////////////////////////////////////////////////////////////////////////////////////////
 export async function processPushQuote(
   userId: number,
@@ -134,47 +134,58 @@ export async function processPushQuote(
 ////////////////////////////////////////////////////////////////////////////////////////
 export async function processPushConfirm(
   userId: number,
-  quoteId?: string // Optional UUID provided by the user via chat command (!push confirm [UUID])
+  quoteId?: string 
 ): Promise<{ updatedChallenge: Challenge; transactionCost: number; quantity: number }> {
     const currentStreamSessionId = getCurrentStreamSessionId(); 
 
-  // Start an atomic database transaction.
   return prisma.$transaction(async (tx) => {
-    const EXPIRATION_TIMEOUT_MS = 30 * 1000; // 30-second quote validity
+    const EXPIRATION_TIMEOUT_MS = 30 * 1000;
     let quote;
+    const expirationCutoff = new Date(Date.now() - EXPIRATION_TIMEOUT_MS); 
 
     // --- 1. QUOTE RETRIEVAL & LOOKUP LOGIC ---
     if (quoteId) {
+        // Case A: Direct lookup by UUID. We MUST still fetch the quote even if expired
+        // because we need its timestamp to check validity in Step 2.
         quote = await tx.tempQuote.findUnique({ where: { quoteId: quoteId } });
-    } else {
-        const allUserQuotes = await tx.tempQuote.findMany({
-            where: { userId: userId },
-            orderBy: { timestampCreated: 'desc' },
-        });
 
-        const activeQuotes = allUserQuotes.filter(q => (Date.now() - q.timestampCreated.getTime()) <= EXPIRATION_TIMEOUT_MS);
+    } else {
+        // Case B: Efficiently find the most recent, ACTIVE quote using a DB filter.
+        // prevents fetching large amounts of history and satisfies the backlog item.
+        const activeQuotes = await tx.tempQuote.findMany({
+            where: { 
+                userId: userId,
+                timestampCreated: { gte: expirationCutoff }, 
+                isLocked: false, 
+            },
+            orderBy: { timestampCreated: 'desc' }, 
+            take: 2, 
+        });
         
         if (activeQuotes.length === 1) {
             quote = activeQuotes[0];
         } else if (activeQuotes.length === 0) {
-            throw new Error('No active or unexpired quote found. Please run !push [ID] [N] again.');
+            throw new Error('No active quote found. Please run !push [ID] [N] again.');
         } else {
             throw new Error('Multiple active quotes found. Please confirm using the full command: !push confirm [UUID].');
         }
     }
 
-    // --- 2. CORE QUOTE VALIDATION ---
+    // --- 2. CORE QUOTE VALIDATION (Standardized Checks) ---
     if (!quote || quote.userId !== userId) {
         throw new Error('Quote is invalid or does not belong to this user.'); 
+    }
+
+    // **CRITICAL: EXPIRATION CHECK** - This now covers BOTH Case A (explicit ID) and 
+    // Case B (where the quote *should* be active, but checking guards against clock drift or manual errors).
+    if (quote.timestampCreated.getTime() < expirationCutoff.getTime()) { // <--- SIMPLIFIED CHECK
+        // For Case B, this line should never be hit, but it's essential for Case A.
+        await tx.tempQuote.delete({ where: { quoteId: quote.quoteId } });
+        throw new Error('The push quote has expired. Please run !push [ID] [N] again.');
     }
     
     if (quote.isLocked) {
         throw new Error('This quote is currently being processed by another transaction.');
-    }
-    
-    if ((Date.now() - quote.timestampCreated.getTime()) > EXPIRATION_TIMEOUT_MS) {
-        await tx.tempQuote.delete({ where: { quoteId: quote.quoteId } });
-        throw new Error('The push quote has expired. Please run !push [ID] [N] again.');
     }
 
     // --- 3. LOCK QUOTE & CHALLENGE VALIDATION ---
