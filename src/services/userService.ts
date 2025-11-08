@@ -13,7 +13,9 @@ interface PlatformUser {
 
 /**
  * Finds a User record by platform ID or creates a new one if it doesn't exist.
+ * Now primarily handles initial user creation and returns the existing user on subsequent calls.
  * This is the mandatory first step for processing any user-initiated command.
+ * The timestamp updating is delegated to the specific command functions (e.g., processDisrupt).
  * @param platformUser - The user data from the streaming platform (e.g., Twitch, Kick).
  * @returns The existing or newly created User record.
  */
@@ -21,24 +23,22 @@ export async function findOrCreateUser(platformUser: PlatformUser): Promise<User
   const { platformId, platformName } = platformUser;
 
   const user = await prisma.user.upsert({
-    // WHERE CLAUSE: Uses the composite field name
     where: { 
       platformId_platformName: { // Prisma generates this name based on @@unique([platformId, platformName])
         platformId: platformId,
         platformName: platformName,
       }
     }, 
-    update: {
-      // Update activity timestamps when an existing user performs a command
-      lastActivityTimestamp: new Date(),
-      // Note: last_live_activity_timestamp logic needs knowledge of stream status (live/offline)
-    },
+    // ⭐ SIMPLIFICATION: The 'update' block no longer updates timestamps
+    // to avoid redundant writes, as the command function (e.g., processDisrupt)
+    // will update them moments later within its transaction.
+    update: {}, 
     create: {
       platformId: platformId,
       platformName: platformName,
-      lastActivityTimestamp: new Date(),
-      dailyChallengeResetAt: getNextDailyResetTime(), // Use the standardized 21:00 UTC reset time from the helper
-      lastKnownBalance: 0, // Default values are handled by the model, but we can set them explicitly here too
+      lastActivityTimestamp: new Date(), // Set initial timestamp on creation
+      dailyChallengeResetAt: getNextDailyResetTime(),
+      lastKnownBalance: 0,
     },
   });
 

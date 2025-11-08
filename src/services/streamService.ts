@@ -229,7 +229,6 @@ export async function initializeStreamState(): Promise<void> {
 /**
  * Retrieves the current global Stream Day number from the StreamStat record.
  * Used by the daily scheduler for the user tick.
- * NOTE: This is NOT the same as the user's lastSeenStreamDay.
  */
 export async function getCurrentStreamDay(): Promise<number> {
     const streamStat = await prisma.streamStat.findFirst();
