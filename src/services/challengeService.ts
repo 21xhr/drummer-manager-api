@@ -505,14 +505,14 @@ export async function archiveExpiredChallenges(): Promise<number> {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
-// FINALIZE EXECUTING CHALLENGE (No changes needed)
+// FINALIZE EECUTING "InProgress" CHALLENGE
 ////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Finds the currently executing challenge (Status: 'InProgress') and sets its status to 'Completed'
  * when the stream goes offline.
  * @returns The completed Challenge record, or null if none was executing.
  */
-export async function finalizeExecutingChallenge(): Promise<Challenge | null> {
+export async function finalizeInProgressChallenge(): Promise<Challenge | null> {
     
     // This runs outside a transaction, using the standard Prisma client, similar to archiveExpiredChallenges.
     
