@@ -96,7 +96,7 @@ export async function processPushQuote(
   // 4. Apply 21% discount if the stream is currently live.
   quotedCost = applyLiveDiscount(quotedCost);
 
-  // --- 4.5. CRITICAL: BALANCE PRE-CHECK (New Logic) ---
+  // --- 4.5. CRITICAL: BALANCE PRE-CHECK ---
   const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { lastKnownBalance: true } 
@@ -222,7 +222,7 @@ export async function processPushConfirm(
       where: { challengeId: challenge.challengeId },
       data: {
         totalPush: { increment: quote.quantity },
-        totalNumbersSpent: { increment: pushTransactionCost }, // Use new name
+        totalNumbersSpent: { increment: pushTransactionCost },
       },
     });
 
@@ -231,7 +231,7 @@ export async function processPushConfirm(
         data: {
             challengeId: challenge.challengeId,
             userId: userId,
-            cost: pushTransactionCost, // Use new name
+            cost: pushTransactionCost, 
             quantity: quote.quantity,
         }
     });
@@ -240,10 +240,13 @@ export async function processPushConfirm(
     await tx.user.update({
         where: { id: userId },
         data: {
-            lastKnownBalance: { decrement: pushTransactionCost }, // Use new name
-            totalNumbersSpent: { increment: pushTransactionCost }, // Use new name
+            lastKnownBalance: { decrement: pushTransactionCost },
+            totalNumbersSpent: { increment: pushTransactionCost },
             lastActivityTimestamp: new Date().toISOString(),
             totalPushesExecuted: { increment: quote.quantity },
+            ...(currentStreamSessionId && {
+                lastLiveActivityTimestamp: new Date().toISOString(),
+            }),
         },
     });
 
@@ -251,7 +254,7 @@ export async function processPushConfirm(
     await tx.user.updateMany({
         where: { id: 1 }, 
         data: {
-            totalNumbersSpentGameWide: { increment: pushTransactionCost }, // Use new name
+            totalNumbersSpentGameWide: { increment: pushTransactionCost },
         }
     });
 
@@ -260,9 +263,9 @@ export async function processPushConfirm(
         await tx.stream.update({
             where: { streamSessionId: currentStreamSessionId },
             data: {
-                totalNumbersSpentInSession: { increment: pushTransactionCost }, // Use new name
+                totalNumbersSpentInSession: { increment: pushTransactionCost },
                 totalPushesInSession: { increment: quote.quantity },
-                totalNumbersSpentOnPush: { increment: pushTransactionCost } // Use new name
+                totalNumbersSpentOnPush: { increment: pushTransactionCost }
             }
         });
     }
@@ -270,7 +273,7 @@ export async function processPushConfirm(
     // --- 5. CLEANUP ---
     await tx.tempQuote.delete({ where: { quoteId: quote.quoteId } });
 
-    return { updatedChallenge, transactionCost: pushTransactionCost, quantity: quote.quantity }; // Return new name
+    return { updatedChallenge, transactionCost: pushTransactionCost, quantity: quote.quantity };
   });
 }
 
@@ -324,10 +327,13 @@ export async function processDigout(userId: number, challengeId: number) {
         const updatedUser = await tx.user.update({
             where: { id: userId },
             data: {
-                lastKnownBalance: { decrement: digoutTransactionCost }, // Use new name
-                totalNumbersSpent: { increment: digoutTransactionCost }, // Use new name
+                lastKnownBalance: { decrement: digoutTransactionCost },
+                totalNumbersSpent: { increment: digoutTransactionCost },
                 totalDigoutsExecuted: { increment: 1 },
-                lastActivityTimestamp: new Date().toISOString(), 
+                lastActivityTimestamp: new Date().toISOString(),
+                ...(currentStreamSessionId && {
+                    lastLiveActivityTimestamp: new Date().toISOString(),
+                }),
             },
         });
 
@@ -335,7 +341,7 @@ export async function processDigout(userId: number, challengeId: number) {
         await tx.user.updateMany({
             where: { id: 1 }, 
             data: {
-                totalNumbersSpentGameWide: { increment: digoutTransactionCost }, // Use new name
+                totalNumbersSpentGameWide: { increment: digoutTransactionCost },
             }
         });
 
@@ -344,9 +350,9 @@ export async function processDigout(userId: number, challengeId: number) {
             await tx.stream.update({
                 where: { streamSessionId: currentStreamSessionId },
                 data: {
-                    totalNumbersSpentInSession: { increment: digoutTransactionCost }, // Use new name
+                    totalNumbersSpentInSession: { increment: digoutTransactionCost },
                     totalDigoutsInSession: { increment: 1 },
-                    totalNumbersSpentOnDigout: { increment: digoutTransactionCost } // Use new name
+                    totalNumbersSpentOnDigout: { increment: digoutTransactionCost }
                 }
             });
         }
@@ -355,10 +361,10 @@ export async function processDigout(userId: number, challengeId: number) {
         const updatedChallenge = await tx.challenge.update({
             where: { challengeId: challengeId },
             data: {
-                status: 'Active', // CHANGE STATUS
-                streamDaysSinceActivation: 0, // RESET CLOCK
-                timestampLastActivation: new Date().toISOString(), // UPDATE ACTIVATION TIME
-                hasBeenDiggedOut: true, // SET DIGOUT FLAG (can only be done once)
+                status: 'Active',
+                streamDaysSinceActivation: 0,
+                timestampLastActivation: new Date().toISOString(),
+                hasBeenDiggedOut: true,
             },
         });
 
@@ -366,7 +372,7 @@ export async function processDigout(userId: number, challengeId: number) {
         return { 
             updatedChallenge, 
             updatedUser, 
-            cost: digoutTransactionCost // Use new name
+            cost: digoutTransactionCost
         };
     });
 }
@@ -380,6 +386,7 @@ export async function processChallengeSubmission(
 ): Promise<{ newChallenge: Challenge, cost: number }> {
     const currentStreamSessionId = getCurrentStreamSessionId(); 
     const transactionTimestamp = new Date().toISOString(); 
+    // fixes the quadratic bug, guarantees a single, UTC-consistent time for the entire atomic block:
 
     return prisma.$transaction(async (tx) => {
         // 1. Fetch User data including counter and reset time
@@ -447,7 +454,10 @@ export async function processChallengeSubmission(
                 totalNumbersSpent: { increment: submissionCost }, 
                 totalChallengesSubmitted: { increment: 1 },
                 lastActivityTimestamp: new Date().toISOString(),
-                dailySubmissionCount: { increment: 1 }, // <-- ATOMIC INCREMENT FIX
+                dailySubmissionCount: { increment: 1 },
+                ...(currentStreamSessionId && {
+                    lastLiveActivityTimestamp: transactionTimestamp,
+                }),
             },
         });
 
@@ -715,9 +725,12 @@ export async function processDisrupt(userId: number): Promise<string> {
             where: { id: userId },
             data: {
                 lastKnownBalance: { decrement: DISRUPT_COST },
-                totalNumbersSpent: { increment: DISRUPT_COST }, // User's individual spending
-                totalDisruptsExecuted: { increment: 1 }, // Track execution count (New field)
+                totalNumbersSpent: { increment: DISRUPT_COST },
+                totalDisruptsExecuted: { increment: 1 },
                 lastActivityTimestamp: new Date().toISOString(),
+                ...(currentStreamSessionId && {
+                    lastLiveActivityTimestamp: new Date().toISOString(),
+                }),
             },
         });
 
