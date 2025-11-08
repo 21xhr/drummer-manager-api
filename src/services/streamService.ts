@@ -222,3 +222,41 @@ export async function initializeStreamState(): Promise<void> {
     console.log(`[StreamService] State initialized: No active stream session found in DB. Status is OFFLINE.`);
   }
 }
+
+////////////////////////////////////////////////////////////////////////////////////////
+// RETRIEVE CURRENT STREAM DAY
+////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * Retrieves the current global Stream Day number from the StreamStat record.
+ * Used by the daily scheduler for the user tick.
+ * NOTE: This is NOT the same as the user's lastSeenStreamDay.
+ */
+export async function getCurrentStreamDay(): Promise<number> {
+    const streamStat = await prisma.streamStat.findFirst();
+    return streamStat ? streamStat.streamDaysSinceInception : 0; 
+    //The expression is a ternary operator (a shorthand if-else statement) used to safely retrieve the global stream day count.
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
+// ADVANCE GLOBAL DAY CLOCK ONCE PER DAY
+////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * Ensures the global Real-World Day clock (daysSinceInception) advances by one day.
+ * This is called by the daily scheduler (21:00 UTC) to guarantee the clock advances
+ * regardless of stream activity.
+ */
+export async function incrementGlobalDayStat(): Promise<void> { 
+    await prisma.$transaction(async (tx) => {
+        // 1. Fetch the existing stat record
+        const { statId } = await getOrCreateGlobalStreamStat(tx);
+
+        // 2. Atomically increment only the Real-World Clock (daysSinceInception)
+        await tx.streamStat.update({
+            where: { id: statId },
+            data: {
+                daysSinceInception: { increment: 1 }, 
+            },
+        });
+        console.log(`[StreamService] Real-World Day Clock advanced by 1 via scheduler.`);
+    });
+}

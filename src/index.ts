@@ -1,49 +1,48 @@
 // src/index.ts
-// This file sets up and starts the core web server (API).
+// This file sets up and starts the core web server (API) and the daily scheduler.
 
 // Enables graceful error handling for async routes, 
 // preventing the application from crashing on unhandled async exceptions.
 import 'express-async-errors'; 
 import express, { Request, Response } from 'express';
-// Prisma client is the connection to our database (Supabase).
-import prisma from './prisma'; 
+import * as cron from 'node-cron'; // <-- NEW: Import the scheduling library
 
-// Import the specific route files for different parts of the application.
+import prisma from './prisma'; 
 import userRoutes from './routes/userRoutes'; 
 import streamRoutes from './routes/streamRoutes';
 
-// Initialize Stream State once when the API server process starts.
-import { initializeStreamState } from './services/streamService'; // <-- REQUIRED IMPORT
+// --- NEW IMPORTS for Scheduling ---
+import { initializeStreamState, getCurrentStreamDay } from './services/streamService'; 
+import { archiveExpiredChallenges } from './services/challengeService';
+import { processDailyUserTick } from './services/clockService'; 
+// NOTE: We need a function to safely increment the global clock in streamService.
+// We'll define a placeholder function call for now. 
+// You must implement this function in src/services/streamService.ts later.
+import { incrementGlobalDayStat } from './services/streamService'; 
+
 
 // --- Server Setup ---
 const app = express();
-const PORT = process.env.PORT || 3000; // Use port 3000 unless a different one is specified in the environment.
+const PORT = process.env.PORT || 3000; 
 
 // --- Middleware ---
-// Enables the server to read incoming JSON data in request bodies (e.g., POST and PUT requests).
 app.use(express.json());
 
 // --- Application Routers (API Endpoints) ---
-// These lines map specific URL paths to our route handlers.
-// All user commands (submit, push, digout, disrupt) are accessed via /api/v1/user/...
 app.use('/api/v1/user', userRoutes); 
-// Routes for stream-related actions (e.g., going live/offline, stream metrics).
 app.use('/api/v1/stream', streamRoutes);
 
 // --- Basic Health Check Route ---
-// A simple test route to check if the server and database are running correctly.
 app.get('/', async (req: Request, res: Response) => {
   try {
-    // Attempt to connect to the database to ensure the connection is active.
     await prisma.$connect();
     res.status(200).json({
       message: "Drummer Manager API is running successfully!",
       status: "OK",
-      dbStatus: "Connected to Supabase", // Confirms DB connection status
+      dbStatus: "Connected to Supabase", 
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    // If the database connection fails, report an error (but the server itself is running).
     res.status(500).json({
       message: "Drummer Manager API is running, but database connection failed.",
       status: "ERROR",
@@ -54,9 +53,43 @@ app.get('/', async (req: Request, res: Response) => {
 });
 
 
+// --- Daily Scheduler (21:00 UTC Clock Tick) ---
+/**
+ * Executes daily maintenance tasks: Challenge archival and user day counter updates.
+ * Runs every day at 21:00 UTC, aligning with daily game resets.
+ */
+cron.schedule('0 21 * * *', async () => {
+    
+    console.log('[Scheduler] Running Daily Archival and User Tick (21:00 UTC).');
+    
+    try {
+        // 1. Get the current global day counter (Needed for the tick logic)
+        const currentStreamDay = await getCurrentStreamDay();
+
+        // 2. Run the Challenge Archival Clock
+        await archiveExpiredChallenges(); 
+        
+        // 3. Run the Daily User Tick (Updates active day counters)
+        await processDailyUserTick(currentStreamDay);
+        
+        // 4. Increment the global stream day counter to advance the clock for tomorrow's tick.
+        // This is necessary to ensure the clock advances even if no stream event occurs that day.
+        await incrementGlobalDayStat(); 
+        
+        console.log(`[Scheduler] Daily Tick Complete. Global Day advanced.`);
+
+    } catch (error) {
+        console.error('[Scheduler Error] Daily Tick failed:', error);
+    }
+
+}, {
+    timezone: "UTC"
+});
+
+
 // --- Start the server Function ---
 /**
- * Executes state initialization before starting the HTTP listener.
+ * Executes state initialization and starts the HTTP listener.
  */
 async function startServer() {
   // 🚨 State Initialization: Must run and await before the server listens for requests.
