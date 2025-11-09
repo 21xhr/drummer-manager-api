@@ -17,9 +17,9 @@ const DISRUPT_COST = 2100; // Fixed cost for Disrupt
 /**
  * Calculates the next 21:00 UTC time that is in the future.
  * If 21:00 UTC today has passed, it returns 21:00 UTC tomorrow.
- * @returns Date object representing the next 21:00 UTC reset time.
+ * @returns {string} The next 21:00 UTC reset time as a standardized ISO 8601 string.
  */
-export function getNextDailyResetTime(): Date {
+export function getNextDailyResetTime(): string {
     const now = new Date();
     
     // 1. Start with today's date and set the time to 21:00:00.000 UTC
@@ -31,7 +31,7 @@ export function getNextDailyResetTime(): Date {
         nextReset.setUTCDate(nextReset.getUTCDate() + 1);
     }
     
-    return nextReset;
+    return nextReset.toISOString(); // ⭐ CRITICAL: Convert to an unambiguous ISO string for storage/consistency.
 }
 
 /**
@@ -398,6 +398,8 @@ export async function processChallengeSubmission(
         if (!user) { throw new Error("User not found during submission process."); }
         
         // --- CONDITIONAL RESET LOGIC ---
+        // currentResetTime will now be a string (or Date object if the DB field is native type,
+        // but for safety, we treat it as the value we need to compare)
         let currentResetTime = user.dailyChallengeResetAt;
         let N = user.dailySubmissionCount; // <-- Use the atomic counter
         const now = new Date();
