@@ -3,6 +3,7 @@ import { Router } from 'express';
 import * as challengeService from '../services/challengeService'; 
 import { findOrCreateUser } from '../services/userService'; 
 import logger from '../logger'; // Winston Logger
+import { RefundOption } from '../services/challengeService';
 
 const router = Router();
 
@@ -335,34 +336,68 @@ router.get('/challenges/active', async (req, res) => {
 // REMOVE CHALLENGE
 // -----------------------------------------------------------
 router.post('/challenges/remove', authenticateUser, async (req: any, res) => {
-    const { challengeId } = req.body;
+    const { challengeId, option } = req.body;
     const authorUserId = req.userId; 
+
+    // ⭐ NEW: Map user input (A/B/C/D) to the internal RefundOption string
+    const OPTION_MAP: { [key: string]: RefundOption } = {
+        'A': 'community_forfeit',
+        'B': 'pusher_refund',
+        'C': 'author_and_chest',
+        'D': 'author_and_pushers',
+    };
+    const userOption = option ? option.toUpperCase() : null; // Normalize input
+    const internalOption = userOption ? OPTION_MAP[userOption] : undefined;
 
     if (challengeId === undefined || isNaN(parseInt(challengeId))) {
         return res.status(400).json({ message: 'Missing or invalid challengeId parameter.' });
     }
 
+    // ⭐ NEW: Input validation against the keys (A, B, C, D)
+    if (userOption && !OPTION_MAP[userOption]) {
+         return res.status(400).json({ message: `Invalid refund option provided. Must be 'A' (Chest), 'B' (Pushers), 'C' (Author + Chest), or 'D' (Author + Pushers).` });
+    }
+    
     try {
-        const result = await challengeService.processRemove(authorUserId, parseInt(challengeId));
+        const result = await challengeService.processRemove(authorUserId, parseInt(challengeId), internalOption);
         
+        // Response Message Customization
+        let sinkMessage = '';
+        const totalPusherRefunds = result.toExternalPushers + result.toCommunityChest;
+
+        if (result.toAuthor > 0) {
+            // Options C or D (Author reclaims their share)
+            const secondarySink = result.toExternalPushers > 0 ? 'Pushers' : 'Community Chest';
+            sinkMessage = `You reclaimed your ${result.toAuthor} NUMBERS. The remaining ${totalPusherRefunds} NUMBERS were directed to the ${secondarySink}.`;
+        } else {
+            // Options A or B (Author did not reclaim share)
+            if (result.toCommunityChest > 0) {
+                 sinkMessage = `All ${result.totalRefundsAmount} NUMBERS were directed to the Community Chest.`;
+            } else {
+                 sinkMessage = `All ${result.totalRefundsAmount} NUMBERS were directed back to the contributing Pushers (${result.refundsProcessed} successful).`;
+            }
+        }
+
         // AUDIT LOG (Success)
-        logger.info(`REMOVE Success: #${challengeId} removed by User ${authorUserId}. Refunds: ${result.totalRefundsAmount}`, {
+        logger.info(`REMOVE Success: #${challengeId} removed by User ${authorUserId}. Funds sink: ${result.fundsSink}`, {
             challengeId: challengeId,
             authorUserId: authorUserId,
             totalRefundsAmount: result.totalRefundsAmount,
             refundsProcessed: result.refundsProcessed,
+            fundsSink: result.fundsSink, 
             platformId: req.platformId,
             action: 'challenge_removed'
         });
 
         // RETURN RESPONSE
         return res.status(200).json({
-            message: `Challenge #${challengeId} removed successfully. ${result.refundsProcessed} pushers refunded a total of ${result.totalRefundsAmount} NUMBERS.`,
+            message: `Challenge #${challengeId} removed successfully. ${sinkMessage}`,
             action: 'challenge_removed',
             data: result.updatedChallenge,
             refundDetails: {
                 totalRefunds: result.totalRefundsAmount,
-                count: result.refundsProcessed
+                count: result.refundsProcessed,
+                sink: result.fundsSink 
             }
         });
     } catch (error) {

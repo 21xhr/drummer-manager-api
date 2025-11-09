@@ -31,7 +31,10 @@ model User {
   activeStreamDaysCount                    Int         @default(0) @map("active_stream_days_count")
   totalNumbersSpentGameWide                Int         @default(0) @map("total_numbers_spent_game_wide")
   totalNumbersReturnedFromRemovalsGameWide Int         @default(0) @map("total_numbers_returned_from_removals_game_wide")
-  
+  totalCausedByRemovals                    BigInt      @default(0) @map("total_caused_by_removals") // Tracks total NUMBERS the user has caused to be forfeited/refunded from removals
+  totalToCommunityChest                    BigInt      @default(0) @map("total_to_community_chest") // Tracks total liability directed to the Community Chest by this user's removals.
+  totalToPushers                           BigInt      @default(0) @map("total_to_pushers") // Tracks total liability directed to Pushers by this user's removals.
+
   // Game Metrics (User)
   dailyChallengeResetAt                    DateTime    @map("daily_challenge_reset_at")
   dailySubmissionCount                     Int         @default(0) @map("daily_submission_count")
