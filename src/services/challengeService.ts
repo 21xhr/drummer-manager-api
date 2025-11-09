@@ -137,6 +137,8 @@ export async function processPushConfirm(
   quoteId?: string 
 ): Promise<{ updatedChallenge: Challenge; transactionCost: number; quantity: number }> {
     const currentStreamSessionId = getCurrentStreamSessionId(); 
+    // ⭐ FIX: Define transactionTimestamp once
+    const transactionTimestamp = new Date().toISOString();
 
   return prisma.$transaction(async (tx) => {
     const EXPIRATION_TIMEOUT_MS = 30 * 1000;
@@ -242,10 +244,10 @@ export async function processPushConfirm(
         data: {
             lastKnownBalance: { decrement: pushTransactionCost },
             totalNumbersSpent: { increment: pushTransactionCost },
-            lastActivityTimestamp: new Date().toISOString(),
+            lastActivityTimestamp: transactionTimestamp, // ⭐ Use constant
             totalPushesExecuted: { increment: quote.quantity },
             ...(currentStreamSessionId && {
-                lastLiveActivityTimestamp: new Date().toISOString(),
+                lastLiveActivityTimestamp: transactionTimestamp, // ⭐ Use constant
             }),
         },
     });
@@ -288,6 +290,9 @@ export async function processPushConfirm(
  */
 export async function processDigout(userId: number, challengeId: number) {
     const currentStreamSessionId = getCurrentStreamSessionId();
+    // ⭐ FIX: Define transactionTimestamp once
+    const transactionTimestamp = new Date().toISOString();
+
     return prisma.$transaction(async (tx) => {
         // 1. Fetch Challenge and User for validation
         const challenge = await tx.challenge.findUnique({
@@ -330,9 +335,9 @@ export async function processDigout(userId: number, challengeId: number) {
                 lastKnownBalance: { decrement: digoutTransactionCost },
                 totalNumbersSpent: { increment: digoutTransactionCost },
                 totalDigoutsExecuted: { increment: 1 },
-                lastActivityTimestamp: new Date().toISOString(),
+                lastActivityTimestamp: transactionTimestamp, // ⭐ Use constant
                 ...(currentStreamSessionId && {
-                    lastLiveActivityTimestamp: new Date().toISOString(),
+                    lastLiveActivityTimestamp: transactionTimestamp, // ⭐ Use constant
                 }),
             },
         });
@@ -363,7 +368,7 @@ export async function processDigout(userId: number, challengeId: number) {
             data: {
                 status: 'Active',
                 streamDaysSinceActivation: 0,
-                timestampLastActivation: new Date().toISOString(),
+                timestampLastActivation: transactionTimestamp, // ⭐ Use constant
                 hasBeenDiggedOut: true,
             },
         });
@@ -637,11 +642,13 @@ export async function processRemove(authorUserId: number, challengeId: number) {
         }
         
         // 3c. Update Author's Per-User Stats (User who ran the !remove command)
+        const transactionTimestamp = new Date().toISOString(); // Define here since we are not reusing it much elsewhere
+
         await tx.user.update({
             where: { id: authorUserId },
             data: {
                 totalRemovalsExecuted: { increment: 1 },
-                lastActivityTimestamp: new Date().toISOString(),
+                lastActivityTimestamp: transactionTimestamp, // ⭐ Use constant
             }
         });
 
@@ -703,8 +710,9 @@ export async function processRemove(authorUserId: number, challengeId: number) {
  * Actual disrupt logic will be implemented post-launch.
  */
 export async function processDisrupt(userId: number): Promise<string> {
-    
     const currentStreamSessionId = getCurrentStreamSessionId();
+    // ⭐ FIX: Define transactionTimestamp once
+    const transactionTimestamp = new Date().toISOString();
     
     return prisma.$transaction(async (tx) => {
         // 1. Fetch User and check balance
@@ -729,9 +737,9 @@ export async function processDisrupt(userId: number): Promise<string> {
                 lastKnownBalance: { decrement: DISRUPT_COST },
                 totalNumbersSpent: { increment: DISRUPT_COST },
                 totalDisruptsExecuted: { increment: 1 },
-                lastActivityTimestamp: new Date().toISOString(),
+                lastActivityTimestamp: transactionTimestamp, // ⭐ Use constant
                 ...(currentStreamSessionId && {
-                    lastLiveActivityTimestamp: new Date().toISOString(),
+                    lastLiveActivityTimestamp: transactionTimestamp, // ⭐ Use constant
                 }),
             },
         });

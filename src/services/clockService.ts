@@ -33,22 +33,30 @@ export async function processDailyUserTick(currentStreamDay: number): Promise<vo
         const lastActivity = user.lastActivityTimestamp;
         const lastLiveActivity = user.lastLiveActivityTimestamp;
         
-        // Define the "today" period as the last 24 hours relative to the tick time.
-        // This is necessary because we don't know the exact time the activity occurred, 
-        // only that the timestamp should be newer than 24 hours ago.
-        const cutoffTime = new Date();
-        cutoffTime.setUTCDate(cutoffTime.getUTCDate() - 1); 
+        // ⭐ IMPROVEMENT: Calculate the cutoff time based purely on UTC epoch milliseconds.
+        // The current time is the time the CRON job executes.
+        // This is the most direct and unambiguous way to calculate a rolling 24-hour window, 
+        // as it completely bypasses the need to manipulate date parts 
+        // and relies only on the universal millisecond epoch count (Date.now()):
+        const nowMs = Date.now();
+        // 24 hours in milliseconds
+        const oneDayMs = 24 * 60 * 60 * 1000;
+        
+        // The cutoff is 24 hours before the current execution time.
+        const cutoffTimeMs = nowMs - oneDayMs; 
+        
+        // ----------------------------------------------------------------------------------
         
         let updateData: any = {
             lastSeenStreamDay: currentStreamDay // Mark user as processed for today
         };
         
         // Activity check: Was the user active (spent numbers) within the last 24 hours?
-        const isActiveToday = lastActivity && lastActivity > cutoffTime;
+        const isActiveToday = lastActivity && lastActivity.getTime() > cutoffTimeMs;
         
         // Live check: Was the user active LIVE within the last 24 hours?
         // Note: isActiveLiveToday implies isActiveToday is also true, as live activity is also general activity.
-        const isActiveLiveToday = lastLiveActivity && lastLiveActivity > cutoffTime; 
+        const isActiveLiveToday = lastLiveActivity && lastLiveActivity.getTime() > cutoffTimeMs; 
 
         if (isActiveToday) {
             if (isActiveLiveToday) {
