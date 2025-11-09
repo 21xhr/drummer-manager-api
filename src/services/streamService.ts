@@ -97,19 +97,22 @@ export async function processStreamLiveEvent(streamStartTime: Date): Promise<voi
             },
         });
 
-        for (const challenge of activeChallenges) {
-            // CRITICAL Archival Clock Logic: Check if this Challenge's counter has already been advanced
-            // on the current UTC CALENDAR DAY (YYYY-MM-DD UTC). This ensures the logic is consistent
-            // with other UTC-based calculations like daily resets.
-            const lastActivationDateUTC = challenge.timestampLastActivation.toISOString().substring(0, 10);
-            const streamEventDateUTC = streamStartTime.toISOString().substring(0, 10);
+        const streamEventDateUTC = streamStartTime.toISOString().substring(0, 10);
 
-            if (streamEventDateUTC !== lastActivationDateUTC) {
+        for (const challenge of activeChallenges) {
+            // ⭐ FIX: Use the new dedicated field for the daily check.
+            const lastTickDateUTC = challenge.lastStreamTickAt.toISOString().substring(0, 10);
+
+            // CRITICAL Archival Clock Logic: Check if this Challenge's counter has already been advanced
+            // on the current UTC CALENDAR DAY (YYYY-MM-DD UTC). 
+            if (streamEventDateUTC !== lastTickDateUTC) {
                 await tx.challenge.update({
                     where: { challengeId: challenge.challengeId },
                     data: {
                         streamDaysSinceActivation: { increment: 1 }, 
-                        timestampLastActivation: streamStartTime,
+                        // ✅ CORRECT: Update the dedicated tick field (Event B)
+                        lastStreamTickAt: streamStartTime,
+                        // 🟢 NOTE: timestampLastActivation (Event A) is now pristine and preserved!
                     },
                 });
             }
@@ -187,7 +190,7 @@ export async function processStreamOfflineEvent(streamEndTime: Date): Promise<vo
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
-//
+// RETURN THE ID OF THE ACTIVE STREAM SESSION
 ////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Returns the ID of the currently active stream session from the in-memory state.
