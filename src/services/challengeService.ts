@@ -152,25 +152,24 @@ export async function processPushConfirm(
         quote = await tx.tempQuote.findUnique({ where: { quoteId: quoteId } });
 
     } else {
-        // Case B: Efficiently find the most recent, ACTIVE quote using a DB filter.
-        // prevents fetching large amounts of history and satisfies the backlog item.
-        const activeQuotes = await tx.tempQuote.findMany({
+        // Case B: Efficiently find the single most recent, ACTIVE quote.
+        // prevents fetching large amounts of history.
+        const latestQuote = await tx.tempQuote.findFirst({
             where: { 
                 userId: userId,
+                // filter by expiration to avoid confirming a truly stale quote
                 timestampCreated: { gte: expirationCutoff }, 
                 isLocked: false, 
             },
             orderBy: { timestampCreated: 'desc' }, 
-            take: 2, 
         });
         
-        if (activeQuotes.length === 1) {
-            quote = activeQuotes[0];
-        } else if (activeQuotes.length === 0) {
+        if (!latestQuote) {
             throw new Error('No active quote found. Please run !push [ID] [N] again.');
-        } else {
-            throw new Error('Multiple active quotes found. Please confirm using the full command: !push confirm [UUID].');
-        }
+        } 
+        
+        // Use the single latest quote found. Older quotes are ignored by default.
+        quote = latestQuote;
     }
 
     // --- 2. CORE QUOTE VALIDATION (Standardized Checks) ---
@@ -512,7 +511,7 @@ export async function archiveExpiredChallenges(): Promise<number> {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
-// FINALIZE EECUTING "InProgress" CHALLENGE
+// FINALIZE EXECUTING "InProgress" CHALLENGE
 ////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Finds the currently executing challenge (Status: 'InProgress') and sets its status to 'Completed'
