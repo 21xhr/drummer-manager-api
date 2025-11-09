@@ -29,12 +29,12 @@ model User {
   lastSeenStreamDay                        Int         @default(0) @map("last_seen_stream_day")
   activeOfflineDaysCount                   Int         @default(0) @map("active_offline_days_count")
   activeStreamDaysCount                    Int         @default(0) @map("active_stream_days_count")
-  dailyChallengeResetAt                    DateTime    @map("daily_challenge_reset_at")
   totalNumbersSpentGameWide                Int         @default(0) @map("total_numbers_spent_game_wide")
   totalNumbersReturnedFromRemovalsGameWide Int         @default(0) @map("total_numbers_returned_from_removals_game_wide")
   
   // Game Metrics (User)
-  dailySubmissionCount                     Int       @default(0) @map("daily_submission_count")
+  dailyChallengeResetAt                    DateTime    @map("daily_challenge_reset_at")
+  dailySubmissionCount                     Int         @default(0) @map("daily_submission_count")
   totalChallengesSubmitted                 Int         @default(0) @map("total_challenges_submitted")
   totalRemovalsExecuted                    Int         @default(0) @map("total_removals_executed")
   totalReceivedFromRemovals                Int         @default(0) @map("total_received_from_removals")
@@ -78,15 +78,20 @@ model Challenge {
   numbersRaised             Int         @default(0) @map("numbers_raised")
   totalNumbersSpent         Int         @default(0) @map("total_numbers_spent")
   totalPush                 Int         @default(0) @map("total_push")
-  streamDaysSinceActivation Int         @default(0) @map("stream_days_since_activation")
   timestampSubmitted        DateTime    @map("timestamp_submitted")
   timestampLastActivation   DateTime    @map("timestamp_last_activation")
   timestampCompleted        DateTime?   @map("timestamp_completed")
   uniquePusher              Int         @default(0) @map("unique_pusher")
   pushBaseCost              Int         @default(21) @map("push_base_cost")
   proposer                  User        @relation("Proposer", fields: [proposerUserId], references: [id])
+  timestampLastStreamDayTicked   DateTime    @default(now()) // Tracks the last time streamDaysSinceActivation was incremented. To guard against double-ticking
+  
+  // Lifecycle fields
+  streamDaysSinceActivation Int         @default(0) @map("stream_days_since_activation")
+  
   pushes                    Push[]
   tempQuotes                TempQuote[]
+
 
   @@map("challenges")
 }

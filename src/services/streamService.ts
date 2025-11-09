@@ -101,18 +101,16 @@ export async function processStreamLiveEvent(streamStartTime: Date): Promise<voi
 
         for (const challenge of activeChallenges) {
             // ⭐ FIX: Use the new dedicated field for the daily check.
-            const lastTickDateUTC = challenge.lastStreamTickAt.toISOString().substring(0, 10);
+            const lastTickDateUTC = challenge.timestampLastStreamDayTicked.toISOString().substring(0, 10);
 
-            // CRITICAL Archival Clock Logic: Check if this Challenge's counter has already been advanced
+            // CRITICAL Archival Clock Logic: Check if this Challenge's counter has already been incremented
             // on the current UTC CALENDAR DAY (YYYY-MM-DD UTC). 
             if (streamEventDateUTC !== lastTickDateUTC) {
                 await tx.challenge.update({
                     where: { challengeId: challenge.challengeId },
                     data: {
                         streamDaysSinceActivation: { increment: 1 }, 
-                        // ✅ CORRECT: Update the dedicated tick field (Event B)
-                        lastStreamTickAt: streamStartTime,
-                        // 🟢 NOTE: timestampLastActivation (Event A) is now pristine and preserved!
+                        timestampLastStreamDayTicked: streamStartTime,
                     },
                 });
             }
