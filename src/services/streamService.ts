@@ -1,7 +1,7 @@
 // src/services/streamService.ts
 // This new service contains the core logic for advancing the 21-day clock on all active challenges, ensuring it only happens once per calendar day, regardless of how many times you stream. It also contains the official source of truth for the isStreamLive() check.
 import prisma from '../prisma';
-import { archiveExpiredChallenges, finalizeInProgressChallenge} from './challengeService'; // <-- NEW IMPORT
+import { archiveExpiredChallenges, finalizeInProgressChallenge } from './challengeService';
 
 // Use string literals for better state management and scaling (e.g., 'BREAK', 'PRE-STREAM' later)
 type StreamStatus = 'OFFLINE' | 'LIVE';
