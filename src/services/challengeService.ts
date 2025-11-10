@@ -553,6 +553,72 @@ export async function finalizeInProgressChallenge(): Promise<Challenge | null> {
     return completedChallenge;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////////////
+// PROCESS EXECUTE CHALLENGE
+////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * Sets a specific challenge to 'InProgress' and 'isExecuting: true'.
+ * Crucially, it finds and finalizes any previously executing challenge.
+ * @param challengeId - The ID of the challenge to launch.
+ * @returns The newly executing Challenge record.
+ * * NOTE ON FUTURE LOGIC: When session tracking is implemented, the finalization logic 
+ * in Step 1 will need to be updated to check total_sessions vs. current_session_count 
+ * before deciding if the status should be 'Completed' or just remain 'InProgress' 
+ * with isExecuting set to false.
+ */
+export async function processExecuteChallenge(challengeId: number): Promise<Challenge> {
+    
+    // Use a transaction to ensure atomic execution: one challenge starts, the other finishes.
+    return prisma.$transaction(async (tx) => {
+
+        // 1. Finalize the previously executing challenge (if any)
+        const previousChallenge = await tx.challenge.findFirst({
+            where: { isExecuting: true },
+        });
+
+        if (previousChallenge) {
+            // CURRENT LOGIC: Always finalize the previous one as 'Completed'
+            await tx.challenge.update({
+                where: { challengeId: previousChallenge.challengeId },
+                data: {
+                    status: 'Completed',
+                    isExecuting: false,
+                    timestampCompleted: new Date().toISOString(),
+                }
+            });
+            console.log(`[ChallengeService] Previous challenge #${previousChallenge.challengeId} finalized as 'Completed' before launch.`);
+        }
+
+        // 2. Validate the challenge to be executed
+        const challenge = await tx.challenge.findUnique({
+            where: { challengeId: challengeId },
+        });
+
+        if (!challenge) {
+            throw new Error(`Challenge ID ${challengeId} not found.`);
+        }
+        
+        // Only Active or Removed (after Digout) challenges can be Executed.
+        if (challenge.status !== 'Active') {
+            throw new Error(`Challenge #${challengeId} cannot be executed. Status must be 'Active'`);
+        }
+
+        // 3. Execute the new challenge
+        const executingChallenge = await tx.challenge.update({
+            where: { challengeId: challengeId },
+            data: {
+                status: 'InProgress',
+                isExecuting: true,
+                // The stream day tick logic will handle tracking the time spent on it.
+            }
+        });
+
+        return executingChallenge;
+    });
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////////////
 // FETCH ACTIVE CHALLENGES (No changes needed)
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -565,6 +631,7 @@ export async function getActiveChallenges() {
         orderBy: { totalNumbersSpent: 'desc' }, // Sort by most pushed, for example
     });
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // PROCESS CHALLENGES REMOVAL
@@ -717,7 +784,7 @@ export async function processRemove(
             }
         });
 
-        // 5. Update Challenge Status (CRITICAL STATE CHANGE) (UNCHANGED)
+        // 5. Update Challenge Status (CRITICAL STATE CHANGE)
         const updatedChallenge = await tx.challenge.update({
             where: { challengeId: challengeId },
             data: {                            
