@@ -5,7 +5,6 @@
 // preventing the application from crashing on unhandled async exceptions.
 import 'express-async-errors'; 
 import express, { Request, Response } from 'express';
-import * as cron from 'node-cron'; // <-- NEW: Import the scheduling library
 
 import prisma from './prisma'; 
 import userRoutes from './routes/userRoutes'; 
@@ -50,40 +49,6 @@ app.get('/', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   }
-});
-
-
-// --- Daily Scheduler (21:00 UTC Clock Tick) ---
-/**
- * Executes daily maintenance tasks: Challenge archival and user day counter updates.
- * Runs every day at 21:00 UTC, aligning with daily game resets.
- */
-cron.schedule('0 21 * * *', async () => {
-    
-    console.log('[Scheduler] Running Daily Archival and User Tick (21:00 UTC).');
-    
-    try {
-        // 1. Get the current global day counter (Needed for the tick logic)
-        const currentStreamDay = await getCurrentStreamDay();
-
-        // 2. Run the Challenge Archival Clock
-        await archiveExpiredChallenges(); 
-        
-        // 3. Run the Daily User Tick (Updates active day counters)
-        await processDailyUserTick(currentStreamDay);
-        
-        // 4. Increment the global stream day counter to advance the clock for tomorrow's tick.
-        // This is necessary to ensure the clock advances even if no stream event occurs that day.
-        await incrementGlobalDayStat(); 
-        
-        console.log(`[Scheduler] Daily Tick Complete. Global Day advanced.`);
-
-    } catch (error) {
-        console.error('[Scheduler Error] Daily Tick failed:', error);
-    }
-
-}, {
-    timezone: "UTC"
 });
 
 
