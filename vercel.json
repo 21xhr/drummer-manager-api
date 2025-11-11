@@ -1,4 +1,11 @@
 {
+  "functions": {
+    "src/index.ts": {
+      // ⚠️ CRITICAL: Exclude 'uuid' from the Vercel bundler
+      // This tells the Node.js runtime to load it directly, bypassing the module bug.
+      "externalDependencies": ["uuid"]
+    }
+  },
   "crons": [
     {
       "path": "/api/v1/clock/run-daily-maintenance",
