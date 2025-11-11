@@ -1,13 +1,4 @@
 {
-  "builds": [
-    {
-      "src": "src/**/*.ts", 
-      "use": "@vercel/node@3.0.0", 
-      "config": {
-        "externalDependencies": ["uuid"] 
-      }
-    }
-  ],
   "crons": [
     {
       "path": "/api/v1/clock/run-daily-maintenance",
