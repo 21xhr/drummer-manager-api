@@ -66,17 +66,21 @@ const authenticateUser = async (req: any, res: any, next: any) => {
 // 1. CHALLENGE SUBMISSION
 // -----------------------------------------------------------
 router.post('/submit', authenticateUser, async (req: any, res) => {
-    const { challengeText } = req.body;
+    const { challengeText, totalSessions, durationType } = req.body;
     const userId = req.userId;
 
-    if (!challengeText) {
-        return res.status(400).json({ error: "Missing challengeText." });
+   if (!challengeText || !totalSessions || !durationType) {
+        return res.status(400).json({ 
+            error: "Missing required fields: challengeText, totalSessions, or durationType." 
+        });
     }
 
     try {
         const { newChallenge, cost } = await challengeService.processChallengeSubmission(
             userId, 
-            challengeText
+            challengeText,
+            totalSessions,
+            durationType
         );
         
         // AUDIT LOG (Success)

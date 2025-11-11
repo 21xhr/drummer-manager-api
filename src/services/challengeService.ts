@@ -61,6 +61,7 @@ function applyLiveDiscount(cost: number): number {
   return cost;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////////////
 // PROCESS PUSH QUOTE
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -69,13 +70,16 @@ export async function processPushQuote(
   challengeId: number,
   quantity: number
 ): Promise<{ quoteId: string; quotedCost: number; challenge: Challenge }> {
+  
   // 1. Fetch Challenge Details for validation and base cost
   const challenge = await prisma.challenge.findUnique({
     where: { challengeId: challengeId },
   });
 
   if (!challenge || challenge.status !== 'Active') {
-    throw new Error(`Challenge ID ${challengeId} not found or is not 'Active'.`);
+    // This check strictly enforces the rule: Pushes only promote Active Challenges.
+    // This implicitly blocks challenges that are InProgress (regardless of session count), Completed, etc.
+    throw new Error(`Challenge ID ${challengeId} not found or is not 'Active'. Pushes are only allowed on 'Active' challenges.`);
   }
   
   // 2. Determine the user's current push count for THIS challenge.
@@ -95,7 +99,7 @@ export async function processPushQuote(
   }
 
   // 4. Apply 21% discount if the stream is currently live.
-  quotedCost = applyLiveDiscount(quotedCost);
+    quotedCost = applyLiveDiscount(quotedCost); // <-- Keep this if function is implemented!
 
   // --- 4.5. CRITICAL: BALANCE PRE-CHECK ---
   const user = await prisma.user.findUnique({
@@ -113,7 +117,8 @@ export async function processPushQuote(
   }
 
   // --- 5. Save the generated quote to the temporary quote table.
-  const quoteId = uuidv4();
+  // Assuming uuidv4 is imported
+  const quoteId = uuidv4(); 
 
   await prisma.tempQuote.create({
     data: {
@@ -129,6 +134,7 @@ export async function processPushQuote(
 
   return { quoteId, quotedCost, challenge };
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // PROCESS PUSH CONFIRM
@@ -387,11 +393,22 @@ export async function processDigout(userId: number, challengeId: number) {
 ////////////////////////////////////////////////////////////////////////////////////////
 export async function processChallengeSubmission(
   userId: number,
-  challengeText: string
+  challengeText: string,
+  totalSessions: number, 
+  durationType: 'ONE_OFF' | 'RECURRING'
 ): Promise<{ newChallenge: Challenge, cost: number }> {
     const currentStreamSessionId = getCurrentStreamSessionId(); 
     const transactionTimestamp = new Date().toISOString(); 
-    // fixes the quadratic bug, guarantees a single, UTC-consistent time for the entire atomic block:
+
+    // ⭐ VALIDATION: Ensure required values are provided and valid
+    if (!durationType || !['ONE_OFF', 'RECURRING'].includes(durationType)) {
+        throw new Error("Invalid or missing durationType.");
+    }
+    if (totalSessions < 1) {
+        throw new Error("totalSessions must be 1 or greater.");
+    }
+    
+    // Note: The webform should handle the ONE_OFF session limit (e.g., max 21) before sending.
 
     return prisma.$transaction(async (tx) => {
         // 1. Fetch User data including counter and reset time
@@ -424,14 +441,11 @@ export async function processChallengeSubmission(
             currentResetTime = updatedUser.dailyChallengeResetAt;
             N = updatedUser.dailySubmissionCount; // N is now 0
         }
-        
-        // 2. Count Challenges Submitted since the latest Reset Time.
-        // **ELIMINATED THE SLOW tx.challenge.count QUERY.**
 
-        // 3. Calculate Cost: N is the count *before* this submission.
+        // 2. Calculate Cost: N is the count *before* this submission.
         const submissionCost = calculateSubmissionCost(N); 
 
-        // 3.5. CRITICAL: BALANCE CHECK (using the user object fetched above)
+        // 3. CRITICAL: BALANCE CHECK (using the user object fetched above)
         if (user.lastKnownBalance < submissionCost) {
             throw new Error(`Insufficient balance. Challenge submission costs ${submissionCost} NUMBERS.`);
         }
@@ -444,10 +458,12 @@ export async function processChallengeSubmission(
                 challengeText: challengeText,
                 proposerUserId: userId,
                 pushBaseCost: 21,
-                status: 'Active',
+                status: 'Active', // Always starts Active
                 streamDaysSinceActivation: 0,
                 category: "General", 
-                durationType: "ONE_OFF", 
+                durationType: durationType, 
+                totalSessions: totalSessions, // Use required field
+                currentSessionCount: 0, // Starts at 0
                 timestampSubmitted: transactionTimestamp, 
                 timestampLastActivation: transactionTimestamp,
             }
@@ -511,44 +527,51 @@ export async function archiveExpiredChallenges(): Promise<number> {
     return result;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////////////
 // FINALIZE EXECUTING "InProgress" CHALLENGE
 ////////////////////////////////////////////////////////////////////////////////////////
 /**
- * Finds the currently executing challenge (Status: 'InProgress') and sets its status to 'Completed'
+ * Finds the currently executing challenge (is_executing: true) and...
  * when the stream goes offline.
  * @returns The completed Challenge record, or null if none was executing.
  */
 export async function finalizeInProgressChallenge(): Promise<Challenge | null> {
     
-    // This runs outside a transaction, using the standard Prisma client, similar to archiveExpiredChallenges.
-    
-    // 1. Find the currently executing challenge
+    // ... (find executingChallenge)
     const executingChallenge = await prisma.challenge.findFirst({
-        where: { 
-            status: 'InProgress', 
-            isExecuting: true 
-        },
+        where: { status: 'InProgress', isExecuting: true },
     });
 
     if (!executingChallenge) {
         console.log("[ChallengeService] No challenge found in 'InProgress' status to finalize.");
         return null;
     }
-
-    // 2. Update its status to 'Completed', set isExecuting to false, and record the completion time.
-    const completedChallenge = await prisma.challenge.update({
-        where: { challengeId: executingChallenge.challengeId },
-        data: {
-            status: 'Completed',
-            isExecuting: false,
-            timestampCompleted: new Date().toISOString(), 
-        }
-    });
-
-    console.log(`[ChallengeService] Challenge #${completedChallenge.challengeId} finalized as 'Completed'.`);
     
-    // Future reward/metric logic would go here.
+    const transactionTimestamp = new Date().toISOString();
+
+    // ⭐ LOGIC: Session OUT - Increment count, THEN check for completion
+    const nextSessionCount = executingChallenge.currentSessionCount + 1;
+    const isCompleted = nextSessionCount >= executingChallenge.totalSessions;
+    
+    const updateData: any = { 
+        isExecuting: false,
+        currentSessionCount: nextSessionCount
+    };
+
+    if (isCompleted) {
+        updateData.status = 'Completed';
+        updateData.timestampCompleted = transactionTimestamp;
+    } 
+    // Else: Status remains 'InProgress'.
+
+    let completedChallenge = await prisma.challenge.update({
+        where: { challengeId: executingChallenge.challengeId },
+        data: updateData
+    });
+    
+    const statusText = isCompleted ? 'Completed' : `finished session ${nextSessionCount} of ${completedChallenge.totalSessions}. Status remains InProgress.`;
+    console.log(`[ChallengeService] Challenge #${completedChallenge.challengeId} finalized as ${statusText}.`);
 
     return completedChallenge;
 }
@@ -557,37 +580,41 @@ export async function finalizeInProgressChallenge(): Promise<Challenge | null> {
 ////////////////////////////////////////////////////////////////////////////////////////
 // PROCESS EXECUTE CHALLENGE
 ////////////////////////////////////////////////////////////////////////////////////////
-/**
- * Sets a specific challenge to 'InProgress' and 'isExecuting: true'.
- * Crucially, it finds and finalizes any previously executing challenge.
- * @param challengeId - The ID of the challenge to launch.
- * @returns The newly executing Challenge record.
- * * NOTE ON FUTURE LOGIC: When session tracking is implemented, the finalization logic 
- * in Step 1 will need to be updated to check total_sessions vs. current_session_count 
- * before deciding if the status should be 'Completed' or just remain 'InProgress' 
- * with isExecuting set to false.
- */
 export async function processExecuteChallenge(challengeId: number): Promise<Challenge> {
     
-    // Use a transaction to ensure atomic execution: one challenge starts, the other finishes.
     return prisma.$transaction(async (tx) => {
+        const transactionTimestamp = new Date().toISOString();
 
         // 1. Finalize the previously executing challenge (if any)
-        const previousChallenge = await tx.challenge.findFirst({
-            where: { isExecuting: true },
-        });
+        const previousChallenge = await tx.challenge.findFirst({ where: { isExecuting: true } });
 
         if (previousChallenge) {
-            // CURRENT LOGIC: Always finalize the previous one as 'Completed'
+            // ⭐ LOGIC: Session OUT - Increment count, THEN check for completion
+            const nextSessionCount = previousChallenge.currentSessionCount + 1;
+            const isCompleted = nextSessionCount >= previousChallenge.totalSessions;
+            
+            const updateData: any = { 
+                isExecuting: false,
+                currentSessionCount: nextSessionCount
+            };
+
+            if (isCompleted) {
+                // Rule: Set status to 'Completed' if final session finishes
+                updateData.status = 'Completed';
+                updateData.timestampCompleted = transactionTimestamp;
+            } 
+            // Else: Status remains 'InProgress'.
+            
+            // NOTE ON ONE_OFF CONTIGUITY: Validation that the new session is on the same day for a ONE_OFF challenge 
+            // should be done by the calling route/service, but the clockService.ts function ensures the state update is correct.
+
             await tx.challenge.update({
                 where: { challengeId: previousChallenge.challengeId },
-                data: {
-                    status: 'Completed',
-                    isExecuting: false,
-                    timestampCompleted: new Date().toISOString(),
-                }
+                data: updateData
             });
-            console.log(`[ChallengeService] Previous challenge #${previousChallenge.challengeId} finalized as 'Completed' before launch.`);
+
+            const statusText = isCompleted ? 'Completed' : `finished session ${nextSessionCount} of ${previousChallenge.totalSessions}. Status remains InProgress.`;
+            console.log(`[ChallengeService] Previous challenge #${previousChallenge.challengeId} ${statusText} before launch.`);
         }
 
         // 2. Validate the challenge to be executed
@@ -595,22 +622,23 @@ export async function processExecuteChallenge(challengeId: number): Promise<Chal
             where: { challengeId: challengeId },
         });
 
-        if (!challenge) {
-            throw new Error(`Challenge ID ${challengeId} not found.`);
-        }
+        if (!challenge) { throw new Error(`Challenge ID ${challengeId} not found.`); }
         
-        // Only Active or Removed (after Digout) challenges can be Executed.
-        if (challenge.status !== 'Active') {
-            throw new Error(`Challenge #${challengeId} cannot be executed. Status must be 'Active'`);
+        // Only Active (first session) or InProgress (resuming) challenges can be Executed.
+        if (challenge.status !== 'Active' && challenge.status !== 'InProgress') {
+            throw new Error(`Challenge #${challengeId} cannot be executed. Status must be 'Active' or 'InProgress'`);
         }
 
         // 3. Execute the new challenge
+        // Set status to 'InProgress' ONLY if it's coming from 'Active' (first session)
+        const newStatus = challenge.status === 'Active' ? 'InProgress' : challenge.status;
+
         const executingChallenge = await tx.challenge.update({
             where: { challengeId: challengeId },
             data: {
-                status: 'InProgress',
+                status: newStatus, 
                 isExecuting: true,
-                // The stream day tick logic will handle tracking the time spent on it.
+                sessionStartTimestamp: transactionTimestamp,
             }
         });
 

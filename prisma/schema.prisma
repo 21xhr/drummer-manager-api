@@ -92,6 +92,11 @@ model Challenge {
   // Lifecycle fields
   streamDaysSinceActivation Int         @default(0) @map("stream_days_since_activation")
   
+  // Session Fields
+  totalSessions             Int        @map("total_sessions") 
+  currentSessionCount       Int        @default(0) @map("current_session_count")
+  sessionStartTimestamp     DateTime?  @map("session_start_timestamp") // Tracks when the current 21-min session began
+
   pushes                    Push[]
   tempQuotes                TempQuote[]
 

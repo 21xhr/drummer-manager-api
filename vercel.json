@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/v1/clock/run-daily-maintenance",
+      "schedule": "0 21 * * *"
+    }
+  ]
+}

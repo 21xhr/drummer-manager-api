@@ -45,6 +45,7 @@ async function getOrCreateGlobalStreamStat(tx: any): Promise<{ statId: number, c
     };
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////////////
 // HANDLES THE STREAM LIVE WEBHOOK EVENT
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -132,6 +133,7 @@ export async function processStreamLiveEvent(streamStartTime: Date): Promise<voi
         console.log(`[StreamService] Stream set to LIVE. Session ID: ${currentStreamSessionId}`);
     });
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // HANDLES THE STREAM OFFLINE WEBHOOK EVENT
@@ -224,6 +226,7 @@ export async function initializeStreamState(): Promise<void> {
   }
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////////////
 // RETRIEVE CURRENT STREAM DAY
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -236,6 +239,7 @@ export async function getCurrentStreamDay(): Promise<number> {
     return streamStat ? streamStat.streamDaysSinceInception : 0; 
     //The expression is a ternary operator (a shorthand if-else statement) used to safely retrieve the global stream day count.
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // ADVANCE GLOBAL DAY CLOCK ONCE PER DAY

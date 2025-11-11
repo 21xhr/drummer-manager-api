@@ -10,14 +10,13 @@ import * as cron from 'node-cron'; // <-- NEW: Import the scheduling library
 import prisma from './prisma'; 
 import userRoutes from './routes/userRoutes'; 
 import streamRoutes from './routes/streamRoutes';
+import clockRoutes from './routes/clockRoutes';
 
-// --- NEW IMPORTS for Scheduling ---
+
 import { initializeStreamState, getCurrentStreamDay } from './services/streamService'; 
 import { archiveExpiredChallenges } from './services/challengeService';
 import { processDailyUserTick } from './services/clockService'; 
-// NOTE: We need a function to safely increment the global clock in streamService.
-// We'll define a placeholder function call for now. 
-// You must implement this function in src/services/streamService.ts later.
+
 import { incrementGlobalDayStat } from './services/streamService'; 
 
 
@@ -31,6 +30,7 @@ app.use(express.json());
 // --- Application Routers (API Endpoints) ---
 app.use('/api/v1/user', userRoutes); 
 app.use('/api/v1/stream', streamRoutes);
+app.use('/api/v1/clock', clockRoutes);
 
 // --- Basic Health Check Route ---
 app.get('/', async (req: Request, res: Response) => {

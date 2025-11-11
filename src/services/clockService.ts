@@ -1,19 +1,24 @@
 // src/services/clockService.ts
 
 import prisma from '../prisma';
+import { Challenge } from '@prisma/client';
+import { archiveExpiredChallenges } from './challengeService'; 
+
+// ------------------------------------------------------------------
+// 1. USER TICK LOGIC (Provided and Verified)
+// ------------------------------------------------------------------
 
 /**
  * Processes the daily tick for all users, updating their active day counters.
  * Should be called once daily at the 21:00 UTC boundary.
- * * @param currentStreamDay - The global stream day number to mark users as 'seen'.
+ * @param currentStreamDay - The global stream day number to mark users as 'seen'.
  */
 export async function processDailyUserTick(currentStreamDay: number): Promise<void> {
     
     // 1. Fetch all users who haven't been processed for the current Stream Day
-    // NOTE: This includes the necessary fields for the logic below.
     const usersToUpdate = await prisma.user.findMany({
         where: {
-            lastSeenStreamDay: { lt: currentStreamDay } // Users processed on a previous stream day
+            lastSeenStreamDay: { lt: currentStreamDay }
         },
         select: {
             id: true,
@@ -24,47 +29,25 @@ export async function processDailyUserTick(currentStreamDay: number): Promise<vo
         }
     });
 
-    // We can run all updates in a single transaction or use Promise.all. 
-    // Since we are updating many different users, Promise.all is more performant 
-    // than a single large transaction in most ORMs, but we'll stick to a list of individual 
-    // atomic updates which are inherently transaction-safe for each user's record.
-
     await Promise.all(usersToUpdate.map(async (user) => {
-        const lastActivity = user.lastActivityTimestamp;
-        const lastLiveActivity = user.lastLiveActivityTimestamp;
-        
-        // ⭐ IMPROVEMENT: Calculate the cutoff time based purely on UTC epoch milliseconds.
-        // The current time is the time the CRON job executes.
-        // This is the most direct and unambiguous way to calculate a rolling 24-hour window, 
-        // as it completely bypasses the need to manipulate date parts 
-        // and relies only on the universal millisecond epoch count (Date.now()):
         const nowMs = Date.now();
-        // 24 hours in milliseconds
         const oneDayMs = 24 * 60 * 60 * 1000;
-        
-        // The cutoff is 24 hours before the current execution time.
         const cutoffTimeMs = nowMs - oneDayMs; 
-        
-        // ----------------------------------------------------------------------------------
         
         let updateData: any = {
             lastSeenStreamDay: currentStreamDay // Mark user as processed for today
         };
         
-        // Activity check: Was the user active (spent numbers) within the last 24 hours?
-        const isActiveToday = lastActivity && lastActivity.getTime() > cutoffTimeMs;
-        
-        // Live check: Was the user active LIVE within the last 24 hours?
-        // Note: isActiveLiveToday implies isActiveToday is also true, as live activity is also general activity.
-        const isActiveLiveToday = lastLiveActivity && lastLiveActivity.getTime() > cutoffTimeMs; 
+        // Use null coalescing to safely access timestamps
+        const isActiveToday = (user.lastActivityTimestamp?.getTime() ?? 0) > cutoffTimeMs;
+        const isActiveLiveToday = (user.lastLiveActivityTimestamp?.getTime() ?? 0) > cutoffTimeMs; 
 
         if (isActiveToday) {
             if (isActiveLiveToday) {
-                // Active Stream Day: Spent numbers/submitted while the stream was live.
-                // NOTE: Using increment operator ({ increment: 1 }) is an atomic operation.
+                // Active Stream Day
                 updateData.activeStreamDaysCount = { increment: 1 };
             } else {
-                // Active Offline Day: Spent numbers/submitted while the stream was offline.
+                // Active Offline Day
                 updateData.activeOfflineDaysCount = { increment: 1 };
             }
         } 
@@ -77,4 +60,90 @@ export async function processDailyUserTick(currentStreamDay: number): Promise<vo
     }));
 
     console.log(`[ClockService] Processed daily tick for ${usersToUpdate.length} users.`);
+
+    // ⭐ SANITY CHECK: Ensure only one Challenge is marked as executing (or zero)
+    try {
+        const executingCount = await prisma.challenge.count({
+            where: { isExecuting: true }
+        });
+
+        if (executingCount > 1) {
+            console.error(`[CRITICAL SANITY CHECK] ${executingCount} Challenges are currently marked as isExecuting=true. This indicates a severe race condition bug.`);
+        } else if (executingCount === 1) {
+             console.log(`[ClockService] Sanity Check: One Challenge is currently executing.`);
+        } else {
+             console.log(`[ClockService] Sanity Check: No Challenge is currently executing.`);
+        }
+    } catch (e) {
+        console.error(`[CRITICAL SANITY CHECK FAILED] Could not check executing challenge count:`, e);
+    }
+}
+
+
+// ------------------------------------------------------------------
+// 2. CHALLENGE MAINTENANCE LOGIC
+// ------------------------------------------------------------------
+
+/**
+ * Enforces the contiguity rule for ONE_OFF challenges.
+ * Rule: ONE_OFF challenges must be completed within the stream day they start.
+ * If they are still in 'InProgress' when this daily maintenance runs, they are failed.
+ * @returns {Promise<number>} The number of challenges that failed contiguity.
+ */
+export async function checkOneOffContiguity(): Promise<number> {
+    const transactionTimestamp = new Date().toISOString();
+
+    // Find all ONE_OFF challenges that are InProgress (started but not finished)
+    // The presence in 'InProgress' for a ONE_OFF at the maintenance time is the failure condition.
+    const updateResult = await prisma.challenge.updateMany({
+        where: {
+            status: 'InProgress',
+            durationType: 'ONE_OFF',
+        },
+        data: {
+            status: 'Archived', // Fail and archive the challenge
+            isExecuting: false,
+            timestampCompleted: transactionTimestamp,
+        }
+    });
+    
+    return updateResult.count;
+}
+
+// ------------------------------------------------------------------
+// 3. DAILY MAINTENANCE ORCHESTRATOR
+// ------------------------------------------------------------------
+
+/**
+ * Main function to run all scheduled maintenance tasks once per day (e.g., via cron job).
+ * This function handles the Real-World Day advance, Archival, and ONE_OFF failure.
+ */
+export async function runDailyMaintenance() {
+    
+    // 1. Advance the Real-World Day Counter and get the current stream day
+    // NOTE: We assume a separate, reliable process updates StreamStat.streamDaysSinceInception when a stream starts/ends.
+    const updatedStat = await prisma.streamStat.update({
+        where: { id: 1 }, // Assuming StreamStat is a singleton with ID 1
+        data: {
+            daysSinceInception: { increment: 1 }
+        }
+    });
+    
+    // The stream day to tick users for is the currently available stream day number
+    const currentStreamDay = updatedStat.streamDaysSinceInception;
+    
+    console.log(`[ClockService] Starting daily maintenance for Real Day ${updatedStat.daysSinceInception}...`);
+
+    // 2. User Activity Tick
+    await processDailyUserTick(currentStreamDay); // This is run using the latest available stream day counter
+    
+    // 3. Archive Expired Active Challenges (21-Day Clock)
+    const archivedCount = await archiveExpiredChallenges();
+    console.log(`[Maintenance] Archived ${archivedCount} challenges that passed the 21-day limit.`);
+
+    // 4. ONE_OFF Contiguity Check
+    const failedCount = await checkOneOffContiguity();
+    console.log(`[Maintenance] Failed and Archived ${failedCount} ONE_OFF challenges due to discontinuity.`);
+
+    console.log(`[ClockService] Daily maintenance complete.`);
 }
