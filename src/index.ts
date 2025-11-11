@@ -57,8 +57,15 @@ app.get('/', async (req: Request, res: Response) => {
  * Executes state initialization and starts the HTTP listener.
  */
 async function startServer() {
-  // 🚨 State Initialization: Must run and await before the server listens for requests.
-  await initializeStreamState(); 
+  
+  try {
+    // 🚨 State Initialization: Must run and await before the server listens for requests.
+    await initializeStreamState(); 
+  } catch (error) {
+    // CRITICAL: Log the specific initialization failure
+    console.error("CRITICAL ERROR: Failed during application state initialization (initializeStreamState). Server cannot start.", error);
+    // You may want to exit the process here, but logging is the priority for Vercel
+  }
 
   // --- Start the server ---
   app.listen(PORT, () => {
@@ -66,6 +73,7 @@ async function startServer() {
     console.log(`Mode: ${process.env.NODE_ENV || 'development'}`);
   });
 }
+
 
 // Call the async function to begin the startup sequence.
 startServer();
