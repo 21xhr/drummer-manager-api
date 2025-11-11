@@ -1,7 +1,7 @@
 // src/services/challengeService.ts
 import prisma from '../prisma';
 import { User, Challenge } from '@prisma/client';
-import { v4 } from 'uuid'; // <-- CRITICAL: Use the simple named import
+// 🛑 Remove the old static import: // import { v4 } from 'uuid'; // <-- CRITICAL: Use the simple named import
 import { isStreamLive, getCurrentStreamSessionId} from './streamService';
 
 // --- GLOBAL CONFIGURATION (SCREAMING_SNAKE_CASE) ---
@@ -10,6 +10,19 @@ const LIVE_DISCOUNT_MULTIPLIER = 0.79; // 1 - 0.21
 const SUBMISSION_BASE_COST = 210; // Base cost for challenge submission
 const DISRUPT_COST = 2100; // Fixed cost for Disrupt
 export type RefundOption = 'community_forfeit' | 'pusher_refund' | 'author_and_chest' | 'author_and_pushers';
+
+// --- Global Variable for Dynamic Import ---
+let uuidv4: Function | null = null;
+
+// Function to get the v4 function dynamically
+async function getV4() {
+    if (!uuidv4) {
+        // CRITICAL: This dynamic import resolves the ERR_REQUIRE_ESM
+        const uuidModule = await import('uuid');
+        uuidv4 = uuidModule.v4;
+    }
+    return uuidv4;
+}
 
 // ------------------------------------------------------------------
 // CORE COST CALCULATIONS
@@ -118,8 +131,11 @@ export async function processPushQuote(
 
   // --- 5. Save the generated quote to the temporary quote table.
   // 1. Generate the unique ID and declare the variable
-    const quoteId = v4();
 
+  // 🛑 IMPORTANT: Use await to get the dynamically loaded function
+    const v4 = await getV4(); 
+    const quoteId = v4();
+    
     await prisma.tempQuote.create({
     data: {
         // 2. Use the defined variable. (Shorthand is clean here)
