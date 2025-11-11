@@ -656,7 +656,7 @@ export async function processExecuteChallenge(challengeId: number): Promise<Chal
 export async function getActiveChallenges() {
     return prisma.challenge.findMany({
         where: { status: 'Active' },
-        orderBy: { totalNumbersSpent: 'desc' }, // Sort by most pushed, for example
+        orderBy: { totalNumbersSpent: 'desc' },
     });
 }
 
@@ -806,7 +806,6 @@ export async function processRemove(
                 totalRemovalsExecuted: { increment: 1 },
                 lastActivityTimestamp: transactionTimestamp,
                 totalCausedByRemovals: { increment: totalRefundsAmount }, 
-                // ⭐ NEW TRACKING FIELDS: Breakdown of where the liability went
                 totalToCommunityChest: { increment: toCommunityChest }, 
                 totalToPushers: { increment: toExternalPushers },
             }

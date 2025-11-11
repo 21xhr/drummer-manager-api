@@ -403,7 +403,7 @@ router.post('/challenges/remove', authenticateUser, async (req: any, res) => {
     const { challengeId, option } = req.body;
     const authorUserId = req.userId; 
 
-    // ⭐ NEW: Map user input (A/B/C/D) to the internal RefundOption string
+    // Map user input (A/B/C/D) to the internal RefundOption string
     const OPTION_MAP: { [key: string]: RefundOption } = {
         'A': 'community_forfeit',
         'B': 'pusher_refund',
@@ -417,7 +417,7 @@ router.post('/challenges/remove', authenticateUser, async (req: any, res) => {
         return res.status(400).json({ message: 'Missing or invalid challengeId parameter.' });
     }
 
-    // ⭐ NEW: Input validation against the keys (A, B, C, D)
+    // Input validation against the keys (A, B, C, D)
     if (userOption && !OPTION_MAP[userOption]) {
          return res.status(400).json({ message: `Invalid refund option provided. Must be 'A' (Chest), 'B' (Pushers), 'C' (Author + Chest), or 'D' (Author + Pushers).` });
     }
