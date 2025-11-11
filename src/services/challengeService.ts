@@ -1,7 +1,7 @@
 // src/services/challengeService.ts
 import prisma from '../prisma';
 import { User, Challenge } from '@prisma/client';
-import * as uuid from 'uuid';
+import { v4 } from 'uuid'; // <-- CRITICAL: Use the simple named import
 import { isStreamLive, getCurrentStreamSessionId} from './streamService';
 
 // --- GLOBAL CONFIGURATION (SCREAMING_SNAKE_CASE) ---
@@ -118,7 +118,7 @@ export async function processPushQuote(
 
   // --- 5. Save the generated quote to the temporary quote table.
   // 1. Generate the unique ID and declare the variable
-  const quoteId = uuid.v4(); 
+    const quoteId = v4();
 
     await prisma.tempQuote.create({
     data: {
