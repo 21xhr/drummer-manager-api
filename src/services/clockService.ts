@@ -93,9 +93,6 @@ export async function processDailyUserTick(currentStreamDay: number): Promise<vo
  * @returns {Promise<number>} The number of challenges that failed contiguity.
  */
 export async function checkOneOffContiguity(): Promise<number> {
-    const transactionTimestamp = new Date().toISOString();
-
-    // Find all ONE_OFF challenges that are InProgress (started but not finished)
     // The presence in 'InProgress' for a ONE_OFF at the maintenance time is the failure condition.
     const updateResult = await prisma.challenge.updateMany({
         where: {
@@ -104,7 +101,9 @@ export async function checkOneOffContiguity(): Promise<number> {
             isExecuting: false, // Prevents premature archival of a currently running challenge.
         },
         data: {
-            status: 'Archived', // Fail and archive the challenge
+            status: Prisma.ChallengeStatus.Failed, 
+            failureReason: 'Contiguity rule broken: Not completed by daily maintenance.',
+            // timestampCompleted remains unset (null), which is correct for a failure.
         }
     });
     

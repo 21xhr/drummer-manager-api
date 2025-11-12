@@ -336,7 +336,9 @@ export async function processDigout(userId: number, challengeId: number) {
         }
 
         if (challenge.status !== 'Archived') {
-            throw new Error(`Challenge #${challengeId} cannot be dug out: Status is '${challenge.status}'.`);
+            // Clarified message: Digout is only for time-expired challenges.
+            const eligibleStatus = 'Archived'; 
+            throw new Error(`Challenge #${challengeId} cannot be dug out. Only status '${eligibleStatus}' is eligible. Current status is '${challenge.status}'.`);
         }
 
         if (challenge.hasBeenDiggedOut) {

@@ -16,6 +16,7 @@ enum ChallengeStatus {
   InProgress
   Completed
   Removed
+  Failed
 }
 
 enum DurationType {
@@ -80,6 +81,7 @@ model Challenge {
   durationType          DurationType    @map("duration_type")
   proposerUserId            Int         @map("proposer_user_id")
   status                ChallengeStatus @map("status")
+  failureReason         String?         @map("failure_reason")
   isExecuting               Boolean     @default(false) @map("is_executing")
   hasBeenAuctioned          Boolean     @default(false) @map("has_been_auctioned")
   hasBeenDiggedOut          Boolean     @default(false) @map("has_been_digged_out")
