@@ -80,7 +80,7 @@ router.post('/submit', authenticateUser, async (req: any, res) => {
             userId, 
             challengeText,
             totalSessions,
-            durationType
+            durationType // This string is passed to the service where it's validated against the Enum
         );
         
         // AUDIT LOG (Success)

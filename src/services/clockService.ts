@@ -1,7 +1,9 @@
 // src/services/clockService.ts
 
 import prisma from '../prisma';
-import { Challenge } from '@prisma/client';
+import { User, Challenge } from '@prisma/client';
+// Import the entire module as 'Prisma' to ensure the namespace is correct
+import * as Prisma from '@prisma/client';
 import { archiveExpiredChallenges } from './challengeService'; 
 
 // ------------------------------------------------------------------
@@ -98,12 +100,11 @@ export async function checkOneOffContiguity(): Promise<number> {
     const updateResult = await prisma.challenge.updateMany({
         where: {
             status: 'InProgress',
-            durationType: 'ONE_OFF',
+            durationType: Prisma.DurationType.ONE_OFF,
+            isExecuting: false, // Prevents premature archival of a currently running challenge.
         },
         data: {
             status: 'Archived', // Fail and archive the challenge
-            isExecuting: false,
-            timestampCompleted: transactionTimestamp,
         }
     });
     

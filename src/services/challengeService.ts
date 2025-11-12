@@ -1,7 +1,8 @@
 // src/services/challengeService.ts
 import prisma from '../prisma';
 import { User, Challenge } from '@prisma/client';
-// 🛑 Remove the old static import: // import { v4 } from 'uuid'; // <-- CRITICAL: Use the simple named import
+// Import the entire module as 'Prisma' to ensure the namespace is correct
+import * as Prisma from '@prisma/client';
 import { isStreamLive, getCurrentStreamSessionId} from './streamService';
 
 // --- GLOBAL CONFIGURATION (SCREAMING_SNAKE_CASE) ---
@@ -135,7 +136,7 @@ export async function processPushQuote(
   // 🛑 IMPORTANT: Use await to get the dynamically loaded function
     const v4 = await getV4(); 
     const quoteId = v4();
-    
+
     await prisma.tempQuote.create({
     data: {
         // 2. Use the defined variable. (Shorthand is clean here)
@@ -412,13 +413,16 @@ export async function processChallengeSubmission(
   userId: number,
   challengeText: string,
   totalSessions: number, 
-  durationType: 'ONE_OFF' | 'RECURRING'
+  // USE THE PRISMA ENUM TYPE FOR THE FUNCTION SIGNATURE
+  durationType: Prisma.DurationType,
 ): Promise<{ newChallenge: Challenge, cost: number }> {
     const currentStreamSessionId = getCurrentStreamSessionId(); 
     const transactionTimestamp = new Date().toISOString(); 
 
     // ⭐ VALIDATION: Ensure required values are provided and valid
-    if (!durationType || !['ONE_OFF', 'RECURRING'].includes(durationType)) {
+    // The Prisma type provides compile-time checks, 
+    // but the runtime validation is still necessary if the data came from a user/API body.
+    if (!durationType || !Object.values(Prisma.DurationType).includes(durationType as Prisma.DurationType)) {
         throw new Error("Invalid or missing durationType.");
     }
     if (totalSessions < 1) {
@@ -478,7 +482,7 @@ export async function processChallengeSubmission(
                 status: 'Active', // Always starts Active
                 streamDaysSinceActivation: 0,
                 category: "General", 
-                durationType: durationType, 
+                durationType: durationType, // This now correctly uses the Enum value
                 totalSessions: totalSessions, // Use required field
                 currentSessionCount: 0, // Starts at 0
                 timestampSubmitted: transactionTimestamp, 

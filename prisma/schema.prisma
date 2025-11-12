@@ -18,6 +18,11 @@ enum ChallengeStatus {
   Removed
 }
 
+enum DurationType {
+  ONE_OFF
+  RECURRING
+}
+
 /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 model User {
@@ -72,7 +77,7 @@ model Challenge {
   challengeId               Int         @id @default(autoincrement()) @map("challenge_id")
   challengeText             String      @map("challenge_text")
   category                  String      @map("category")
-  durationType              String      @map("duration_type")
+  durationType          DurationType    @map("duration_type")
   proposerUserId            Int         @map("proposer_user_id")
   status                ChallengeStatus @map("status")
   isExecuting               Boolean     @default(false) @map("is_executing")

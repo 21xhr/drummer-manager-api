@@ -1,5 +1,7 @@
 // src/services/streamService.ts
-// This new service contains the core logic for advancing the 21-day clock on all active challenges, ensuring it only happens once per calendar day, regardless of how many times you stream. It also contains the official source of truth for the isStreamLive() check.
+// This new service contains the core logic for advancing the 21-day clock on all active challenges, 
+// ensuring it only happens once per calendar day, regardless of how many stream sessions per day. 
+// It also contains the official source of truth for the isStreamLive() check.
 import prisma from '../prisma';
 import { archiveExpiredChallenges, finalizeInProgressChallenge } from './challengeService';
 
@@ -202,13 +204,18 @@ export function getCurrentStreamSessionId(): number | null {
 ////////////////////////////////////////////////////////////////////////////////////////
 // SERVER STARTUP / STATE RECOVERY
 ////////////////////////////////////////////////////////////////////////////////////////
-/**
- * Loads the last active stream session from the database into memory
- * upon server startup, ensuring the in-memory state is synchronized.
- * This prevents the isStreamLive() check from returning false after a server restart.
- */
 export async function initializeStreamState(): Promise<void> {
-  // Look for the most recent stream session that has not yet been processed (i.e., still LIVE)
+  // 1. Fetch the global stat record first. (Assuming it's a singleton with ID 1 or findFirst)
+  // This is needed for the logging of the current global days.
+  const streamStat = await prisma.streamStat.findFirst({
+      where: { id: 1 } // Assuming ID 1 for singleton
+  });
+  
+  // Provide defaults if the stat record doesn't exist yet (though it shouldn't happen in production)
+  const currentGlobalDay = streamStat?.daysSinceInception ?? 0;
+  const currentStreamDay = streamStat?.streamDaysSinceInception ?? 0;
+
+  // 2. Look for the most recent stream session that has not yet been processed (i.e., still LIVE)
   const lastActiveStream = await prisma.stream.findFirst({
     where: { hasBeenProcessed: false },
     orderBy: { streamSessionId: 'desc' },
@@ -220,9 +227,11 @@ export async function initializeStreamState(): Promise<void> {
     currentStreamStartTime = lastActiveStream.startTimestamp;
     currentStreamSessionId = lastActiveStream.streamSessionId;
 
-    console.log(`[StreamService] State recovered: Stream Session #${lastActiveStream.streamSessionId} loaded as LIVE.`);
+    // Corrected Log: Use fetched variables and literal strings
+    console.log(`[StreamService] State recovered: Session #${currentStreamSessionId} loaded as ${currentStreamStatus}. Global Day: ${currentGlobalDay}. Stream Day: ${currentStreamDay}.`);
   } else {
-    console.log(`[StreamService] State initialized: No active stream session found in DB. Status is OFFLINE.`);
+    // Corrected Log: Include the global days even when offline
+    console.log(`[StreamService] State initialized: No active session found. Status is OFFLINE. Global Day: ${currentGlobalDay}. Stream Day: ${currentStreamDay}.`);
   }
 }
 
