@@ -403,12 +403,11 @@ router.post('/challenges/remove', authenticateUser, async (req: any, res) => {
     const { challengeId, option } = req.body;
     const authorUserId = req.userId; 
 
-    // Map user input (A/B/C/D) to the internal RefundOption string
+    // Map user input (A/B/C) to the internal RefundOption string
     const OPTION_MAP: { [key: string]: RefundOption } = {
         'A': 'community_forfeit',
-        'B': 'pusher_refund',
-        'C': 'author_and_chest',
-        'D': 'author_and_pushers',
+        'B': 'author_and_chest',
+        'C': 'author_and_pushers',
     };
     const userOption = option ? option.toUpperCase() : null; // Normalize input
     const internalOption = userOption ? OPTION_MAP[userOption] : undefined;
@@ -419,7 +418,7 @@ router.post('/challenges/remove', authenticateUser, async (req: any, res) => {
 
     // Input validation against the keys (A, B, C, D)
     if (userOption && !OPTION_MAP[userOption]) {
-         return res.status(400).json({ message: `Invalid refund option provided. Must be 'A' (Chest), 'B' (Pushers), 'C' (Author + Chest), or 'D' (Author + Pushers).` });
+         return res.status(400).json({ message: `Invalid refund option provided. Must be 'A' (Chest Forfeit), 'B' (Author + Chest), or 'C' (Author + Pushers).` });
     }
     
     try {
@@ -427,19 +426,13 @@ router.post('/challenges/remove', authenticateUser, async (req: any, res) => {
         
         // Response Message Customization
         let sinkMessage = '';
-        const totalPusherRefunds = result.toExternalPushers + result.toCommunityChest;
-
-        if (result.toAuthor > 0) {
-            // Options C or D (Author reclaims their share)
-            const secondarySink = result.toExternalPushers > 0 ? 'Pushers' : 'Community Chest';
-            sinkMessage = `You reclaimed your ${result.toAuthor} NUMBERS. The remaining ${totalPusherRefunds} NUMBERS were directed to the ${secondarySink}.`;
-        } else {
-            // Options A or B (Author did not reclaim share)
-            if (result.toCommunityChest > 0) {
-                 sinkMessage = `All ${result.totalRefundsAmount} NUMBERS were directed to the Community Chest.`;
-            } else {
-                 sinkMessage = `All ${result.totalRefundsAmount} NUMBERS were directed back to the contributing Pushers (${result.refundsProcessed} successful).`;
-            }
+        
+        if (result.option === 'community_forfeit') { // Option A
+            sinkMessage = `All ${result.totalRefundsAmount} NUMBERS were forfeited to the Community Chest.`;
+        } else if (result.option === 'author_and_chest') { // Option B
+            sinkMessage = `Your ${result.toAuthor} NUMBERS were refunded externally. The remaining ${result.toCommunityChest} NUMBERS were forfeited to the Community Chest.`;
+        } else if (result.option === 'author_and_pushers') { // Option C
+            sinkMessage = `The total refund of ${result.totalRefundsAmount} NUMBERS was directed back to you and the contributing Pushers (${result.refundsProcessed} successful).`;
         }
 
         // AUDIT LOG (Success)

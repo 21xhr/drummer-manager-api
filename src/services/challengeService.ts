@@ -10,7 +10,7 @@ const DIGOUT_COST_PERCENTAGE = 0.21; // 21%
 const LIVE_DISCOUNT_MULTIPLIER = 0.79; // 1 - 0.21
 const SUBMISSION_BASE_COST = 210; // Base cost for challenge submission
 const DISRUPT_COST = 2100; // Fixed cost for Disrupt
-export type RefundOption = 'community_forfeit' | 'pusher_refund' | 'author_and_chest' | 'author_and_pushers';
+export type RefundOption = 'community_forfeit' | 'author_and_chest' | 'author_and_pushers';
 
 // --- Global Variable for Dynamic Import ---
 let uuidv4: Function | null = null;
@@ -24,6 +24,7 @@ async function getV4() {
     }
     return uuidv4;
 }
+
 
 // ------------------------------------------------------------------
 // CORE COST CALCULATIONS
@@ -689,6 +690,18 @@ export async function getActiveChallenges() {
  * @param authorUserId - The ID of the user executing the command (must be the author).
  * @param challengeId - The ID of the challenge to remove.
  */
+// Type definition for the return value of the Prisma transaction
+type ProcessRemoveTransactionResult = {
+    updatedChallenge: Challenge; 
+    allExternalRefundsToProcess: { userId: number, refundAmount: number }[];
+    totalRefundsAmount: number; 
+    option: RefundOption;
+    fundsSinkText: string; 
+    toAuthor: number; 
+    toExternalPushers: number;
+    toCommunityChest: number;
+};
+
 export async function processRemove(
     authorUserId: number, 
     challengeId: number,
@@ -701,7 +714,9 @@ export async function processRemove(
     fundsSink: string, 
     toAuthor: number, 
     toCommunityChest: number, 
-    toExternalPushers: number }> {
+    toExternalPushers: number,
+    option: RefundOption
+ }> {
     
     const refundsToProcess: { userId: number, refundAmount: number }[] = [];
     let totalRefundsAmount = 0; // The 21% amount
@@ -711,7 +726,8 @@ export async function processRemove(
     const transactionTimestamp = new Date().toISOString();
 
     // --- STEP 1: ATOMIC DATABASE TRANSACTION (Local State Change: Challenge/Global) ---
-    const result = await prisma.$transaction(async (tx) => {
+    const result: ProcessRemoveTransactionResult = await prisma.$transaction(async (tx): Promise<ProcessRemoveTransactionResult> => {
+        // 1. Validation and Fetch
         // 1. Validation and Fetch
         const challenge = await tx.challenge.findUnique({
             where: { challengeId: challengeId },
@@ -766,14 +782,11 @@ export async function processRemove(
         if (option === 'community_forfeit') { // Option A
             toCommunityChest = totalRefundsAmount;
             fundsSinkText = 'Community Chest';
-        } else if (option === 'pusher_refund') { // Option B
-            toExternalPushers = totalRefundsAmount;
-            fundsSinkText = 'Pushers';
-        } else if (option === 'author_and_chest') { // Option C
+        } else if (option === 'author_and_chest') { // Option B
             toAuthor = authorRefundAmount;
             toCommunityChest = pushersRefundAmount;
             fundsSinkText = 'Author + Community Chest';
-        } else if (option === 'author_and_pushers') { // Option D
+        } else if (option === 'author_and_pushers') { // Option C
             toAuthor = authorRefundAmount;
             toExternalPushers = pushersRefundAmount;
             fundsSinkText = 'Author + Pushers';
@@ -794,16 +807,6 @@ export async function processRemove(
                 data: {
                     totalRemovalsInSession: { increment: 1 },
                     totalNumbersReturnedFromRemovalsInSession: { increment: totalRefundsAmount }
-                }
-            });
-        }
-        
-        // C. Update Author's Balance (If reclaiming share)
-        if (toAuthor > 0) {
-            await tx.user.update({
-                where: { id: authorUserId },
-                data: {
-                    lastKnownBalance: { increment: toAuthor }, // Reclaim author's own share locally
                 }
             });
         }
@@ -839,11 +842,21 @@ export async function processRemove(
             },
         });
 
+        // --- Prepare the Consolidated External Refund List (TS/Logic FIX) ---
+        // Start with the list of non-author pushers
+        const allExternalRefundsToProcess = [...pushersRefundsToProcess]; 
+
+        // If the author's share is meant for refund (Options B or C), add them to the list
+        if (toAuthor > 0) { 
+            // Add the author to the list that needs to be processed by the external API in Step 2
+            allExternalRefundsToProcess.push({ userId: authorUserId, refundAmount: toAuthor });
+        }
+
         return { 
             updatedChallenge, 
-            pushersRefundsToProcess, 
+            allExternalRefundsToProcess, // This is the consolidated list
             totalRefundsAmount, 
-            option,
+            option: option as RefundOption, // Cast to the expected type
             fundsSinkText,
             toAuthor,
             toExternalPushers,
@@ -854,12 +867,14 @@ export async function processRemove(
     // --- STEP 2: EXTERNAL REFUND CALLS (Lumia API INTEGRATION POINT) ---
     const successfulRefunds: { userId: number, amount: number }[] = [];
     
-    // Only process external calls if the option involved Pushers (B or D)
-    const requiresExternalRefund = result.option === 'pusher_refund' || result.option === 'author_and_pushers';
+    // Only process external calls if the option involved Pushers (B or C)
+    const requiresExternalRefund = result.option === 'author_and_chest' || result.option === 'author_and_pushers';
     
     if (requiresExternalRefund) {
-        // ... (External Refund Logic UNCHANGED, uses result.pushersRefundsToProcess)
-        // ...
+        // Use the consolidated list here: result.allExternalRefundsToProcess
+        for (const refund of result.allExternalRefundsToProcess) { 
+            // ... (External Refund Logic) ...
+        }
     }
 
     // --- STEP 4: FINAL RESPONSE ---
@@ -867,11 +882,12 @@ export async function processRemove(
         updatedChallenge: result.updatedChallenge,
         refundsProcessed: successfulRefunds.length,
         totalRefundsAmount: result.totalRefundsAmount,
-        failedRefunds: result.pushersRefundsToProcess.length - successfulRefunds.length, 
+        failedRefunds: result.allExternalRefundsToProcess.length - successfulRefunds.length,
         fundsSink: result.fundsSinkText,
         toAuthor: result.toAuthor,
         toCommunityChest: result.toCommunityChest,
         toExternalPushers: result.toExternalPushers,
+        option: result.option,
     };
 }
 
