@@ -12,7 +12,7 @@ const router = Router();
 
 /**
  * POST /api/v1/clock/run-daily-maintenance
- * * This endpoint is designed to be called by a scheduled service (like Vercel Cron).
+ * * This endpoint is designed to be called by a scheduled service (Vercel Cron).
  * It executes all daily, time-sensitive maintenance tasks:
  * 1. Increments Real-World Day Counter.
  * 2. Runs the User Activity Tick.

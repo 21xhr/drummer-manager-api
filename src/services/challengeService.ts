@@ -162,7 +162,6 @@ export async function processPushConfirm(
   quoteId?: string 
 ): Promise<{ updatedChallenge: Challenge; transactionCost: number; quantity: number }> {
     const currentStreamSessionId = getCurrentStreamSessionId(); 
-    // ⭐ FIX: Define transactionTimestamp once
     const transactionTimestamp = new Date().toISOString();
 
   return prisma.$transaction(async (tx) => {
@@ -480,13 +479,10 @@ export async function processChallengeSubmission(
             data: {
                 challengeText: challengeText,
                 proposerUserId: userId,
-                pushBaseCost: 21,
                 status: 'Active', // Always starts Active
-                streamDaysSinceActivation: 0,
                 category: "General", 
                 durationType: durationType, // This now correctly uses the Enum value
                 totalSessions: totalSessions, // Use required field
-                currentSessionCount: 0, // Starts at 0
                 timestampSubmitted: transactionTimestamp, 
                 timestampLastActivation: transactionTimestamp,
             }
