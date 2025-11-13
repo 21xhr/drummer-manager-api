@@ -29,6 +29,9 @@ function getServiceErrorStatus(errorMessage: string): number {
     if (
         errorMessage.includes("only be removed by the author") || 
         errorMessage.includes("cannot be removed while in status")
+        // Catch generic unauthorized/access denied messages (e.g., from execute endpoint)
+        errorMessage.includes("Access Denied") || 
+        errorMessage.includes("unauthorized")
     ) {
          return 403;
     }

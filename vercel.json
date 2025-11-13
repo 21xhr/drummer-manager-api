@@ -2,7 +2,10 @@
   "crons": [
     {
       "path": "/api/v1/clock/run-daily-maintenance",
-      "schedule": "0 21 * * *"
+      "schedule": "0 21 * * *",
+      "headers": {
+        "x-vercel-cron-secret": "@CRON_SECRET"
+      }
     }
   ]
 }

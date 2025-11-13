@@ -625,9 +625,6 @@ export async function processExecuteChallenge(challengeId: number): Promise<Chal
             } 
             // Else: Status remains 'InProgress'.
             
-            // NOTE ON ONE_OFF CONTIGUITY: Validation that the new session is on the same day for a ONE_OFF challenge 
-            // should be done by the calling route/service, but the clockService.ts function ensures the state update is correct.
-
             await tx.challenge.update({
                 where: { challengeId: previousChallenge.challengeId },
                 data: updateData
@@ -854,7 +851,7 @@ export async function processRemove(
 
         return { 
             updatedChallenge, 
-            allExternalRefundsToProcess, // This is the consolidated list
+            allExternalRefundsToProcess, // This is the consolidated list returned as 'result'
             totalRefundsAmount, 
             option: option as RefundOption, // Cast to the expected type
             fundsSinkText,

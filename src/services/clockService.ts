@@ -121,7 +121,6 @@ export async function checkOneOffContiguity(): Promise<number> {
 export async function runDailyMaintenance() {
     
     // 1. Advance the Real-World Day Counter and get the current stream day
-    // NOTE: We assume a separate, reliable process updates StreamStat.streamDaysSinceInception when a stream starts/ends.
     const updatedStat = await prisma.streamStat.update({
         where: { id: 1 }, // Assuming StreamStat is a singleton with ID 1
         data: {
