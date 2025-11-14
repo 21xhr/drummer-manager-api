@@ -4,6 +4,7 @@ import * as challengeService from '../services/challengeService';
 import { findOrCreateUser } from '../services/userService'; 
 import logger from '../logger'; // Winston Logger
 import { RefundOption } from '../services/challengeService';
+import { verifyToken } from '../services/jwtService'; 
 
 const router = Router();
 
@@ -28,7 +29,7 @@ function getServiceErrorStatus(errorMessage: string): number {
     // 403 Forbidden (Unauthorized action)
     if (
         errorMessage.includes("only be removed by the author") || 
-        errorMessage.includes("cannot be removed while in status")
+        errorMessage.includes("cannot be removed while in status") ||
         // Catch generic unauthorized/access denied messages (e.g., from execute endpoint)
         errorMessage.includes("Access Denied") || 
         errorMessage.includes("unauthorized")
@@ -42,7 +43,7 @@ function getServiceErrorStatus(errorMessage: string): number {
 // ---------------------------------------
 
 // Middleware to standardize user input and ensure user registration
-const authenticateUser = async (req: any, res: any, next: any) => {
+export const authenticateUser = async (req: any, res: any, next: any) => {
     const { platformId, platformName } = req.body;
 
     if (!platformId || !platformName) {
@@ -66,10 +67,12 @@ const authenticateUser = async (req: any, res: any, next: any) => {
 };
 
 // -----------------------------------------------------------
-// 1. CHALLENGE SUBMISSION
+// 1. CHALLENGE SUBMISSION (LEGACY/CHAT) - CONSISTENCY UPDATE
 // -----------------------------------------------------------
 router.post('/submit', authenticateUser, async (req: any, res) => {
-    const { challengeText, totalSessions, durationType } = req.body;
+    // NOTE: This legacy route remains for chat-only submission requests but should be deprecated 
+    // in favor of the /submit/web flow (which uses a separate token generation endpoint).
+    const { challengeText, totalSessions, durationType, cadence } = req.body;
     const userId = req.userId;
 
    if (!challengeText || !totalSessions || !durationType) {
@@ -78,12 +81,25 @@ router.post('/submit', authenticateUser, async (req: any, res) => {
         });
     }
 
+    // Cadence validation for recurring challenges
+    if (durationType === 'RECURRING' && !cadence) {
+        return res.status(400).json({ 
+            error: "Cadence is required for Recurring challenges." 
+        });
+    }
+
+    const sessions = parseInt(totalSessions);
+    if (isNaN(sessions) || sessions < 1) {
+        return res.status(400).json({ error: "totalSessions must be a positive number." });
+    }
+
     try {
         const { newChallenge, cost } = await challengeService.processChallengeSubmission(
             userId, 
             challengeText,
             totalSessions,
-            durationType // This string is passed to the service where it's validated against the Enum
+            durationType,
+            cadence
         );
         
         // AUDIT LOG (Success)
@@ -118,6 +134,80 @@ router.post('/submit', authenticateUser, async (req: any, res) => {
             action: 'submission_failure',
             error: errorMessage,
         });
+    }
+});
+
+
+// -----------------------------------------------------------
+// 1.5. WEB FORM CHALLENGE SUBMISSION (NEW)
+// -----------------------------------------------------------
+/**
+ * POST /api/v1/user/submit/web
+ * * Handles the final challenge submission from the web form, validating the JWT.
+ */
+router.post('/submit/web', async (req: any, res) => {
+    // Expected inputs from the web form: token, form fields
+    // ⭐ UPDATE: Destructure token and cadence
+    const { token, challengeText, totalSessions, durationType, cadence } = req.body; 
+    let userId: number;
+    let platformId: string;
+    let platformName: string;
+
+    // 1. JWT Authentication and Identity Extraction
+    try {
+        if (!token) {
+            return res.status(401).json({ error: "Missing authentication token." });
+        }
+        
+        const payload = verifyToken(token); // Throws if invalid/expired
+        userId = payload.userId;
+        platformId = payload.platformId;
+        platformName = payload.platformName;
+
+    } catch (error) {
+        logger.error('JWT Validation Error:', error);
+        return res.status(401).json({ 
+            message: 'Authentication failed. Token is invalid or expired.',
+            action: 'jwt_auth_failure',
+            error: error instanceof Error ? error.message : 'Unknown authentication error.',
+        });
+    }
+
+    // 2. Input Validation (Post-Auth)
+    if (!challengeText || totalSessions === undefined || !durationType) {
+        return res.status(400).json({ 
+            error: "Missing required challenge fields (text, sessions, or duration)." 
+        });
+    }
+
+    // ⭐ NEW: Cadence validation for recurring challenges
+    if (durationType === 'RECURRING' && !cadence) {
+        return res.status(400).json({ 
+            error: "Cadence is required for Recurring challenges." 
+        });
+    }
+    
+    // Convert to integer and validate
+    const sessions = parseInt(totalSessions);
+    if (isNaN(sessions) || sessions < 1) {
+        return res.status(400).json({ error: "totalSessions must be a positive number." });
+    }
+
+    // 3. Process Submission Transaction
+    try {
+        // ⭐ REUSE THE EXISTING, ATOMIC SERVICE FUNCTION with new cadence parameter ⭐
+        const { newChallenge, cost } = await challengeService.processChallengeSubmission(
+            userId, // Authenticated via JWT
+            challengeText,
+            sessions,
+            durationType,
+            cadence // ⭐ NEW: Pass cadence to the service
+        );
+        
+        // ... (rest of success/error handling is the same) ...
+        
+    } catch (error) {
+        // ... (rest of error handling is the same) ...
     }
 });
 

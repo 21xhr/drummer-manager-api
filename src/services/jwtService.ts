@@ -1,0 +1,75 @@
+// src/services/jwtService.ts
+// Centralizes all logic for generating, signing, and verifying the authentication tokens.
+import jwt, { Secret, SignOptions } from 'jsonwebtoken'; 
+import logger from '../logger'; 
+
+const JWT_SECRET: Secret = process.env.JWT_SECRET || 'your_fallback_secret_for_dev_ONLY'; 
+
+interface TokenPayload {
+    userId: number;
+    platformId: string;
+    platformName: string;
+}
+
+/**
+ * Generates a signed JWT for secure user identity transfer.
+ * @param payload The user identity payload.
+ * @param duration The token expiry time (e.g., '21m', '1h'). Defaults to '21m'.
+ */
+export function generateToken(payload: TokenPayload, duration: string = '21m'): string {
+    const options: SignOptions = {
+        // ⭐ FINAL GUARANTEED FIX: Cast 'duration' to 'any'. 
+        // This is necessary because your local TypeScript environment 
+        // is preventing 'string' from being assigned to the 'StringValue' type 
+        // required by the local jsonwebtoken definition file.
+        expiresIn: duration as any, 
+        algorithm: 'HS256', 
+    };
+    
+    return jwt.sign(payload, JWT_SECRET, options);
+}
+
+
+/**
+ * Verifies the JWT and returns the payload if valid. Throws error if invalid or expired.
+ */
+export function verifyToken(token: string): TokenPayload {
+    // The verify function will throw an error if the token is invalid or expired
+    return jwt.verify(token, JWT_SECRET) as TokenPayload;
+}
+
+// Validation logic for dynamic duration, used by tokenRoutes.ts
+const MAX_TOKEN_DURATION_MINUTES = 60;
+const DEFAULT_TOKEN_DURATION = '15m';
+
+/**
+ * Validates and converts the requested duration to a safe string format (e.g., '30m').
+ */
+export function validateDuration(duration: string | undefined): string {
+    if (!duration) return DEFAULT_TOKEN_DURATION;
+
+    // Matches e.g., '15m', '30M', '1h', '2H'
+    const match = duration.match(/^(\d+)([mh])$/i); 
+    if (!match) return DEFAULT_TOKEN_DURATION;
+
+    const value = parseInt(match[1]);
+    const unit = match[2].toLowerCase();
+
+    // Convert everything to minutes for comparison
+    let minutes = 0;
+    if (unit === 'h') {
+        minutes = value * 60;
+    } else { // unit === 'm'
+        minutes = value;
+    }
+
+    if (minutes > MAX_TOKEN_DURATION_MINUTES) {
+        // Log a warning and cap at the maximum
+        logger.warn(`Requested token duration (${duration}) exceeds max of ${MAX_TOKEN_DURATION_MINUTES}m. Capping.`);
+        return `${MAX_TOKEN_DURATION_MINUTES}m`;
+    }
+    
+    // Return the validated, safe duration string
+    // We return the duration string in minutes for consistent API usage ('30m')
+    return `${minutes}m`;
+}

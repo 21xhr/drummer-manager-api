@@ -412,27 +412,29 @@ export async function processDigout(userId: number, challengeId: number) {
 // PROCESS CHALLENGE SUBMISSION
 ////////////////////////////////////////////////////////////////////////////////////////
 export async function processChallengeSubmission(
-  userId: number,
-  challengeText: string,
-  totalSessions: number, 
-  // USE THE PRISMA ENUM TYPE FOR THE FUNCTION SIGNATURE
-  durationType: Prisma.DurationType,
+    userId: number,
+    challengeText: string,
+    totalSessions: number,
+    // USE THE PRISMA ENUM TYPE FOR THE FUNCTION SIGNATURE
+    durationType: Prisma.DurationType,
+    cadence?: string // ⭐ ADDED: Optional cadence string
 ): Promise<{ newChallenge: Challenge, cost: number }> {
-    const currentStreamSessionId = getCurrentStreamSessionId(); 
-    const transactionTimestamp = new Date().toISOString(); 
+    const currentStreamSessionId = getCurrentStreamSessionId();
+    const transactionTimestamp = new Date().toISOString();
 
     // ⭐ VALIDATION: Ensure required values are provided and valid
-    // The Prisma type provides compile-time checks, 
-    // but the runtime validation is still necessary if the data came from a user/API body.
-    if (!durationType || !Object.values(Prisma.DurationType).includes(durationType as Prisma.DurationType)) {
+    if (!durationType || !Object.values(Prisma.DurationType).includes(durationType)) {
         throw new Error("Invalid or missing durationType.");
     }
     if (totalSessions < 1) {
         throw new Error("totalSessions must be 1 or greater.");
     }
-    
-    // Note: The webform should handle the ONE_OFF session limit (e.g., max 21) before sending.
+    // ⭐ NEW VALIDATION: Cadence is mandatory for Recurring challenges
+    if (durationType === Prisma.DurationType.RECURRING && !cadence) {
+        throw new Error("Cadence is required for Recurring challenges.");
+    }
 
+    // Note: The webform should handle the ONE_OFF session limit (e.g., max 21) before sending.
     return prisma.$transaction(async (tx) => {
         // 1. Fetch User data including counter and reset time
         const user = await tx.user.findUnique({
@@ -482,8 +484,9 @@ export async function processChallengeSubmission(
                 proposerUserId: userId,
                 status: 'Active', // Always starts Active
                 category: "General", 
-                durationType: durationType, // This now correctly uses the Enum value
-                totalSessions: totalSessions, // Use required field
+                durationType: durationType,
+                ...(cadence && { cadence: cadence }), // Conditionally include cadence if it's provided
+                totalSessions: totalSessions, // Required field
                 timestampSubmitted: transactionTimestamp, 
                 timestampLastActivation: transactionTimestamp,
             }
@@ -518,7 +521,7 @@ export async function processChallengeSubmission(
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
-// HANDLES ARCHIVAL LOGIC (No changes needed)
+// HANDLES ARCHIVAL LOGIC
 ////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Archives challenges that have been active for 21 or more stream days.

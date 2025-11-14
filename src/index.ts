@@ -10,7 +10,7 @@ import prisma from './prisma';
 import userRoutes from './routes/userRoutes'; 
 import streamRoutes from './routes/streamRoutes';
 import clockRoutes from './routes/clockRoutes';
-
+import tokenRoutes from './routes/tokenRoutes';
 
 import { initializeStreamState, getCurrentStreamDay } from './services/streamService'; 
 import { archiveExpiredChallenges } from './services/challengeService';
@@ -30,6 +30,7 @@ app.use(express.json());
 app.use('/api/v1/user', userRoutes); 
 app.use('/api/v1/stream', streamRoutes);
 app.use('/api/v1/clock', clockRoutes);
+app.use('/api/v1/token', tokenRoutes);
 
 // --- Basic Health Check Route ---
 app.get('/', async (req: Request, res: Response) => {
