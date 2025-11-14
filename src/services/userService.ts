@@ -1,5 +1,6 @@
 // src/services/userService.ts
 // centralize all database interactions related to the User model into a dedicated service file.
+// You can add other user-related database functions here (e.g., getUserStats, updateUserBalance)
 import prisma from '../prisma';
 import { User } from '@prisma/client';
 import { getNextDailyResetTime } from './challengeService';
@@ -22,6 +23,8 @@ interface PlatformUser {
 export async function findOrCreateUser(platformUser: PlatformUser): Promise<User> {
   const { platformId, platformName } = platformUser;
 
+  const INITIAL_BALANCE = 500; // Define an starting balance here for testing/incentive
+
   const user = await prisma.user.upsert({
     where: { 
       platformId_platformName: { // Prisma generates this name based on @@unique([platformId, platformName])
@@ -38,11 +41,10 @@ export async function findOrCreateUser(platformUser: PlatformUser): Promise<User
       platformName: platformName,
       lastActivityTimestamp: new Date(), // Set initial timestamp on creation
       dailyChallengeResetAt: getNextDailyResetTime(),
-      lastKnownBalance: 0,
+      lastKnownBalance: INITIAL_BALANCE,
     },
   });
 
   return user;
 }
 
-// You can add other user-related database functions here (e.g., getUserStats, updateUserBalance)

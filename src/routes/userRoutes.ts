@@ -147,7 +147,6 @@ router.post('/submit', authenticateUser, async (req: any, res) => {
  */
 router.post('/submit/web', async (req: any, res) => {
     // Expected inputs from the web form: token, form fields
-    // ⭐ UPDATE: Destructure token and cadence
     const { token, challengeText, totalSessions, durationType, cadence } = req.body; 
     let userId: number;
     let platformId: string;
@@ -163,11 +162,27 @@ router.post('/submit/web', async (req: any, res) => {
         userId = payload.userId;
         platformId = payload.platformId;
         platformName = payload.platformName;
+        
+        // ⭐ FIX 1: findOrCreateUser expects one object argument, not two strings.
+        // It's technically redundant here since we have the userId from the token, 
+        // but we keep it to ensure the user record is initialized if they were brand new.
+        await findOrCreateUser({ platformId, platformName }); 
 
     } catch (error) {
         logger.error('JWT Validation Error:', error);
-        return res.status(401).json({ 
-            message: 'Authentication failed. Token is invalid or expired.',
+        
+        // ⭐ FIX 3: Add type guard to check 'error.name'
+        if (error instanceof Error && (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError')) {
+             return res.status(401).json({ 
+                 message: 'Authentication failed. Token is invalid or expired. Please get a new token.',
+                 action: 'jwt_auth_failure',
+                 error: error.message
+             });
+        }
+        
+        // Handle all other errors in the auth block
+         return res.status(401).json({ 
+            message: 'Authentication failed due to a server error.',
             action: 'jwt_auth_failure',
             error: error instanceof Error ? error.message : 'Unknown authentication error.',
         });
@@ -179,12 +194,8 @@ router.post('/submit/web', async (req: any, res) => {
             error: "Missing required challenge fields (text, sessions, or duration)." 
         });
     }
-
-    // ⭐ NEW: Cadence validation for recurring challenges
     if (durationType === 'RECURRING' && !cadence) {
-        return res.status(400).json({ 
-            error: "Cadence is required for Recurring challenges." 
-        });
+        return res.status(400).json({ error: "Cadence is required for Recurring challenges." });
     }
     
     // Convert to integer and validate
@@ -195,19 +206,49 @@ router.post('/submit/web', async (req: any, res) => {
 
     // 3. Process Submission Transaction
     try {
-        // ⭐ REUSE THE EXISTING, ATOMIC SERVICE FUNCTION with new cadence parameter ⭐
-        const { newChallenge, cost } = await challengeService.processChallengeSubmission(
+        // ⭐ FIX 2: Use the existing service function name processChallengeSubmission 
+        // and pass the required positional arguments.
+        const { newChallenge, cost, updatedUser } = await challengeService.processChallengeSubmission(
             userId, // Authenticated via JWT
             challengeText,
-            sessions,
+            sessions, // Use the parsed integer
             durationType,
-            cadence // ⭐ NEW: Pass cadence to the service
+            cadence // Pass cadence to the service
         );
         
-        // ... (rest of success/error handling is the same) ...
+        // AUDIT LOG (Success)
+        logger.info(`SUBMIT Success: #${newChallenge.challengeId} by User ${userId}`, {
+            challengeId: newChallenge.challengeId,
+            cost: cost,
+            proposerUserId: userId,
+            platformId: platformId,
+            platformName: platformName,
+            action: 'submission_success'
+        });
+
+        // RETURN RESPONSE
+        return res.status(200).json({
+            message: `Challenge #${newChallenge.challengeId} submitted successfully for a cost of ${cost} NUMBERS.`,
+            action: 'submission_success',
+            details: {
+                challengeId: newChallenge.challengeId,
+                cost: cost,
+                challengeText: newChallenge.challengeText,
+                status: newChallenge.status,
+                lastKnownBalance: updatedUser.lastKnownBalance
+            }
+        });
         
     } catch (error) {
-        // ... (rest of error handling is the same) ...
+        logger.error('Challenge Submission Error:', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+        const status = getServiceErrorStatus(errorMessage); 
+        
+        return res.status(status).json({
+            message: status === 500 ? 'Challenge submission failed due to a server error.' : errorMessage,
+            action: 'submission_failure',
+            error: errorMessage,
+        });
     }
 });
 

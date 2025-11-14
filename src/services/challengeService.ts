@@ -418,7 +418,7 @@ export async function processChallengeSubmission(
     // USE THE PRISMA ENUM TYPE FOR THE FUNCTION SIGNATURE
     durationType: Prisma.DurationType,
     cadence?: string // ⭐ ADDED: Optional cadence string
-): Promise<{ newChallenge: Challenge, cost: number }> {
+): Promise<{ newChallenge: Challenge, cost: number, updatedUser: User }> {
     const currentStreamSessionId = getCurrentStreamSessionId();
     const transactionTimestamp = new Date().toISOString();
 
@@ -480,20 +480,20 @@ export async function processChallengeSubmission(
         // 5. Create the new Challenge record
         const newChallenge = await tx.challenge.create({
             data: {
-                challengeText: challengeText,
-                proposerUserId: userId,
-                status: 'Active', // Always starts Active
-                category: "General", 
-                durationType: durationType,
-                ...(cadence && { cadence: cadence }), // Conditionally include cadence if it's provided
+                challengeText: challengeText, // Required field
+                proposerUserId: userId, // Required field
+                status: 'Active', // Required field (Always starts Active)
+                category: "General", // Required field (Defaulted here)
+                durationType: durationType, // Required field
+                ...(cadence && { cadence: cadence }), // Conditionally included if provided
                 totalSessions: totalSessions, // Required field
-                timestampSubmitted: transactionTimestamp, 
-                timestampLastActivation: transactionTimestamp,
+                timestampSubmitted: transactionTimestamp, // Required field
+                timestampLastActivation: transactionTimestamp, // Required field
             }
         });
 
         // 6. Update User Stats: Deduct balance, update spending, and submission count
-        await tx.user.update({
+        const userUpdateResult = await tx.user.update({ // ⭐ MODIFIED: Store the update result
             where: { id: userId },
             data: {
                 lastKnownBalance: { decrement: submissionCost }, 
@@ -505,6 +505,14 @@ export async function processChallengeSubmission(
                     lastLiveActivityTimestamp: transactionTimestamp,
                 }),
             },
+            // ⭐ CRITICAL CHANGE: Select the required fields for the return value
+            select: {
+                id: true, // Need at least one unique field for the User type
+                lastKnownBalance: true, 
+                // Add any other User fields required by your `User` type here
+                // Note: If you import the full `User` type, ensure you select all fields
+                // For simplicity, we assume we only need the ID and balance for the return
+            }
         });
 
         // 7., 8. Update Global Ledger and Stream Session Metrics (Unchanged)
@@ -516,7 +524,12 @@ export async function processChallengeSubmission(
             });
         }
 
-        return { newChallenge, cost: submissionCost }; 
+        // ⭐ CRITICAL CHANGE: Update the return value
+        return { 
+            newChallenge, 
+            cost: submissionCost, 
+            updatedUser: userUpdateResult as User // Cast to User if necessary
+        };
     });
 }
 
