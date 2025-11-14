@@ -6,6 +6,8 @@
 import 'express-async-errors'; 
 import express, { Request, Response } from 'express';
 
+import cors from 'cors';
+
 import prisma from './prisma'; 
 import userRoutes from './routes/userRoutes'; 
 import streamRoutes from './routes/streamRoutes';
@@ -24,6 +26,18 @@ const app = express();
 const PORT = process.env.PORT || 3000; 
 
 // --- Middleware ---
+// CRITICAL: Load the frontend URL from environment variables
+const WEBFORM_BASE_URL = process.env.WEBFORM_BASE_URL || 'http://localhost:8080';
+
+// ⭐ CORS Configuration (Must come before app.use(express.json()))
+const corsOptions = {
+    // Only allow requests from your Vercel frontend URL (from .env)
+    origin: WEBFORM_BASE_URL, 
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+    optionsSuccessStatus: 204
+};
+app.use(cors(corsOptions)); // ⭐ Apply CORS Middleware
 app.use(express.json());
 
 // --- Application Routers (API Endpoints) ---
@@ -78,4 +92,3 @@ async function startServer() {
 
 // Call the async function to begin the startup sequence.
 startServer();
-// Dummy commit to bust Vercel cache: v1.0
