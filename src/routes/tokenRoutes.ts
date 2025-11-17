@@ -1,6 +1,6 @@
 // src/routes/tokenRoutes.ts
 import { Router } from 'express';
-import { authenticateUser } from './userRoutes'; // Note: We need to assume the middleware is exported from userRoutes
+import { authenticateUser } from '../middleware/authMiddleware';
 import { generateToken, validateDuration } from '../services/jwtService'; 
 import logger from '../logger';
 
