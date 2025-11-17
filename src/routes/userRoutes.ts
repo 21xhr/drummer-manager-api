@@ -97,7 +97,7 @@ router.post('/submit/web', async (req: any, res) => {
     const { token, challengeText, totalSessions, durationType, cadence } = req.body; 
     let userId: number;
     let platformId: string;
-    let platformName: string;
+    let platformName: PlatformName; // Declare platformName using the PlatformName enum type
 
     // 1. JWT Authentication and Identity Extraction
     try {
