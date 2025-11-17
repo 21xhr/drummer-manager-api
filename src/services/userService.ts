@@ -2,13 +2,13 @@
 // centralize all database interactions related to the User model into a dedicated service file.
 // You can add other user-related database functions here (e.g., getUserStats, updateUserBalance)
 import prisma from '../prisma';
-import { User } from '@prisma/client';
+import { User, PlatformName } from '@prisma/client';
 import { getNextDailyResetTime } from './challengeService';
 
 // Type definition for the user data coming from the external platform
 interface PlatformUser {
   platformId: string;
-  platformName: string;
+  platformName: PlatformName;
   // You can add more initial fields here if the platform provides them
 }
 
@@ -32,9 +32,9 @@ export async function findOrCreateUser(platformUser: PlatformUser): Promise<User
         platformName: platformName,
       }
     }, 
-    // ⭐ SIMPLIFICATION: The 'update' block no longer updates timestamps
-    // to avoid redundant writes, as the command function (e.g., processDisrupt)
-    // will update them moments later within its transaction.
+    // ⭐ SIMPLIFICATION: The 'update' block no longer updates activity timestamps.
+    // The responsibility for setting 'lastActivityTimestamp' is delegated to the specific service function
+    // (e.g., processDisrupt, processChallengeSubmission) to avoid redundant writes.
     update: {}, 
     create: {
       platformId: platformId,

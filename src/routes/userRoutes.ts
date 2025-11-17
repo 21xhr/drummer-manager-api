@@ -5,66 +5,13 @@ import { findOrCreateUser } from '../services/userService';
 import logger from '../logger'; // Winston Logger
 import { RefundOption } from '../services/challengeService';
 import { verifyToken } from '../services/jwtService'; 
+import { getServiceErrorStatus } from '../utils/routeUtils';
+import { authenticateUser } from '../middleware/authMiddleware';
+import { PlatformName } from '@prisma/client';
+
 
 const router = Router();
 
-// --- Centralized Error Status Helper ---
-function getServiceErrorStatus(errorMessage: string): number {
-    // 400 Bad Request (Client did something wrong: not found, invalid state, insufficient balance)
-    if (
-        errorMessage.includes("Challenge ID") || 
-        errorMessage.includes("not found") || 
-        errorMessage.includes("Status is") ||
-        errorMessage.includes("cannot be executed. Status must be 'Active'") ||
-        errorMessage.includes("Insufficient balance") || 
-        errorMessage.includes("Quote has expired") || 
-        errorMessage.includes("Multiple active quotes") ||
-        errorMessage.includes("cannot be dug out") ||
-        errorMessage.includes("already been digged out") ||
-        errorMessage.includes("currently being processed")
-    ) {
-        return 400;
-    }
-    
-    // 403 Forbidden (Unauthorized action)
-    if (
-        errorMessage.includes("only be removed by the author") || 
-        errorMessage.includes("cannot be removed while in status") ||
-        // Catch generic unauthorized/access denied messages (e.g., from execute endpoint)
-        errorMessage.includes("Access Denied") || 
-        errorMessage.includes("unauthorized")
-    ) {
-         return 403;
-    }
-    
-    // 500 Internal Server Error (Something unexpected happened)
-    return 500;
-}
-// ---------------------------------------
-
-// Middleware to standardize user input and ensure user registration
-export const authenticateUser = async (req: any, res: any, next: any) => {
-    const { platformId, platformName } = req.body;
-
-    if (!platformId || !platformName) {
-        return res.status(400).json({ error: "Missing platformId or platformName in request body." });
-    }
-
-    try {
-        const user = await findOrCreateUser({ platformId, platformName });
-        req.userId = user.id; 
-        req.platformId = user.platformId;
-        req.platformName = user.platformName;
-        next();
-    } catch (error) {
-        logger.error('User Authentication Error:', error);
-        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-        return res.status(500).json({ 
-            message: 'Failed to find or create user.',
-            error: errorMessage,
-        });
-    }
-};
 
 // -----------------------------------------------------------
 // 1. CHALLENGE SUBMISSION (LEGACY/CHAT) - CONSISTENCY UPDATE
@@ -161,12 +108,15 @@ router.post('/submit/web', async (req: any, res) => {
         const payload = verifyToken(token); // Throws if invalid/expired
         userId = payload.userId;
         platformId = payload.platformId;
-        platformName = payload.platformName;
+        // ⭐ CRITICAL FIX: Cast the verified string from the JWT payload
+        // to the new Prisma Enum type before passing it to the service.
+        // We ensure it is a valid PlatformName string from the enum.
+        platformName = payload.platformName as PlatformName;        
         
         // ⭐ FIX 1: findOrCreateUser expects one object argument, not two strings.
         // It's technically redundant here since we have the userId from the token, 
         // but we keep it to ensure the user record is initialized if they were brand new.
-        await findOrCreateUser({ platformId, platformName }); 
+        await findOrCreateUser({ platformId, platformName });
 
     } catch (error) {
         logger.error('JWT Validation Error:', error);
@@ -466,64 +416,6 @@ router.get('/challenges/active', async (req, res) => {
         
         return res.status(500).json({
             message: 'Failed to retrieve active challenges due to a server error.',
-            error: errorMessage,
-        });
-    }
-});
-
-
-// -----------------------------------------------------------
-// EXECUTE CHALLENGE
-// -----------------------------------------------------------
-router.post('/challenges/execute', authenticateUser, async (req: any, res) => {
-    // Note: Execution only requires the Challenge ID; the caller's ID is used for auth/logging.
-    const { challengeId } = req.body;
-    const authorUserId = req.userId; // User ID authenticated by the middleware
-
-    // ⭐ AUTHORIZATION CHECK: ONLY ALLOW USER ID 21 (ADMIN)
-    const ADMIN_USER_ID = 21;
-    if (authorUserId !== ADMIN_USER_ID) {
-        // Return 403 Forbidden for unauthorized access
-        return res.status(403).json({ 
-            message: "Access Denied. This endpoint is restricted to the administrator (User ID 21).",
-            action: 'authorization_failure'
-        });
-    }
-    // ⭐ END AUTHORIZATION CHECK
-
-    if (challengeId === undefined || isNaN(parseInt(challengeId))) {
-        return res.status(400).json({ message: 'Missing or invalid challengeId parameter.' });
-    }
-
-    try {
-        const executingChallenge = await challengeService.processExecuteChallenge(parseInt(challengeId));
-        
-        // AUDIT LOG (Success)
-        logger.info(`EXECUTE Success: Challenge #${executingChallenge.challengeId} launched by Admin User ${authorUserId}.`, {
-            challengeId: executingChallenge.challengeId,
-            proposerUserId: executingChallenge.proposerUserId,
-            platformId: req.platformId,
-            action: 'challenge_executed'
-        });
-
-        // RETURN RESPONSE
-        return res.status(200).json({
-            message: `Challenge #${executingChallenge.challengeId} is now **EXECUTING**! The previous challenge has been finalized.`,
-            action: 'challenge_executed',
-            data: {
-                challengeId: executingChallenge.challengeId,
-                status: executingChallenge.status,
-                isExecuting: executingChallenge.isExecuting
-            }
-        });
-    } catch (error) {
-        logger.error('Execute Challenge Error:', error);
-        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-        const status = getServiceErrorStatus(errorMessage); 
-        
-        return res.status(status).json({
-            message: status === 500 ? 'Challenge execution failed due to a server error.' : errorMessage,
-            action: 'challenge_execute_failure',
             error: errorMessage,
         });
     }

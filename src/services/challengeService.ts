@@ -91,7 +91,7 @@ export async function processPushQuote(
     where: { challengeId: challengeId },
   });
 
-  if (!challenge || challenge.status !== 'Active') {
+  if (!challenge || challenge.status !== 'ACTIVE') {
     // This check strictly enforces the rule: Pushes only promote Active Challenges.
     // This implicitly blocks challenges that are InProgress (regardless of session count), Completed, etc.
     throw new Error(`Challenge ID ${challengeId} not found or is not 'Active'. Pushes are only allowed on 'Active' challenges.`);
@@ -218,7 +218,7 @@ export async function processPushConfirm(
     await tx.tempQuote.update({ where: { quoteId: quote.quoteId }, data: { isLocked: true } });
 
     const challenge = await tx.challenge.findUnique({ where: { challengeId: quote.challengeId } });
-    if (!challenge || challenge.status !== 'Active') {
+    if (!challenge || challenge.status !== 'ACTIVE') {
       await tx.tempQuote.delete({ where: { quoteId: quote.quoteId } }); 
       throw new Error(`Challenge ID ${quote.challengeId} is no longer 'Active' and cannot be pushed.`);
     }
@@ -335,9 +335,9 @@ export async function processDigout(userId: number, challengeId: number) {
             throw new Error(`User ID ${userId} not found during transaction.`);
         }
 
-        if (challenge.status !== 'Archived') {
+        if (challenge.status !== 'ARCHIVED') {
             // Clarified message: Digout is only for time-expired challenges.
-            const eligibleStatus = 'Archived'; 
+            const eligibleStatus = 'ARCHIVED'; 
             throw new Error(`Challenge #${challengeId} cannot be dug out. Only status '${eligibleStatus}' is eligible. Current status is '${challenge.status}'.`);
         }
 
@@ -392,7 +392,7 @@ export async function processDigout(userId: number, challengeId: number) {
         const updatedChallenge = await tx.challenge.update({
             where: { challengeId: challengeId },
             data: {
-                status: 'Active',
+                status: 'ACTIVE',
                 streamDaysSinceActivation: 0,
                 timestampLastActivation: transactionTimestamp, // ⭐ Use constant
                 hasBeenDiggedOut: true,
@@ -482,7 +482,7 @@ export async function processChallengeSubmission(
             data: {
                 challengeText: challengeText, // Required field
                 proposerUserId: userId, // Required field
-                status: 'Active', // Required field (Always starts Active)
+                status: 'ACTIVE', // Required field (Always starts Active)
                 category: "General", // Required field (Defaulted here)
                 durationType: durationType, // Required field
                 ...(cadence && { cadence: cadence }), // Conditionally included if provided
@@ -548,11 +548,11 @@ export async function archiveExpiredChallenges(): Promise<number> {
         // 1. Find and update all active challenges that have reached or passed the 21-day limit.
         const updateResult = await tx.challenge.updateMany({
             where: {
-                status: 'Active',
+                status: 'ACTIVE',
                 streamDaysSinceActivation: { gte: 21 }, // Greater than or equal to 21
             },
             data: {
-                status: 'Archived',
+                status: 'ARCHIVED',
             },
         });
 
@@ -576,7 +576,7 @@ export async function finalizeInProgressChallenge(): Promise<Challenge | null> {
     
     // ... (find executingChallenge)
     const executingChallenge = await prisma.challenge.findFirst({
-        where: { status: 'InProgress', isExecuting: true },
+        where: { status: 'IN_PROGRESS', isExecuting: true },
     });
 
     if (!executingChallenge) {
@@ -658,13 +658,13 @@ export async function processExecuteChallenge(challengeId: number): Promise<Chal
         if (!challenge) { throw new Error(`Challenge ID ${challengeId} not found.`); }
         
         // Only Active (first session) or InProgress (resuming) challenges can be Executed.
-        if (challenge.status !== 'Active' && challenge.status !== 'InProgress') {
+        if (challenge.status !== 'ACTIVE' && challenge.status !== 'IN_PROGRESS') {
             throw new Error(`Challenge #${challengeId} cannot be executed. Status must be 'Active' or 'InProgress'`);
         }
 
         // 3. Execute the new challenge
         // Set status to 'InProgress' ONLY if it's coming from 'Active' (first session)
-        const newStatus = challenge.status === 'Active' ? 'InProgress' : challenge.status;
+        const newStatus = challenge.status === 'ACTIVE' ? 'IN_PROGRESS' : challenge.status;
 
         const executingChallenge = await tx.challenge.update({
             where: { challengeId: challengeId },
@@ -688,7 +688,7 @@ export async function processExecuteChallenge(challengeId: number): Promise<Chal
  */
 export async function getActiveChallenges() {
     return prisma.challenge.findMany({
-        where: { status: 'Active' },
+        where: { status: 'ACTIVE' },
         orderBy: { totalNumbersSpent: 'desc' },
     });
 }
@@ -850,7 +850,7 @@ export async function processRemove(
         const updatedChallenge = await tx.challenge.update({
             where: { challengeId: challengeId },
             data: {                            
-                status: 'Removed', 
+                status: 'REMOVED', 
                 isExecuting: false
             },
         });

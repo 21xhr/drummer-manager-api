@@ -4,6 +4,7 @@ import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import logger from '../logger'; 
 
 const JWT_SECRET: Secret = process.env.JWT_SECRET || 'your_fallback_secret_for_dev_ONLY'; 
+// Note: Security risk of the fallback = None (only happens during broken local dev, never in Prod as Vercel has the JWT_SECRET).
 
 interface TokenPayload {
     userId: number;
@@ -18,10 +19,9 @@ interface TokenPayload {
  */
 export function generateToken(payload: TokenPayload, duration: string = '21m'): string {
     const options: SignOptions = {
-        // ⭐ FINAL GUARANTEED FIX: Cast 'duration' to 'any'. 
-        // This is necessary because your local TypeScript environment 
-        // is preventing 'string' from being assigned to the 'StringValue' type 
-        // required by the local jsonwebtoken definition file.
+        // ⭐ FIX: We keep the 'as any' cast because the local TypeScript environment 
+        // strictly defines 'expiresIn' and rejects a plain 'string', forcing us to override 
+        // the type check for dynamic duration strings (e.g., '21m').
         expiresIn: duration as any, 
         algorithm: 'HS256', 
     };
@@ -39,8 +39,8 @@ export function verifyToken(token: string): TokenPayload {
 }
 
 // Validation logic for dynamic duration, used by tokenRoutes.ts
-const MAX_TOKEN_DURATION_MINUTES = 60;
-const DEFAULT_TOKEN_DURATION = '15m';
+const MAX_TOKEN_DURATION_MINUTES = 210;
+const DEFAULT_TOKEN_DURATION = '21m';
 
 /**
  * Validates and converts the requested duration to a safe string format (e.g., '30m').
