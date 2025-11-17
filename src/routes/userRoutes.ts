@@ -1,5 +1,5 @@
 // src/routes/userRoutes.ts
-import { Router } from 'express'; 
+import { Router, Request, Response } from 'express'; 
 import * as challengeService from '../services/challengeService'; 
 import { findOrCreateUser } from '../services/userService'; 
 import logger from '../logger'; // Winston Logger
@@ -16,7 +16,7 @@ const router = Router();
 // -----------------------------------------------------------
 // 1. CHALLENGE SUBMISSION (LEGACY/CHAT) - CONSISTENCY UPDATE
 // -----------------------------------------------------------
-router.post('/submit', authenticateUser, async (req: any, res) => {
+router.post('/submit', authenticateUser, async (req: Request, res: Response) => {
     // NOTE: This legacy route remains for chat-only submission requests but should be deprecated 
     // in favor of the /submit/web flow (which uses a separate token generation endpoint).
     const { challengeText, totalSessions, durationType, cadence } = req.body;
@@ -92,7 +92,7 @@ router.post('/submit', authenticateUser, async (req: any, res) => {
  * POST /api/v1/user/submit/web
  * * Handles the final challenge submission from the web form, validating the JWT.
  */
-router.post('/submit/web', async (req: any, res) => {
+router.post('/submit/web', async (req: Request, res: Response) => {
     // Expected inputs from the web form: token, form fields
     const { token, challengeText, totalSessions, durationType, cadence } = req.body; 
     let userId: number;
@@ -206,7 +206,7 @@ router.post('/submit/web', async (req: any, res) => {
 // -----------------------------------------------------------
 // 2. PUSH QUOTE
 // -----------------------------------------------------------
-router.post('/push/quote', authenticateUser, async (req: any, res) => {
+router.post('/push/quote', authenticateUser, async (req: Request, res: Response) => {
     const { challengeId, quantity } = req.body;
     const userId = req.userId;
 
@@ -259,7 +259,7 @@ router.post('/push/quote', authenticateUser, async (req: any, res) => {
 // -----------------------------------------------------------
 // 3. PUSH CONFIRM
 // -----------------------------------------------------------
-router.post('/push/confirm', authenticateUser, async (req: any, res) => {
+router.post('/push/confirm', authenticateUser, async (req: Request, res: Response) => {
     const { quoteId } = req.body; 
     const userId = req.userId;
 
@@ -306,7 +306,7 @@ router.post('/push/confirm', authenticateUser, async (req: any, res) => {
 // -----------------------------------------------------------
 // 4. DIGOUT
 // -----------------------------------------------------------
-router.post('/digout', authenticateUser, async (req: any, res) => {
+router.post('/digout', authenticateUser, async (req: Request, res: Response) => {
     const { challengeId } = req.body; 
     const userId = req.userId;
 
@@ -356,7 +356,7 @@ router.post('/digout', authenticateUser, async (req: any, res) => {
 // -----------------------------------------------------------
 // 5. DISRUPT (Placeholder for future chaos)
 // -----------------------------------------------------------
-router.post('/disrupt', authenticateUser, async (req: any, res) => {
+router.post('/disrupt', authenticateUser, async (req: Request, res: Response) => {
     const userId = req.userId; // AuthenticateUser middleware handles finding/creating the user
 
     try {
@@ -394,7 +394,7 @@ router.post('/disrupt', authenticateUser, async (req: any, res) => {
 // -----------------------------------------------------------
 // GET ACTIVE CHALLENGES (No auth required)
 // -----------------------------------------------------------
-router.get('/challenges/active', async (req, res) => {
+router.get('/challenges/active', async (req: Request, res: Response) => {
     try {
         const challenges = await challengeService.getActiveChallenges();
         
@@ -425,7 +425,7 @@ router.get('/challenges/active', async (req, res) => {
 // -----------------------------------------------------------
 // REMOVE CHALLENGE
 // -----------------------------------------------------------
-router.post('/challenges/remove', authenticateUser, async (req: any, res) => {
+router.post('/challenges/remove', authenticateUser, async (req: Request, res: Response) => {
     const { challengeId, option } = req.body;
     const authorUserId = req.userId; 
 

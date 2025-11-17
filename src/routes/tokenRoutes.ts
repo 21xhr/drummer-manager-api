@@ -1,5 +1,5 @@
 // src/routes/tokenRoutes.ts
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { authenticateUser } from '../middleware/authMiddleware';
 import { generateToken, validateDuration } from '../services/jwtService'; 
 import logger from '../logger';
@@ -12,7 +12,7 @@ const router = Router();
  * Accepts optional 'duration' (e.g., '21m') to extend validity up to 210 minutes.
  * This is the entry point from the chat command (!challengesubmit).
  */
-router.post('/submit-challenge', authenticateUser, async (req: any, res) => {
+router.post('/submit-challenge', authenticateUser, async (req: Request, res: Response) => {
     const userId = req.userId;
     const { platformId, platformName, duration } = req.body; // duration is optional
 

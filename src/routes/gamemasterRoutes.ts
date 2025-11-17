@@ -1,5 +1,5 @@
 // src/routes/gamemasterRoutes.ts
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import * as challengeService from '../services/challengeService'; 
 import logger from '../logger'; // Winston Logger
 import { getServiceErrorStatus } from '../utils/routeUtils';
@@ -10,7 +10,7 @@ const router = Router();
 // -----------------------------------------------------------
 // EXECUTE CHALLENGE
 // -----------------------------------------------------------
-router.post('/challenges/execute', authenticateUser, async (req: any, res) => {
+router.post('/challenges/execute', authenticateUser, async (req: Request, res: Response) => {
     // Note: Execution only requires the Challenge ID; the caller's ID is used for auth/logging.
     const { challengeId } = req.body;
     const authorUserId = req.userId; // User ID authenticated by the middleware

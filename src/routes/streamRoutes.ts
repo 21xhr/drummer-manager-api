@@ -1,5 +1,5 @@
 // src/routes/streamRoutes.ts
-import { Router } from 'express'; 
+import { Router, Request, Response } from 'express'; 
 import { processStreamLiveEvent, processStreamOfflineEvent } from '../services/streamService';
 import { isStreamLive } from '../services/streamService';
 import prisma from '../prisma'; 
@@ -17,7 +17,7 @@ const router = Router();
  * Webhook endpoint called when the streamer goes LIVE.
  * Request Body: { timestamp: string (ISO 8601, optional) }
  */
-router.post('/live', async (req, res) => {
+router.post('/live', async (req: Request, res: Response) => {
   // Use current time as fallback if webhook doesn't provide a precise timestamp
   const streamStartTime = req.body.timestamp ? new Date(req.body.timestamp) : new Date();
 
@@ -47,7 +47,7 @@ router.post('/live', async (req, res) => {
  * Webhook endpoint called when the streamer goes OFFLINE.
  * Request Body: { timestamp: string (ISO 8601, optional) }
  */
-router.post('/offline', async (req, res) => {
+router.post('/offline', async (req: Request, res: Response) => {
   const streamEndTime = req.body.timestamp ? new Date(req.body.timestamp) : new Date();
 
   if (isNaN(streamEndTime.getTime())) {
@@ -75,7 +75,7 @@ router.post('/offline', async (req, res) => {
  * GET /api/v1/stream/stats
  * Provides current stream status and global game stats.
  */
-router.get('/stats', async (req, res) => {
+router.get('/stats', async (req: Request, res: Response) => {
   try {
     // 1. Get Global Stream Stat
     const globalStats = await prisma.streamStat.findFirst();
