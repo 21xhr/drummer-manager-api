@@ -10,19 +10,27 @@ datasource db {
 }
 
 enum ChallengeStatus {
-  Active
-  Archived
-  Auctioning
-  InProgress
-  Completed
-  Removed
-  Failed
+  ACTIVE
+  ARCHIVED
+  AUCTIONED
+  COMPLETED
+  FAILED
+  IN_PROGRESS
+  REMOVED
 }
 
 enum DurationType {
   ONE_OFF
   RECURRING
 }
+
+enum PlatformName {
+  GAME_MASTER // Internal value for admin user
+  KICK
+  TWITCH
+  YOUTUBE
+}
+
 
 /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -9,7 +9,7 @@ const router = Router();
 /**
  * POST /api/v1/token/submit-challenge
  * * Generates a secure, single-use URL/token for the web form challenge submission.
- * Accepts optional 'duration' (e.g., '30m') to extend validity up to 60 minutes.
+ * Accepts optional 'duration' (e.g., '21m') to extend validity up to 210 minutes.
  * This is the entry point from the chat command (!challengesubmit).
  */
 router.post('/submit-challenge', authenticateUser, async (req: any, res) => {
@@ -21,7 +21,7 @@ router.post('/submit-challenge', authenticateUser, async (req: any, res) => {
         const token = generateToken({ userId, platformId, platformName }, tokenDuration);
         
         // Use an environment variable for the frontend URL
-        const WEBFORM_BASE_URL = process.env.WEBFORM_BASE_URL || "https://your-frontend-app.com";
+        const WEBFORM_BASE_URL = process.env.WEBFORM_BASE_URL || "https://drummer-manager-website.vercel.app";
         const secureUrl = `${WEBFORM_BASE_URL}/challenge/submit?token=${token}`;
 
         logger.info(`TOKEN Success: Token generated for User ${userId}. Expiry: ${tokenDuration}`, {

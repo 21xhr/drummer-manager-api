@@ -26,13 +26,23 @@ const app = express();
 const PORT = process.env.PORT || 3000; 
 
 // --- Middleware ---
-// CRITICAL: Load the frontend URL from environment variables
-const WEBFORM_BASE_URL = process.env.WEBFORM_BASE_URL || 'http://localhost:8080';
+// ⭐ Define the allowed origins for CORS
+const allowedOrigins = [
+    // 1. Production/Vercel URL (The live site)
+    "https://drummer-manager-website.vercel.app", 
+    // 2. Local Testing URL (Live Preview by Microsoft)
+    "http://192.168.1.37:3001",
+    // 3. Fallback for generic local development (e.g., if you switch extensions)
+    "http://localhost:3001",
+    "http://127.0.0.1:5500",
+    // 4. Local Testing URL (Live Server by Ritwick Dey)
+    "http://192.168.1.37:5500"
+];
 
 // ⭐ CORS Configuration (Must come before app.use(express.json()))
 const corsOptions = {
     // Only allow requests from your Vercel frontend URL (from .env)
-    origin: WEBFORM_BASE_URL, 
+    origin: allowedOrigins, 
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
     optionsSuccessStatus: 204

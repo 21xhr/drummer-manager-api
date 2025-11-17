@@ -95,7 +95,7 @@ export async function processStreamLiveEvent(streamStartTime: Date): Promise<voi
         // 2. Update Challenge Clocks (21-Day Counter) 
         const activeChallenges = await tx.challenge.findMany({
             where: {
-                status: 'Active',
+                status: 'ACTIVE',
                 streamDaysSinceActivation: { lt: 21 } 
             },
         });

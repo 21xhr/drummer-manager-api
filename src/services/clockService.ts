@@ -96,12 +96,12 @@ export async function checkOneOffContiguity(): Promise<number> {
     // The presence in 'InProgress' for a ONE_OFF at the maintenance time is the failure condition.
     const updateResult = await prisma.challenge.updateMany({
         where: {
-            status: 'InProgress',
+            status: 'IN_PROGRESS',
             durationType: Prisma.DurationType.ONE_OFF,
             isExecuting: false, // Prevents premature archival of a currently running challenge.
         },
         data: {
-            status: Prisma.ChallengeStatus.Failed, 
+            status: Prisma.ChallengeStatus.FAILED, 
             failureReason: 'Contiguity rule broken: Not completed by daily maintenance.',
             // timestampCompleted remains unset (null), which is correct for a failure.
         }
