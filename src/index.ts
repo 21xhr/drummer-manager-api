@@ -1,4 +1,5 @@
 // src/index.ts
+/// <reference path="./types/express.d.ts" />
 // This file sets up and starts the core web server (API) and the daily scheduler.
 
 // Enables graceful error handling for async routes, 
@@ -32,6 +33,8 @@ const allowedOrigins = [
     "https://drummer-manager-website.vercel.app", 
     // 2. Local Testing URL (Live Preview by Microsoft)
     "http://192.168.1.37:3001",
+    "http://192.168.1.37:5500",
+    "http://192.168.1.37:3000",
     // 3. Fallback for generic local development (e.g., if you switch extensions)
     "http://localhost:3001",
     "http://127.0.0.1:5500",

@@ -1,14 +1,16 @@
 // src/types/express.d.ts
 
-// This file extends the Express Request type to include custom properties
-// attached by your middleware (like authenticateUser).
+// 1. Import the necessary type from Prisma Client
+import { PlatformName } from '@prisma/client'; 
 
-declare namespace Express {
-    // Merge the interface with the existing Express Request interface
-    export interface Request {
+// 2. Use module augmentation to correctly extend the Express Request interface
+declare module 'express-serve-static-core' {
+    // We merge with the core Request interface that Express uses
+    interface Request {
         // Properties added by authenticateUser middleware
         userId: number;
         platformId: string;
-        platformName: string;
+        // ⭐ FIX: Use the Prisma enum for strong type checking ⭐
+        platformName: PlatformName; 
     }
 }
