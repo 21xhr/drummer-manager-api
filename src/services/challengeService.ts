@@ -1,6 +1,6 @@
 // src/services/challengeService.ts
 import prisma from '../prisma';
-import { User, Challenge } from '@prisma/client';
+import { User, Challenge, CadenceUnit } from '@prisma/client';
 // Import the entire module as 'Prisma' to ensure the namespace is correct
 import * as Prisma from '@prisma/client';
 import { isStreamLive, getCurrentStreamSessionId} from './streamService';
@@ -415,9 +415,9 @@ export async function processChallengeSubmission(
     userId: number,
     challengeText: string,
     totalSessions: number,
-    // USE THE PRISMA ENUM TYPE FOR THE FUNCTION SIGNATURE
     durationType: Prisma.DurationType,
-    cadence?: string // ⭐ ADDED: Optional cadence string
+    sessionCadenceText?: string,
+    cadenceUnit?: Prisma.CadenceUnit
 ): Promise<{ newChallenge: Challenge, cost: number, updatedUser: User }> {
     const currentStreamSessionId = getCurrentStreamSessionId();
     const transactionTimestamp = new Date().toISOString();
@@ -429,9 +429,9 @@ export async function processChallengeSubmission(
     if (totalSessions < 1) {
         throw new Error("totalSessions must be 1 or greater.");
     }
-    // ⭐ NEW VALIDATION: Cadence is mandatory for Recurring challenges
-    if (durationType === Prisma.DurationType.RECURRING && !cadence) {
-        throw new Error("Cadence is required for Recurring challenges.");
+    // ⭐ VALIDATION: sessionCadenceText is mandatory for Recurring challenges
+    if (durationType === Prisma.DurationType.RECURRING && !sessionCadenceText) {
+    throw new Error("sessionCadenceText is required for Recurring challenges.");
     }
 
     // Note: The webform should handle the ONE_OFF session limit (e.g., max 21) before sending.
@@ -485,7 +485,14 @@ export async function processChallengeSubmission(
                 status: 'ACTIVE', // Required field (Always starts Active)
                 category: "General", // Required field (Defaulted here)
                 durationType: durationType, // Required field
-                ...(cadence && { cadence: cadence }), // Conditionally included if provided
+                // --- NEW CADENCE FIELDS ---
+                ...(sessionCadenceText && { sessionCadenceText: sessionCadenceText }),
+                ...(cadenceUnit && { cadenceUnit: cadenceUnit }),
+                
+                // Always include these for RECURRING challenges
+                cadenceProgressCounter: 0,
+                cadencePeriodStart: (durationType === Prisma.DurationType.RECURRING ? new Date() : null),
+
                 totalSessions: totalSessions, // Required field
                 timestampSubmitted: transactionTimestamp, // Required field
                 timestampLastActivation: transactionTimestamp, // Required field

@@ -31,6 +31,12 @@ enum PlatformName {
   YOUTUBE
 }
 
+enum CadenceUnit {
+  DAILY
+  WEEKLY
+  MONTHLY
+  CUSTOM_DAYS // X sessions every Y days
+}
 
 /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -106,6 +112,12 @@ model Challenge {
   proposer                  User        @relation("Proposer", fields: [proposerUserId], references: [id])
   timestampLastStreamDayTicked   DateTime    @default(now()) // Tracks the last time streamDaysSinceActivation was incremented. To guard against double-ticking
   
+  // Cadence Fields
+  sessionCadenceText      String?         @map("session_cadence_text")
+  cadenceUnit             CadenceUnit?    @map("cadence_unit")
+  cadenceProgressCounter  Int             @default(0) @map("cadence_progress_counter")
+  cadencePeriodStart      DateTime?       @map("cadence_period_start")
+
   // Lifecycle fields
   streamDaysSinceActivation Int         @default(0) @map("stream_days_since_activation")
   

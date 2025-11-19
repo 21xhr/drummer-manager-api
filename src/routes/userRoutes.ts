@@ -19,7 +19,8 @@ const router = Router();
 router.post('/submit', authenticateUser, async (req: Request, res: Response) => {
     // NOTE: This legacy route remains for chat-only submission requests but should be deprecated 
     // in favor of the /submit/web flow (which uses a separate token generation endpoint).
-    const { challengeText, totalSessions, durationType, cadence } = req.body;
+    // ⭐ UPDATE: Extract new cadence fields
+    const { challengeText, totalSessions, durationType, sessionCadenceText, cadenceUnit } = req.body;
     const userId = req.userId;
 
    if (!challengeText || !totalSessions || !durationType) {
@@ -28,10 +29,10 @@ router.post('/submit', authenticateUser, async (req: Request, res: Response) => 
         });
     }
 
-    // Cadence validation for recurring challenges
-    if (durationType === 'RECURRING' && !cadence) {
+    // ⭐ UPDATE: Cadence validation for recurring challenges
+    if (durationType === 'RECURRING' && (!sessionCadenceText || !cadenceUnit)) {
         return res.status(400).json({ 
-            error: "Cadence is required for Recurring challenges." 
+            error: "Both Session Cadence Text and Cadence Unit are required for Recurring challenges." 
         });
     }
 
@@ -46,7 +47,8 @@ router.post('/submit', authenticateUser, async (req: Request, res: Response) => 
             challengeText,
             totalSessions,
             durationType,
-            cadence
+            sessionCadenceText, // ⭐ UPDATE: Pass sessionCadenceText
+            cadenceUnit         // ⭐ UPDATE: Pass cadenceUnit
         );
         
         // AUDIT LOG (Success)
@@ -94,7 +96,8 @@ router.post('/submit', authenticateUser, async (req: Request, res: Response) => 
  */
 router.post('/submit/web', async (req: Request, res: Response) => {
     // Expected inputs from the web form: token, form fields
-    const { token, challengeText, totalSessions, durationType, cadence } = req.body; 
+    // ⭐ UPDATE: Extract new cadence fields
+    const { token, challengeText, totalSessions, durationType, sessionCadenceText, cadenceUnit } = req.body; 
     let userId: number;
     let platformId: string;
     let platformName: PlatformName; // Declare platformName using the PlatformName enum type
@@ -115,7 +118,8 @@ router.post('/submit/web', async (req: Request, res: Response) => {
         
         // ⭐ FIX 1: findOrCreateUser expects one object argument, not two strings.
         // It's technically redundant here since we have the userId from the token, 
-        // but we keep it to ensure the user record is initialized if they were brand new.
+        // but we keep it to ensure the user record is initialized (e.g., setting required timestamps like dailyChallengeResetAt) 
+        // if they were brand new before the submission transaction proceeds.
         await findOrCreateUser({ platformId, platformName });
 
     } catch (error) {
@@ -144,8 +148,9 @@ router.post('/submit/web', async (req: Request, res: Response) => {
             error: "Missing required challenge fields (text, sessions, or duration)." 
         });
     }
-    if (durationType === 'RECURRING' && !cadence) {
-        return res.status(400).json({ error: "Cadence is required for Recurring challenges." });
+    // ⭐ UPDATE: Cadence validation for recurring challenges
+    if (durationType === 'RECURRING' && (!sessionCadenceText || !cadenceUnit)) {
+        return res.status(400).json({ error: "Both Session Cadence Text and Cadence Unit are required for Recurring challenges." });
     }
     
     // Convert to integer and validate
@@ -163,7 +168,8 @@ router.post('/submit/web', async (req: Request, res: Response) => {
             challengeText,
             sessions, // Use the parsed integer
             durationType,
-            cadence // Pass cadence to the service
+            sessionCadenceText, // ⭐ UPDATE: Pass sessionCadenceText
+            cadenceUnit         // ⭐ UPDATE: Pass cadenceUnit
         );
         
         // AUDIT LOG (Success)
