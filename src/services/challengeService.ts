@@ -1,9 +1,10 @@
 // src/services/challengeService.ts
 import prisma from '../prisma';
-import { User, Challenge, CadenceUnit } from '@prisma/client';
-// Import the entire module as 'Prisma' to ensure the namespace is correct
+import { User, Challenge, CadenceUnit, DurationType } from '@prisma/client'; // named import for clear typing (optional)
 import * as Prisma from '@prisma/client';
 import { isStreamLive, getCurrentStreamSessionId} from './streamService';
+import { PrismaClient } from '@prisma/client';
+
 
 // --- GLOBAL CONFIGURATION (SCREAMING_SNAKE_CASE) ---
 const DIGOUT_COST_PERCENTAGE = 0.21; // 21%
@@ -12,8 +13,10 @@ const SUBMISSION_BASE_COST = 210; // Base cost for challenge submission
 const DISRUPT_COST = 2100; // Fixed cost for Disrupt
 export type RefundOption = 'community_forfeit' | 'author_and_chest' | 'author_and_pushers';
 
+
 // --- Global Variable for Dynamic Import ---
 let uuidv4: Function | null = null;
+
 
 // Function to get the v4 function dynamically
 async function getV4() {
@@ -23,6 +26,16 @@ async function getV4() {
         uuidv4 = uuidModule.v4;
     }
     return uuidv4;
+}
+
+/**
+ * Parses the required session count (X) from the cadence text.
+ * Expects format: "X session(s) every..."
+ */
+function parseCadenceRequiredCount(sessionCadenceText: string | undefined): number {
+    if (!sessionCadenceText) return 1; 
+    const match = sessionCadenceText.match(/^(\d+)/);
+    return match ? parseInt(match[1], 10) : 1; 
 }
 
 
@@ -408,6 +421,7 @@ export async function processDigout(userId: number, challengeId: number) {
     });
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////////////
 // PROCESS CHALLENGE SUBMISSION
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -477,6 +491,12 @@ export async function processChallengeSubmission(
         
         // 4. (MOCK) Deduction...
 
+        // ⭐ NEW: Parse required count for recurring challenges
+        let cadenceRequiredCount: number | undefined;
+        if (durationType === Prisma.DurationType.RECURRING) {
+            cadenceRequiredCount = parseCadenceRequiredCount(sessionCadenceText);
+        }
+
         // 5. Create the new Challenge record
         const newChallenge = await tx.challenge.create({
             data: {
@@ -490,8 +510,9 @@ export async function processChallengeSubmission(
                 ...(cadenceUnit && { cadenceUnit: cadenceUnit }),
                 
                 // Always include these for RECURRING challenges
+                cadenceRequiredCount: cadenceRequiredCount || null, // ⭐ SET REQUIRED COUNT
                 cadenceProgressCounter: 0,
-                cadencePeriodStart: (durationType === Prisma.DurationType.RECURRING ? new Date() : null),
+                cadencePeriodStart: null, // ⭐ CORRECT: Set on first execution
 
                 totalSessions: totalSessions, // Required field
                 timestampSubmitted: transactionTimestamp, // Required field
@@ -679,13 +700,20 @@ export async function processExecuteChallenge(challengeId: number): Promise<Chal
         // Set status to 'InProgress' ONLY if it's coming from 'Active' (first session)
         const newStatus = challenge.status === 'ACTIVE' ? 'IN_PROGRESS' : challenge.status;
 
+        const updateData: any = {
+            status: newStatus, 
+            isExecuting: true,
+            sessionStartTimestamp: transactionTimestamp,
+        };
+
+        // ⭐ CRITICAL: Set cadencePeriodStart ONLY when transitioning from ACTIVE to IN_PROGRESS
+        if (challenge.status === 'ACTIVE' && challenge.durationType === 'RECURRING') {
+            updateData.cadencePeriodStart = transactionTimestamp;
+        }
+
         const executingChallenge = await tx.challenge.update({
             where: { challengeId: challengeId },
-            data: {
-                status: newStatus, 
-                isExecuting: true,
-                sessionStartTimestamp: transactionTimestamp,
-            }
+            data: updateData
         });
 
         return executingChallenge;

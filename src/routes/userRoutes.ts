@@ -47,28 +47,39 @@ router.post('/submit', authenticateUser, async (req: Request, res: Response) => 
             challengeText,
             totalSessions,
             durationType,
-            sessionCadenceText, // ⭐ UPDATE: Pass sessionCadenceText
-            cadenceUnit         // ⭐ UPDATE: Pass cadenceUnit
+            sessionCadenceText,
+            cadenceUnit
         );
         
-        // AUDIT LOG (Success)
+        // AUDIT LOG (Success) - ENHANCED DETAIL
         logger.info(`SUBMIT Success: #${newChallenge.challengeId} by User ${userId}`, {
             challengeId: newChallenge.challengeId,
             cost: cost,
+            pushBaseCost: newChallenge.pushBaseCost, 
+            totalSessions: newChallenge.totalSessions, 
+            category: newChallenge.category,
+            durationType: newChallenge.durationType,
+            sessionCadenceText: newChallenge.sessionCadenceText,
             proposerUserId: userId,
             platformId: req.platformId,
             platformName: req.platformName,
-            action: 'submission_success'
+            action: 'submission_success',
+            cadence: `${newChallenge.cadenceRequiredCount} per ${newChallenge.cadenceUnit}` 
         });
 
-        // RETURN RESPONSE
+        // RETURN RESPONSE - ENHANCED DETAIL
         return res.status(200).json({
             message: `Challenge #${newChallenge.challengeId} submitted successfully for a cost of ${cost} NUMBERS.`,
             action: 'submission_success',
             details: {
                 challengeId: newChallenge.challengeId,
                 cost: cost,
+                pushBaseCost: newChallenge.pushBaseCost, // ✅ CORRECTED
                 challengeText: newChallenge.challengeText,
+                totalSessions: newChallenge.totalSessions, // ✅ Added
+                category: newChallenge.category, // ✅ Added
+                durationType: newChallenge.durationType, // ✅ Added
+                sessionCadenceText: newChallenge.sessionCadenceText, // ✅ Added
                 status: newChallenge.status
             }
         });
@@ -116,7 +127,7 @@ router.post('/submit/web', async (req: Request, res: Response) => {
         // We ensure it is a valid PlatformName string from the enum.
         platformName = payload.platformName as PlatformName;        
         
-        // ⭐ FIX 1: findOrCreateUser expects one object argument, not two strings.
+        // ⭐ findOrCreateUser expects one object argument, not two strings.
         // It's technically redundant here since we have the userId from the token, 
         // but we keep it to ensure the user record is initialized (e.g., setting required timestamps like dailyChallengeResetAt) 
         // if they were brand new before the submission transaction proceeds.
@@ -125,7 +136,7 @@ router.post('/submit/web', async (req: Request, res: Response) => {
     } catch (error) {
         logger.error('JWT Validation Error:', error);
         
-        // ⭐ FIX 3: Add type guard to check 'error.name'
+        // ⭐ Add type guard to check 'error.name'
         if (error instanceof Error && (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError')) {
              return res.status(401).json({ 
                  message: 'Authentication failed. Token is invalid or expired. Please get a new token.',
@@ -161,37 +172,48 @@ router.post('/submit/web', async (req: Request, res: Response) => {
 
     // 3. Process Submission Transaction
     try {
-        // ⭐ FIX 2: Use the existing service function name processChallengeSubmission 
-        // and pass the required positional arguments.
+        // ⭐ CRITICAL STEP: Execute the Challenge Submission business logic.
+        // The return object provides the created challenge details, the final cost, and the user's updated balance.
         const { newChallenge, cost, updatedUser } = await challengeService.processChallengeSubmission(
             userId, // Authenticated via JWT
             challengeText,
             sessions, // Use the parsed integer
             durationType,
-            sessionCadenceText, // ⭐ UPDATE: Pass sessionCadenceText
-            cadenceUnit         // ⭐ UPDATE: Pass cadenceUnit
+            sessionCadenceText, 
+            cadenceUnit         
         );
         
-        // AUDIT LOG (Success)
+        // AUDIT LOG (Success) - ENHANCED DETAIL
         logger.info(`SUBMIT Success: #${newChallenge.challengeId} by User ${userId}`, {
             challengeId: newChallenge.challengeId,
             cost: cost,
+            pushBaseCost: newChallenge.pushBaseCost, 
+            totalSessions: newChallenge.totalSessions,
+            category: newChallenge.category,
+            durationType: newChallenge.durationType,
+            sessionCadenceText: newChallenge.sessionCadenceText, 
             proposerUserId: userId,
             platformId: platformId,
             platformName: platformName,
-            action: 'submission_success'
+            action: 'submission_success',
+            cadence: `${newChallenge.cadenceRequiredCount} per ${newChallenge.cadenceUnit}`
         });
 
-        // RETURN RESPONSE
+        // RETURN RESPONSE - ENHANCED DETAIL
         return res.status(200).json({
             message: `Challenge #${newChallenge.challengeId} submitted successfully for a cost of ${cost} NUMBERS.`,
             action: 'submission_success',
             details: {
                 challengeId: newChallenge.challengeId,
                 cost: cost,
+                pushBaseCost: newChallenge.pushBaseCost,
                 challengeText: newChallenge.challengeText,
+                totalSessions: newChallenge.totalSessions, 
+                category: newChallenge.category, 
+                durationType: newChallenge.durationType,
+                sessionCadenceText: newChallenge.sessionCadenceText, 
                 status: newChallenge.status,
-                lastKnownBalance: updatedUser.lastKnownBalance
+                lastKnownBalance: updatedUser.lastKnownBalance 
             }
         });
         

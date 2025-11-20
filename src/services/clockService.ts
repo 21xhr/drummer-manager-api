@@ -110,6 +110,90 @@ export async function checkOneOffContiguity(): Promise<number> {
     return updateResult.count;
 }
 
+
+// ------------------------------------------------------------------
+// ⭐ NEW: RECURRING CADENCE ENFORCEMENT LOGIC (Final Version)
+// ------------------------------------------------------------------
+
+/**
+ * Enforces the cadence rules for all IN_PROGRESS recurring challenges.
+ * Checks if the last period was completed and resets the counter, or fails the challenge.
+ */
+export async function enforceRecurringChallengeCadence(): Promise<number> {
+    const now = new Date();
+    let challengesChecked = 0;
+    
+    // 1. Find all IN_PROGRESS Recurring Challenges that are NOT currently executing
+    const recurringChallenges = await prisma.challenge.findMany({
+        where: {
+            status: Prisma.ChallengeStatus.IN_PROGRESS,
+            durationType: Prisma.DurationType.RECURRING,
+            isExecuting: false,
+        }
+    });
+    
+    const failedChallengeIds: number[] = [];
+
+    for (const challenge of recurringChallenges) {
+        
+        // ⭐ CRITICAL FIX: Ensure cadencePeriodStart is set. If not, skip (data error).
+        if (!challenge.cadencePeriodStart) {
+            console.error(`[CRITICAL DATA ERROR] Recurring Challenge #${challenge.challengeId} is IN_PROGRESS but cadencePeriodStart is null. Skipping cadence check.`);
+            continue; 
+        }
+        
+        const lastActiveDate = challenge.cadencePeriodStart;
+        const requiredCount = challenge.cadenceRequiredCount ?? 1;
+
+        let periodDays = 7; // Default to Weekly
+        
+        // Determine the period length in days
+        if (challenge.cadenceUnit === Prisma.CadenceUnit.DAILY) {
+            periodDays = 1;
+        } else if (challenge.cadenceUnit === Prisma.CadenceUnit.MONTHLY) {
+            periodDays = 30; 
+        } else if (challenge.cadenceUnit === Prisma.CadenceUnit.CUSTOM_DAYS) {
+            const match = challenge.sessionCadenceText?.match(/every (\d+) days/);
+            periodDays = match ? parseInt(match[1], 10) : 7; 
+        }
+
+        // --- Core Check: Has the period passed? ---
+        const deadline = new Date(lastActiveDate.getTime() + periodDays * 24 * 60 * 60 * 1000);
+        const periodPassed = now > deadline;
+        
+        if (periodPassed) {
+            challengesChecked++;
+            
+            if (challenge.cadenceProgressCounter < requiredCount) {
+                // FAILURE: Did not meet the required pace
+                failedChallengeIds.push(challenge.challengeId);
+                
+                await prisma.challenge.update({
+                    where: { challengeId: challenge.challengeId },
+                    data: {
+                        status: Prisma.ChallengeStatus.FAILED, 
+                        failureReason: `Cadence rule broken: Failed to complete ${requiredCount} sessions within the ${challenge.cadenceUnit} period.`,
+                        timestampCompleted: now.toISOString(), 
+                    }
+                });
+            } else {
+                // SUCCESS: Met the required pace. Reset the counter and advance the period start date.
+                await prisma.challenge.update({
+                    where: { challengeId: challenge.challengeId },
+                    data: {
+                        cadenceProgressCounter: 0,         // Reset for the next period
+                        cadencePeriodStart: now.toISOString(), // Set the new period's anchor to NOW
+                    }
+                });
+            }
+        }
+    }
+    
+    console.log(`[Cadence Check] Checked ${challengesChecked} recurring challenges. Failed ${failedChallengeIds.length}.`);
+    return failedChallengeIds.length;
+}
+
+
 // ------------------------------------------------------------------
 // 3. DAILY MAINTENANCE ORCHESTRATOR
 // ------------------------------------------------------------------
@@ -144,5 +228,9 @@ export async function runDailyMaintenance() {
     const failedCount = await checkOneOffContiguity();
     console.log(`[Maintenance] Failed and Archived ${failedCount} ONE_OFF challenges due to discontinuity.`);
 
+    // ⭐ 5. RECURRING Cadence Enforcement
+    const failedCadenceCount = await enforceRecurringChallengeCadence();
+    console.log(`[Maintenance] Failed ${failedCadenceCount} RECURRING challenges due to missed cadence pace.`);
+    
     console.log(`[ClockService] Daily maintenance complete.`);
 }
