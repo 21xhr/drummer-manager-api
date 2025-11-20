@@ -127,7 +127,7 @@ router.post('/submit/web', async (req: Request, res: Response) => {
         // We ensure it is a valid PlatformName string from the enum.
         platformName = payload.platformName as PlatformName;        
         
-        // ⭐ findOrCreateUser expects one object argument, not two strings.
+        // findOrCreateUser expects one object argument, not two strings.
         // It's technically redundant here since we have the userId from the token, 
         // but we keep it to ensure the user record is initialized (e.g., setting required timestamps like dailyChallengeResetAt) 
         // if they were brand new before the submission transaction proceeds.
@@ -136,7 +136,7 @@ router.post('/submit/web', async (req: Request, res: Response) => {
     } catch (error) {
         logger.error('JWT Validation Error:', error);
         
-        // ⭐ Add type guard to check 'error.name'
+        // Add type guard to check 'error.name'
         if (error instanceof Error && (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError')) {
              return res.status(401).json({ 
                  message: 'Authentication failed. Token is invalid or expired. Please get a new token.',
