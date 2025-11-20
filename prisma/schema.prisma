@@ -116,7 +116,8 @@ model Challenge {
   sessionCadenceText      String?         @map("session_cadence_text")
   cadenceUnit             CadenceUnit?    @map("cadence_unit")
   cadenceProgressCounter  Int             @default(0) @map("cadence_progress_counter")
-  cadencePeriodStart      DateTime?       @map("cadence_period_start")
+  cadencePeriodStart      DateTime?       @map("cadence_period_start") // Will be set on FIRST EXECUTION or successful daily tick.
+  cadenceRequiredCount    Int?            @default(1) @map("cadence_required_count") 
 
   // Lifecycle fields
   streamDaysSinceActivation Int         @default(0) @map("stream_days_since_activation")
