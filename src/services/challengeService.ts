@@ -641,6 +641,12 @@ export async function processExecuteChallenge(challengeId: number): Promise<Chal
                 currentSessionCount: nextSessionCount
             };
 
+            // ⭐ NEW LOGIC: Increment Cadence Progress for Recurring Challenges
+            // This ensures we track how many sessions were done *this* period (e.g., this week)
+            if (previousChallenge.durationType === 'RECURRING') {
+                updateData.cadenceProgressCounter = { increment: 1 };
+            }
+
             if (isCompleted) {
                 // Rule: Set status to 'Completed' if final session finishes
                 updateData.status = 'Completed';
