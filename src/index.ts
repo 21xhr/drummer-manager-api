@@ -24,23 +24,29 @@ import { incrementGlobalDayStat } from './services/streamService';
 
 // --- Server Setup ---
 const app = express();
-const PORT = process.env.PORT || 3000; 
+// ⭐ FIX 1: Ensure PORT is always a number by casting the entire expression.
+const PORT = Number(process.env.PORT || 3000);
 
 // --- Middleware ---
 // ⭐ Define the allowed origins for CORS
 const allowedOrigins = [
-    // 1. Production/Vercel URL (The live site)
+    // 1. Production/Vercel URL
     "https://drummer-manager-website.vercel.app", 
-    // 2. Local Testing URL (Live Preview by Microsoft)
-    "http://192.168.1.37:3001",
-    "http://192.168.1.37:5500",
-    "http://192.168.1.37:3000",
-    // 3. Fallback for generic local development (e.g., if you switch extensions)
+    
+    // 2. Localhost Development (Generic fallbacks)
     "http://localhost:3001",
+    "http://localhost:5500",
     "http://127.0.0.1:5500",
-    // 4. Local Testing URL (Live Server by Ritwick Dey)
-    "http://192.168.1.37:5500"
+
+    // 3. Network Development (The IP address of YOUR MACHINE)
+    // IMPORTANT: Include both the Web Server port (5500) and the API Dev port (3001)
+    "http://192.168.1.37:3001", // For direct API testing
+    "http://192.168.1.37:5500", // For your web form (the browser's origin)
+    
+    // You do NOT need the port the API is running on (3000) 
+    // unless you have another process accessing it from 3000.
 ];
+
 
 // ⭐ CORS Configuration (Must come before app.use(express.json()))
 const corsOptions = {
@@ -96,8 +102,14 @@ async function startServer() {
   }
 
   // --- Start the server ---
-  app.listen(PORT, () => {
-    console.log(`\n🚀 Drummer Manager API is live at http://localhost:${PORT}`);
+  // ⭐ CRITICAL FIX: Add the host 0.0.0.0 to bind to all interfaces
+  const HOST = '0.0.0.0';
+
+  // --- Start the server ---
+  // FIX 2: This call is now valid because PORT is guaranteed to be a number.
+  app.listen(PORT, HOST, () => {
+    // The console message can now use the HOST to show network accessibility
+    console.log(`\n🚀 Drummer Manager API is live and network accessible at http://${HOST}:${PORT}`);
     console.log(`Mode: ${process.env.NODE_ENV || 'development'}`);
   });
 }
