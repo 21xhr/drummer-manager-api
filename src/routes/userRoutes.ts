@@ -199,21 +199,29 @@ router.post('/submit/web', async (req: Request, res: Response) => {
             cadence: `${newChallenge.cadenceRequiredCount} per ${newChallenge.cadenceUnit}`
         });
 
-        // RETURN RESPONSE - ENHANCED DETAIL
+        // RETURN RESPONSE - ENHANCED DETAIL (CRITICAL FIX APPLIED + STATS ADDED)
         return res.status(200).json({
             message: `Challenge #${newChallenge.challengeId} submitted successfully for a cost of ${cost} NUMBERS.`,
             action: 'submission_success',
             details: {
-                challengeId: newChallenge.challengeId,
                 cost: cost,
-                pushBaseCost: newChallenge.pushBaseCost,
-                challengeText: newChallenge.challengeText,
-                totalSessions: newChallenge.totalSessions, 
-                category: newChallenge.category, 
-                durationType: newChallenge.durationType,
-                sessionCadenceText: newChallenge.sessionCadenceText, 
-                status: newChallenge.status,
-                lastKnownBalance: updatedUser.lastKnownBalance 
+                newChallenge: {
+                    challengeId: newChallenge.challengeId,
+                    pushBaseCost: newChallenge.pushBaseCost,
+                    challengeText: newChallenge.challengeText,
+                    totalSessions: newChallenge.totalSessions, 
+                    category: newChallenge.category, 
+                    durationType: newChallenge.durationType,
+                    sessionCadenceText: newChallenge.sessionCadenceText, 
+                    status: newChallenge.status,
+                },
+                // ⭐ CRITICAL UPDATE: Include all user stats from updatedUser
+                userStats: {
+                    lastKnownBalance: updatedUser.lastKnownBalance,
+                    dailySubmissionCount: updatedUser.dailySubmissionCount,
+                    totalChallengesSubmitted: updatedUser.totalChallengesSubmitted,
+                    totalNumbersSpent: updatedUser.totalNumbersSpent,
+                }
             }
         });
         
