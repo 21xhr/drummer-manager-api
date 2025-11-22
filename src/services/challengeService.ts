@@ -505,7 +505,7 @@ export async function processChallengeSubmission(
                 status: 'ACTIVE', // Required field (Always starts Active)
                 category: "General", // Required field (Defaulted here)
                 durationType: durationType, // Required field
-                // --- NEW CADENCE FIELDS ---
+                // --- CADENCE FIELDS ---
                 ...(sessionCadenceText && { sessionCadenceText: sessionCadenceText }),
                 ...(cadenceUnit && { cadenceUnit: cadenceUnit }),
                 
@@ -535,11 +535,12 @@ export async function processChallengeSubmission(
             },
             // ⭐ CRITICAL CHANGE: Select the required fields for the return value
             select: {
-                id: true, // Need at least one unique field for the User type
+                id: true, 
                 lastKnownBalance: true, 
+                dailySubmissionCount: true, 
+                totalChallengesSubmitted: true,
+                totalNumbersSpent: true,
                 // Add any other User fields required by your `User` type here
-                // Note: If you import the full `User` type, ensure you select all fields
-                // For simplicity, we assume we only need the ID and balance for the return
             }
         });
 
