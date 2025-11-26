@@ -24,34 +24,41 @@ import { incrementGlobalDayStat } from './services/streamService';
 
 // --- Server Setup ---
 const app = express();
-// ⭐ FIX 1: Ensure PORT is always a number by casting the entire expression.
+// ⭐ Ensure PORT is always a number by casting the entire expression.
 const PORT = Number(process.env.PORT || 3000);
 
 // --- Middleware ---
-// ⭐ Define the allowed origins for CORS
-const allowedOrigins = [
-    // 1. Production/Vercel URL
-    "https://drummer-manager-website.vercel.app", 
-    
-    // 2. Localhost Development (Generic fallbacks)
+// ⭐ Define the allowed origins for CORS (Used for production reference)
+const PROD_ORIGIN = "https://drummer-manager-website.vercel.app";
+// Note: DEV_ORIGINS is only used for logging/debugging context now, the main rule is below.
+const DEV_ORIGINS = [
     "http://localhost:3001",
     "http://localhost:5500",
     "http://127.0.0.1:5500",
-
-    // 3. Network Development (The IP address of YOUR MACHINE)
-    // IMPORTANT: Include both the Web Server port (5500) and the API Dev port (3001)
-    "http://192.168.1.37:3001", // For direct API testing
-    "http://192.168.1.37:5500", // For your web form (the browser's origin)
-    
-    // You do NOT need the port the API is running on (3000) 
-    // unless you have another process accessing it from 3000.
+    "http://192.168.1.37:*"
 ];
 
 
 // ⭐ CORS Configuration (Must come before app.use(express.json()))
 const corsOptions = {
-    // Only allow requests from your Vercel frontend URL (from .env)
-    origin: allowedOrigins, 
+    // CRITICAL FIX: Use a custom function to allow ALL requests in development 
+    // that are NOT production, bypassing all local network header issues.
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+        const isProduction = process.env.NODE_ENV === 'production';
+        
+        if (isProduction) {
+            // In Production, lock it down to the Vercel URL
+            if (origin === PROD_ORIGIN) {
+                callback(null, true);
+            } else {
+                callback(new Error('Not allowed by CORS'), false);
+            }
+        } else {
+            // In Development, allow any origin. This is the only reliable way 
+            // to allow external clients (phone) to connect to your private IP.
+            callback(null, true);
+        }
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
     optionsSuccessStatus: 204
@@ -102,7 +109,7 @@ async function startServer() {
   }
 
   // --- Start the server ---
-  // ⭐ CRITICAL FIX: Add the host 0.0.0.0 to bind to all interfaces
+  // ⭐ CRITICAL: Add the host 0.0.0.0 to bind to all interfaces
   const HOST = '0.0.0.0';
 
   // --- Start the server ---

@@ -18,16 +18,19 @@ router.post('/submit-challenge', authenticateUser, async (req: Request, res: Res
         const tokenDuration = validateDuration(duration);
         const token = generateToken({ userId, platformId, platformName }, tokenDuration);
         
-        // ⭐ NEW LOGIC: Dynamic URL Construction
+         // ⭐ NEW LOGIC: Dynamic URL Construction
+            /* The Goal: The API must send a URL back to the API caller (Chatbot in a production environment).
+                If the API is running locally (isLocalHost is true), the user must use the private IP (192.168.1.37) 
+                to access the web form (port 5500) from an external device like a phone.
+                If the API is running in production (Vercel), the user uses the public Vercel URL.*/
         const isLocalHost = req.hostname === 'localhost' || req.hostname === '127.0.0.1' || req.hostname === '0.0.0.0';
         
-        // Use a fixed port 5500 for the frontend, and 192.168.1.37 for the host if not localhost
         const WEBFORM_BASE_URL = 
             isLocalHost
-            ? `http://192.168.1.37:5500` // Use your fixed local IP for the link
+            ? `http://192.168.1.37:5500` 
+            // 🔑 NOTE: This MUST be the Mac's private LAN IP, and the Live Server's port (5500), for phone access during local development.
             : process.env.WEBFORM_BASE_URL || "https://drummer-manager-website.vercel.app";
 
-        // Fix the typo in the path: "challengessubmitform" -> "challengesubmitform"
         const secureUrl = `${WEBFORM_BASE_URL}/challengesubmitform/index.html?token=${token}`;
         
         // Log, etc.
