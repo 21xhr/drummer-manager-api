@@ -1,12 +1,12 @@
 // src/services/jwtService.ts
 // Centralizes all logic for generating, signing, and verifying the authentication tokens.
-import jwt, { Secret, SignOptions } from 'jsonwebtoken'; 
+import jwt, { Secret, SignOptions, JwtPayload } from 'jsonwebtoken'; 
 import logger from '../logger'; 
 
 const JWT_SECRET: Secret = process.env.JWT_SECRET || 'your_fallback_secret_for_dev_ONLY'; 
 // Note: Security risk of the fallback = None (only happens during broken local dev, never in Prod as Vercel has the JWT_SECRET).
 
-interface TokenPayload {
+interface TokenPayload extends JwtPayload {
     userId: number;
     platformId: string;
     platformName: string;
@@ -19,7 +19,7 @@ interface TokenPayload {
  */
 export function generateToken(payload: TokenPayload, duration: string = '21m'): string {
     const options: SignOptions = {
-        // ⭐ FIX: We keep the 'as any' cast because the local TypeScript environment 
+        // ⭐ We keep the 'as any' cast because the local TypeScript environment 
         // strictly defines 'expiresIn' and rejects a plain 'string', forcing us to override 
         // the type check for dynamic duration strings (e.g., '21m').
         expiresIn: duration as any, 
