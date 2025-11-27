@@ -107,8 +107,7 @@ router.post('/submit', authenticateUser, async (req: Request, res: Response) => 
  */
 router.post('/submit/web', async (req: Request, res: Response) => {
     // Expected inputs from the web form: token, form fields
-    // ⭐ UPDATE: Extract new cadence fields
-    const { token, challengeText, totalSessions, durationType, sessionCadenceText, cadenceUnit } = req.body; 
+    const { token, challengeText, totalSessions, durationType, sessionCadenceText, cadenceUnit, cost: clientCostEstimate } = req.body;
     let userId: number;
     let platformId: string;
     let platformName: PlatformName; // Declare platformName using the PlatformName enum type
