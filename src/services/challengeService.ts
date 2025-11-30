@@ -582,6 +582,15 @@ export async function processChallengeSubmission(
                 dailySubmissionCount: true, 
                 totalChallengesSubmitted: true,
                 totalNumbersSpent: true,
+                // --- RECOMMENDED ADDITIONS BASED ON SCHEMA.PRISMA ---
+                platformId: true,           // Identity: Required for system logic
+                platformName: true,         // Identity: Display user's platform
+                dailyChallengeResetAt: true, // State: Critical for frontend countdown/info
+                // Key Metrics for User Stats Summary
+                totalPushesExecuted: true,
+                totalDigoutsExecuted: true,
+                totalRemovalsExecuted: true,
+                totalReceivedFromRemovals: true,
                 // Add any other User fields required by your `User` type here
             }
         });
@@ -603,6 +612,7 @@ export async function processChallengeSubmission(
         };
     });
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // HANDLES ARCHIVAL LOGIC
