@@ -39,22 +39,19 @@ function parseCadenceRequiredCount(sessionCadenceText: string | undefined): numb
 }
 
 
-// ------------------------------------------------------------------
-// CORE COST CALCULATIONS
-// ------------------------------------------------------------------
 
 /**
  * Calculates the next 21:00 UTC time that is in the future.
  * If 21:00 UTC today has passed, it returns 21:00 UTC tomorrow.
  * @returns {string} The next 21:00 UTC reset time as a standardized ISO 8601 string.
- */
+*/
 export function getNextDailyResetTime(): string {
     const now = new Date();
     
     // 1. Start with today's date and set the time to 21:00:00.000 UTC
     const nextReset = new Date(now.getTime());
     nextReset.setUTCHours(21, 0, 0, 0);
-
+    
     // 2. If 21:00 UTC today has already passed, advance to the next day
     if (nextReset <= now) {
         nextReset.setUTCDate(nextReset.getUTCDate() + 1);
@@ -63,6 +60,70 @@ export function getNextDailyResetTime(): string {
     return nextReset.toISOString(); // ⭐ CRITICAL: Convert to an unambiguous ISO string for storage/consistency.
 }
 
+
+// ------------------------------------------------------------------
+// CORE SUBMISSION CONTEXT (NEW)
+// ------------------------------------------------------------------
+
+/**
+ * Retrieves the user's current daily submission context, performing a reset
+ * of the daily counter if the current time is past the dailyChallengeResetAt time.
+ * @param userId - The ID of the user.
+ * @returns An object containing the current state needed for submission cost calculation.
+ */
+export async function getCurrentDailySubmissionContext(userId: number | string): Promise<{
+    dailySubmissionCount: number;
+    baseCostPerSession: number;
+}> {
+    // CRITICAL FIX: Convert string ID to number for Prisma lookup if necessary
+    const idToLookup = typeof userId === 'string' ? parseInt(userId, 10) : userId;
+
+    // We use a transaction to ensure atomicity in case a reset is needed.
+    return prisma.$transaction(async (tx) => {
+        // 1. Fetch User data
+        const user = await tx.user.findUnique({
+            where: { id: idToLookup }, // Use the resolved numeric ID
+            select: { dailyChallengeResetAt: true, dailySubmissionCount: true }
+        });
+
+        // 🛑 We throw here if the user is not found, but tokenRoutes.ts now calls
+        // findOrCreateUser *before* calling this function, guaranteeing the user exists.
+        if (!user) { throw new Error("User not found."); } // This is now a safety net.
+
+        let currentResetTime = user.dailyChallengeResetAt;
+        let N = user.dailySubmissionCount; // N is the count *before* this submission
+        const now = new Date();
+
+        // --- CONDITIONAL RESET LOGIC ---
+        if (now > currentResetTime) {
+            // The daily window has expired. Reset the counter and time.
+            const nextReset = getNextDailyResetTime();
+
+            const updatedUser = await tx.user.update({
+                where: { id: idToLookup },
+                data: {
+                    dailyChallengeResetAt: nextReset,
+                    dailySubmissionCount: 0, // <-- RESET COUNTER HERE
+                },
+                select: { dailySubmissionCount: true } // Only need the new count
+            });
+            N = updatedUser.dailySubmissionCount; // N is now 0
+        }
+
+        // 2. Calculate the base cost using the (potentially reset) daily count
+        const cost = calculateSubmissionCost(N);
+
+        return {
+            dailySubmissionCount: N,
+            baseCostPerSession: cost
+        };
+    });
+}
+
+
+// ------------------------------------------------------------------
+// CORE COST CALCULATIONS
+// ------------------------------------------------------------------
 /**
  * Calculates the quadratic cost for submitting a new challenge, based on the user's
  * daily submission count. Applies live stream discount if applicable.
@@ -78,6 +139,7 @@ function calculateSubmissionCost(challengeCountToday: number): number {
     
     return cost;
 }
+
 
 /**
  * Applies the live discount to a calculated cost, rounding up the final value.
@@ -436,62 +498,41 @@ export async function processChallengeSubmission(
     const currentStreamSessionId = getCurrentStreamSessionId();
     const transactionTimestamp = new Date().toISOString();
 
-    // ⭐ VALIDATION: Ensure required values are provided and valid
+    // VALIDATION: Ensure required values are provided and valid
     if (!durationType || !Object.values(Prisma.DurationType).includes(durationType)) {
         throw new Error("Invalid or missing durationType.");
     }
     if (totalSessions < 1) {
         throw new Error("totalSessions must be 1 or greater.");
     }
-    // ⭐ VALIDATION: sessionCadenceText is mandatory for Recurring challenges
+    // VALIDATION: sessionCadenceText is mandatory for Recurring challenges
     if (durationType === Prisma.DurationType.RECURRING && !sessionCadenceText) {
     throw new Error("sessionCadenceText is required for Recurring challenges.");
     }
 
     // Note: The webform should handle the ONE_OFF session limit (e.g., max 21) before sending.
     return prisma.$transaction(async (tx) => {
-        // 1. Fetch User data including counter and reset time
+        
+        // 1. Get Submission Context (handles conditional reset and returns cost for N daily submission)
+        const { dailySubmissionCount: N, baseCostPerSession: submissionCost } = 
+            await getCurrentDailySubmissionContext(userId); 
+        
+        // 2. Fetch User Balance (must be inside transaction for atomic balance check)
         const user = await tx.user.findUnique({
             where: { id: userId },
-            select: { dailyChallengeResetAt: true, dailySubmissionCount: true, lastKnownBalance: true } // <-- ADD dailySubmissionCount
+            select: { lastKnownBalance: true }
         });
 
         if (!user) { throw new Error("User not found during submission process."); }
-        
-        // --- CONDITIONAL RESET LOGIC ---
-        // currentResetTime will now be a string (or Date object if the DB field is native type,
-        // but for safety, we treat it as the value we need to compare)
-        let currentResetTime = user.dailyChallengeResetAt;
-        let N = user.dailySubmissionCount; // <-- Use the atomic counter
-        const now = new Date();
 
-        if (now > currentResetTime) {
-            // The daily window has expired. Reset the counter and time.
-            const nextReset = getNextDailyResetTime();
-
-            const updatedUser = await tx.user.update({
-                where: { id: userId },
-                data: {
-                    dailyChallengeResetAt: nextReset,
-                    dailySubmissionCount: 0, // <-- RESET COUNTER HERE
-                },
-                select: { dailyChallengeResetAt: true, dailySubmissionCount: true }
-            });
-            currentResetTime = updatedUser.dailyChallengeResetAt;
-            N = updatedUser.dailySubmissionCount; // N is now 0
-        }
-
-        // 2. Calculate Cost: N is the count *before* this submission.
-        const submissionCost = calculateSubmissionCost(N); 
-
-        // 3. CRITICAL: BALANCE CHECK (using the user object fetched above)
+        // 3. CRITICAL: BALANCE CHECK
         if (user.lastKnownBalance < submissionCost) {
             throw new Error(`Insufficient balance. Challenge submission costs ${submissionCost} NUMBERS.`);
         }
         
         // 4. (MOCK) Deduction...
 
-        // ⭐ NEW: Parse required count for recurring challenges
+        // Parse required count for recurring challenges
         let cadenceRequiredCount: number | undefined;
         if (durationType === Prisma.DurationType.RECURRING) {
             cadenceRequiredCount = parseCadenceRequiredCount(sessionCadenceText);
@@ -505,14 +546,15 @@ export async function processChallengeSubmission(
                 status: 'ACTIVE', // Required field (Always starts Active)
                 category: "General", // Required field (Defaulted here)
                 durationType: durationType, // Required field
+                pushBaseCost: submissionCost, // Store the calculated cost here
                 // --- CADENCE FIELDS ---
                 ...(sessionCadenceText && { sessionCadenceText: sessionCadenceText }),
                 ...(cadenceUnit && { cadenceUnit: cadenceUnit }),
                 
                 // Always include these for RECURRING challenges
-                cadenceRequiredCount: cadenceRequiredCount || null, // ⭐ SET REQUIRED COUNT
+                cadenceRequiredCount: cadenceRequiredCount || null, // SET REQUIRED COUNT
                 cadenceProgressCounter: 0,
-                cadencePeriodStart: null, // ⭐ CORRECT: Set on first execution
+                cadencePeriodStart: null, // CORRECT: Set on first execution
 
                 totalSessions: totalSessions, // Required field
                 timestampSubmitted: transactionTimestamp, // Required field
@@ -521,7 +563,7 @@ export async function processChallengeSubmission(
         });
 
         // 6. Update User Stats: Deduct balance, update spending, and submission count
-        const userUpdateResult = await tx.user.update({ // ⭐ MODIFIED: Store the update result
+        const userUpdateResult = await tx.user.update({ // Store the update result
             where: { id: userId },
             data: {
                 lastKnownBalance: { decrement: submissionCost }, 
@@ -723,7 +765,7 @@ export async function processExecuteChallenge(challengeId: number): Promise<Chal
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
-// FETCH ACTIVE CHALLENGES (No changes needed)
+// FETCH ACTIVE CHALLENGES
 ////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Fetches all challenges that are currently 'Active'.

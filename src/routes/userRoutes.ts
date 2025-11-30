@@ -74,12 +74,12 @@ router.post('/submit', authenticateUser, async (req: Request, res: Response) => 
             details: {
                 challengeId: newChallenge.challengeId,
                 cost: cost,
-                pushBaseCost: newChallenge.pushBaseCost, // ✅ CORRECTED
+                pushBaseCost: newChallenge.pushBaseCost, 
                 challengeText: newChallenge.challengeText,
-                totalSessions: newChallenge.totalSessions, // ✅ Added
-                category: newChallenge.category, // ✅ Added
-                durationType: newChallenge.durationType, // ✅ Added
-                sessionCadenceText: newChallenge.sessionCadenceText, // ✅ Added
+                totalSessions: newChallenge.totalSessions,
+                category: newChallenge.category,
+                durationType: newChallenge.durationType,
+                sessionCadenceText: newChallenge.sessionCadenceText,
                 status: newChallenge.status
             }
         });
@@ -121,7 +121,7 @@ router.post('/submit/web', async (req: Request, res: Response) => {
         const payload = verifyToken(token); // Throws if invalid/expired
         userId = payload.userId;
         platformId = payload.platformId;
-        // ⭐ CRITICAL FIX: Cast the verified string from the JWT payload
+        // ⭐ CRITICAL: Cast the verified string from the JWT payload
         // to the new Prisma Enum type before passing it to the service.
         // We ensure it is a valid PlatformName string from the enum.
         platformName = payload.platformName as PlatformName;        
@@ -171,7 +171,7 @@ router.post('/submit/web', async (req: Request, res: Response) => {
 
     // 3. Process Submission Transaction
     try {
-        // ⭐ CRITICAL STEP: Execute the Challenge Submission business logic.
+        // ⭐ CRITICAL: Execute the Challenge Submission business logic.
         // The return object provides the created challenge details, the final cost, and the user's updated balance.
         const { newChallenge, cost, updatedUser } = await challengeService.processChallengeSubmission(
             userId, // Authenticated via JWT
@@ -198,7 +198,7 @@ router.post('/submit/web', async (req: Request, res: Response) => {
             cadence: `${newChallenge.cadenceRequiredCount} per ${newChallenge.cadenceUnit}`
         });
 
-        // RETURN RESPONSE - ENHANCED DETAIL (CRITICAL FIX APPLIED + STATS ADDED)
+        // RETURN RESPONSE - ENHANCED DETAIL
         return res.status(200).json({
             message: `Challenge #${newChallenge.challengeId} submitted successfully for a cost of ${cost} NUMBERS.`,
             action: 'submission_success',
@@ -214,7 +214,7 @@ router.post('/submit/web', async (req: Request, res: Response) => {
                     sessionCadenceText: newChallenge.sessionCadenceText, 
                     status: newChallenge.status,
                 },
-                // ⭐ CRITICAL UPDATE: Include all user stats from updatedUser
+                // ⭐ CRITICAL: Include all user stats from updatedUser
                 userStats: {
                     lastKnownBalance: updatedUser.lastKnownBalance,
                     dailySubmissionCount: updatedUser.dailySubmissionCount,

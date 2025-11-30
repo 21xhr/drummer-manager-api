@@ -112,7 +112,7 @@ export async function checkOneOffContiguity(): Promise<number> {
 
 
 // ------------------------------------------------------------------
-// ⭐ NEW: RECURRING CADENCE ENFORCEMENT LOGIC (Final Version)
+// ⭐ RECURRING CADENCE ENFORCEMENT LOGIC (Final Version)
 // ------------------------------------------------------------------
 
 /**
@@ -136,7 +136,7 @@ export async function enforceRecurringChallengeCadence(): Promise<number> {
 
     for (const challenge of recurringChallenges) {
         
-        // ⭐ CRITICAL FIX: Ensure cadencePeriodStart is set. If not, skip (data error).
+        // ⭐ CRITICAL: Ensure cadencePeriodStart is set. If not, skip (data error).
         if (!challenge.cadencePeriodStart) {
             console.error(`[CRITICAL DATA ERROR] Recurring Challenge #${challenge.challengeId} is IN_PROGRESS but cadencePeriodStart is null. Skipping cadence check.`);
             continue; 

@@ -1,48 +1,72 @@
+// src/routes/tokenRoutes.ts
+
 import { Router, Request, Response } from 'express';
+import { PlatformName } from '@prisma/client';
 import { authenticateUser } from '../middleware/authMiddleware';
-import { generateToken, validateDuration, verifyToken } from '../services/jwtService'; // 👈 Ensure verifyToken is imported
+import { generateToken, validateDuration, verifyToken } from '../services/jwtService'; 
+import { findOrCreateUser } from '../services/userService';
+import { getCurrentDailySubmissionContext } from '../services/challengeService';
 import logger from '../logger';
 
 const router = Router();
 
 /**
-c * * Generates a secure, single-use URL/token for the web form challenge submission.
- * Accepts optional 'duration' (e.g., '21m') to extend validity up to 210 minutes.
+ * * Generates a secure, single-use URL/token for the web form challenge submission.
  * This is the entry point from the chat command (!challengesubmit).
  */
 router.post('/submit-challenge', authenticateUser, async (req: Request, res: Response) => {
+    // userId is the numeric DB ID, often typed as a string from middleware/JWT.
     const userId = req.userId;
-    const { platformId, platformName, duration } = req.body; // duration is optional
+    const { platformId, platformName, duration } = req.body;
 
     try {
         const tokenDuration = validateDuration(duration);
+        
+        // 🔑 CRITICAL: Initialize user record if it doesn't exist. 
+        // This ensures the dailySubmissionCount and dailyChallengeResetAt fields are present
+        // before we attempt to read them in getCurrentDailySubmissionContext.
+        await findOrCreateUser({ 
+            platformId, 
+            platformName: platformName as PlatformName // Cast platformName to the Prisma Enum
+        });
+
+        // 1. Now safe to fetch the user's current daily submission context
+        // 🛑 FIX: Pass the string 'userId' directly. Safe because the service function now accepts string|number.
+        const context = await getCurrentDailySubmissionContext(userId);
+        const { dailySubmissionCount, baseCostPerSession } = context;
+
+        // Generate token
         const token = generateToken({ userId, platformId, platformName }, tokenDuration);
         
-         // ⭐ NEW LOGIC: Dynamic URL Construction
-            /* The Goal: The API must send a URL back to the API caller (Chatbot in a production environment).
-                If the API is running locally (isLocalHost is true), the user must use the private IP (192.168.1.37) 
-                to access the web form (port 5500) from an external device like a phone.
-                If the API is running in production (Vercel), the user uses the public Vercel URL.*/
+         // ⭐ Dynamic URL Construction
         const isLocalHost = req.hostname === 'localhost' || req.hostname === '127.0.0.1' || req.hostname === '0.0.0.0';
         
         const WEBFORM_BASE_URL = 
             isLocalHost
             ? `http://192.168.1.37:5500` 
-            // 🔑 NOTE: This MUST be the Mac's private LAN IP, and the Live Server's port (5500), for phone access during local development.
             : process.env.WEBFORM_BASE_URL || "https://drummer-manager-website.vercel.app";
 
         const secureUrl = `${WEBFORM_BASE_URL}/challengesubmitform/index.html?token=${token}`;
         
-        // Log, etc.
+        // 2. Update the response message and add context to details
+        const formattedCost = baseCostPerSession.toLocaleString();
+        
+        // Construct the new message string for the chat command answer
+        const chatResponse = 
+            `Please use the following secure link to submit your challenge (valid for ${tokenDuration}). ` +
+            `Your daily submission count is **${dailySubmissionCount}** (Base Cost: **${formattedCost}** NUMBERS). ` +
+            `Link: ${secureUrl}`;
 
-        // Return the secure URL to the chat bot/client
+        // Return the secure URL and enriched context to the chat bot/client
         return res.status(200).json({
-            message: `Please use the following secure link to submit your challenge (valid for ${tokenDuration}): ${secureUrl}`,
+            message: chatResponse, 
             action: 'token_generation_success',
             details: {
                 token: token,
                 secureUrl: secureUrl,
-                duration: tokenDuration
+                duration: tokenDuration,
+                dailySubmissionCount: dailySubmissionCount,
+                baseCostPerSession: baseCostPerSession 
             }
         });
 
@@ -60,7 +84,7 @@ router.post('/submit-challenge', authenticateUser, async (req: Request, res: Res
 
 
 /**
- * POST /api/v1/token/verify 👈 NEW CRITICAL ENDPOINT
+ * POST /api/v1/token/verify
  * * Verifies a token passed from the web form and returns the verified user identity.
  * This is called by the frontend (index.html) immediately upon receiving a URL with a token.
  */
@@ -85,7 +109,7 @@ router.post('/verify', async (req: Request, res: Response) => {
             message: 'Token verified successfully.',
             platformId: payload.platformId,
             platformName: payload.platformName,
-            // ⭐ FIX IMPLEMENTATION: Use optional chaining (?.) and check if payload.exp exists.
+            // ⭐ Use optional chaining (?.) and check if payload.exp exists.
             expiresIn: payload.exp ? validateDuration(`${(payload.exp * 1000 - Date.now()) / 60000}m`) : 'N/A'
         });
 
