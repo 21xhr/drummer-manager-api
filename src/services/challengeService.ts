@@ -1,6 +1,6 @@
 // src/services/challengeService.ts
 import prisma from '../prisma';
-import { User, Challenge, CadenceUnit, DurationType } from '@prisma/client'; // named import for clear typing (optional)
+import { User, Challenge, ChallengeStatus, CadenceUnit, DurationType } from '@prisma/client'; // named import for clear typing (optional)
 import * as Prisma from '@prisma/client';
 import { isStreamLive, getCurrentStreamSessionId} from './streamService';
 import { PrismaClient } from '@prisma/client';
@@ -493,7 +493,7 @@ export async function processChallengeSubmission(
     totalSessions: number,
     durationType: DurationType,
     sessionCadenceText?: string,
-    cadenceUnit?: Prisma.CadenceUnit
+    cadenceUnit?: CadenceUnit
 ): Promise<{ newChallenge: Challenge, cost: number, updatedUser: User }> {
     const currentStreamSessionId = getCurrentStreamSessionId();
     const transactionTimestamp = new Date().toISOString();
@@ -1085,10 +1085,10 @@ export async function processDisrupt(userId: number): Promise<string> {
  */
 export async function setChallengeStatusByAdmin(
     challengeId: number,
-    newStatus: Prisma.ChallengeStatus // Use Prisma.ChallengeStatus for the input type
+    newStatus: ChallengeStatus
 ): Promise<Challenge> {
     // 1. Basic Validation (ensure the status is valid)
-    if (!Object.values(Prisma.ChallengeStatus).includes(newStatus)) {
+    if (!Object.values(ChallengeStatus).includes(newStatus)) {
         throw new Error(`Invalid status provided: ${newStatus}.`);
     }
     
@@ -1096,11 +1096,11 @@ export async function setChallengeStatusByAdmin(
     const updateData: any = { 
         status: newStatus,
         // When setting to REMOVED, ARCHIVED, or FAILED, ensure it's not currently executing
-        ...(newStatus !== Prisma.ChallengeStatus.IN_PROGRESS && { 
+        ...(newStatus !== ChallengeStatus.IN_PROGRESS && { 
             isExecuting: false 
         }),
         // Optionally, record the completion timestamp if setting to a final state
-        ...(newStatus === Prisma.ChallengeStatus.COMPLETED && {
+        ...(newStatus === ChallengeStatus.COMPLETED && {
             timestampCompleted: new Date().toISOString()
         })
     };
