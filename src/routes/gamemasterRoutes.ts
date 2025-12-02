@@ -1,30 +1,22 @@
 // src/routes/gamemasterRoutes.ts
 import { Router, Request, Response } from 'express';
-import * as challengeService from '../services/challengeService'; 
+// import * as Prisma from '@prisma/client';
+import { ChallengeStatus } from '@prisma/client';
+import * as Prisma from '@prisma/client';
+import * as challengeService from '../services/challengeService';
 import logger from '../logger'; // Winston Logger
 import { getServiceErrorStatus } from '../utils/routeUtils';
-import { authenticateUser } from '../middleware/authMiddleware';
+import { authenticateUser, authenticateGameMaster } from '../middleware/authMiddleware';
 
 const router = Router();
 
 // -----------------------------------------------------------
 // EXECUTE CHALLENGE
 // -----------------------------------------------------------
-router.post('/challenges/execute', authenticateUser, async (req: Request, res: Response) => {
-    // Note: Execution only requires the Challenge ID; the caller's ID is used for auth/logging.
+router.post('/challenges/execute', authenticateGameMaster, async (req: Request, res: Response) => {
+    // Note: The authorization check is now handled entirely by authenticateGameMaster middleware.
     const { challengeId } = req.body;
-    const authorUserId = req.userId; // User ID authenticated by the middleware
-
-    // ⭐ AUTHORIZATION CHECK: ONLY ALLOW USER ID 21 (ADMIN)
-    const ADMIN_USER_ID = 21;
-    if (authorUserId !== ADMIN_USER_ID) {
-        // Return 403 Forbidden for unauthorized access
-        return res.status(403).json({ 
-            message: "Access Denied. This endpoint is restricted to the administrator (User ID 21).",
-            action: 'authorization_failure'
-        });
-    }
-    // ⭐ END AUTHORIZATION CHECK
+    const authorUserId = req.userId; // User ID authenticated by the middleware (guaranteed to be a user defined in ADMIN_USER_ID)
 
     if (challengeId === undefined || isNaN(parseInt(challengeId))) {
         return res.status(400).json({ message: 'Missing or invalid challengeId parameter.' });
@@ -64,3 +56,48 @@ router.post('/challenges/execute', authenticateUser, async (req: Request, res: R
     }
 });
 
+
+// -----------------------------------------------------------
+// SET CHALLENGE STATUS (ADMIN)
+// -----------------------------------------------------------
+/**
+ * Allows the Game Master to set an arbitrary status for a challenge.
+ * PUT /gm/challenge/:challengeId/status
+ */
+router.put('/challenge/:challengeId/status', authenticateGameMaster, async (req: Request, res: Response) => {
+    const challengeId = parseInt(req.params.challengeId, 10);
+    const { status } = req.body; 
+
+    if (!status) {
+        return res.status(400).json({ message: "Missing 'status' in request body." });
+    }
+    if (challengeId === undefined || isNaN(challengeId)) {
+        return res.status(400).json({ message: "Missing or invalid challengeId parameter." });
+    }
+
+    const newStatus = status.toUpperCase() as ChallengeStatus;
+    
+    try {
+        const updatedChallenge = await challengeService.setChallengeStatusByAdmin(
+            challengeId,
+            newStatus
+        );
+
+        return res.status(200).json({ 
+            message: `Challenge #${challengeId} status successfully set to ${newStatus} by the Game Master.`,
+            action: 'gm_status_update_success',
+            challenge: updatedChallenge
+        });
+
+    } catch (error) {
+        logger.error(`GM Status Update Error for #${challengeId}:`, error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown server error occurred.';
+        const status = getServiceErrorStatus(errorMessage); 
+        
+        return res.status(status).json({
+            message: errorMessage,
+            action: 'gm_status_update_failure',
+            error: errorMessage,
+        });
+    }
+});

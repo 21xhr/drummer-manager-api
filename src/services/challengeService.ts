@@ -491,7 +491,7 @@ export async function processChallengeSubmission(
     userId: number,
     challengeText: string,
     totalSessions: number,
-    durationType: Prisma.DurationType,
+    durationType: DurationType,
     sessionCadenceText?: string,
     cadenceUnit?: Prisma.CadenceUnit
 ): Promise<{ newChallenge: Challenge, cost: number, updatedUser: User }> {
@@ -499,14 +499,14 @@ export async function processChallengeSubmission(
     const transactionTimestamp = new Date().toISOString();
 
     // VALIDATION: Ensure required values are provided and valid
-    if (!durationType || !Object.values(Prisma.DurationType).includes(durationType)) {
+    if (!durationType || !Object.values(DurationType).includes(durationType)) {
         throw new Error("Invalid or missing durationType.");
     }
     if (totalSessions < 1) {
         throw new Error("totalSessions must be 1 or greater.");
     }
     // VALIDATION: sessionCadenceText is mandatory for Recurring challenges
-    if (durationType === Prisma.DurationType.RECURRING && !sessionCadenceText) {
+    if (durationType === DurationType.RECURRING && !sessionCadenceText) {
     throw new Error("sessionCadenceText is required for Recurring challenges.");
     }
 
@@ -534,7 +534,7 @@ export async function processChallengeSubmission(
 
         // Parse required count for recurring challenges
         let cadenceRequiredCount: number | undefined;
-        if (durationType === Prisma.DurationType.RECURRING) {
+        if (durationType === DurationType.RECURRING) {
             cadenceRequiredCount = parseCadenceRequiredCount(sessionCadenceText);
         }
 
@@ -1008,7 +1008,6 @@ export async function processRemove(
  */
 export async function processDisrupt(userId: number): Promise<string> {
     const currentStreamSessionId = getCurrentStreamSessionId();
-    // ⭐ FIX: Define transactionTimestamp once
     const transactionTimestamp = new Date().toISOString();
     
     return prisma.$transaction(async (tx) => {
@@ -1071,4 +1070,51 @@ export async function processDisrupt(userId: number): Promise<string> {
             "We promise to make it hurt later. (Maybe.)"
         );
     });
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+// SET CHALLENGE STATUS BY ADMIN
+////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * Allows the Game Master (admin) to set a specific status on any challenge.
+ * This bypasses normal challenge lifecycle rules.
+ * @param challengeId - The ID of the challenge to modify.
+ * @param newStatus - The target ChallengeStatus enum value.
+ * @returns The updated Challenge record.
+ */
+export async function setChallengeStatusByAdmin(
+    challengeId: number,
+    newStatus: Prisma.ChallengeStatus // Use Prisma.ChallengeStatus for the input type
+): Promise<Challenge> {
+    // 1. Basic Validation (ensure the status is valid)
+    if (!Object.values(Prisma.ChallengeStatus).includes(newStatus)) {
+        throw new Error(`Invalid status provided: ${newStatus}.`);
+    }
+    
+    // 2. Perform the update
+    const updateData: any = { 
+        status: newStatus,
+        // When setting to REMOVED, ARCHIVED, or FAILED, ensure it's not currently executing
+        ...(newStatus !== Prisma.ChallengeStatus.IN_PROGRESS && { 
+            isExecuting: false 
+        }),
+        // Optionally, record the completion timestamp if setting to a final state
+        ...(newStatus === Prisma.ChallengeStatus.COMPLETED && {
+            timestampCompleted: new Date().toISOString()
+        })
+    };
+
+    try {
+        const updatedChallenge = await prisma.challenge.update({
+            where: { challengeId: challengeId },
+            data: updateData
+        });
+        
+        console.log(`[ChallengeService] GM set Challenge #${challengeId} status to ${newStatus}.`);
+        return updatedChallenge;
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown database error during status update.';
+        throw new Error(`Failed to set challenge status for ID ${challengeId}: ${errorMessage}`);
+    }
 }

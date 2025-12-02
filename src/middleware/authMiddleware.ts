@@ -2,7 +2,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { findOrCreateUser } from '../services/userService'; 
 import logger from '../logger';
-import { PlatformName } from '@prisma/client'; // Keep this import!
+import { PlatformName } from '@prisma/client';
+
+// The ID reserved for the Game Master (Drummer, 21)
+const ADMIN_USER_ID = 21; 
 
 // Middleware to standardize user input and ensure user registration
 export const authenticateUser = async (req: Request, res: Response, next: NextFunction) => {
@@ -15,16 +18,11 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
     try {
         const user = await findOrCreateUser({ 
             platformId, 
-            // The input type should be PlatformName for findOrCreateUser, 
-            // casting the request body string to satisfy it.
             platformName: platformName as PlatformName 
         });
         
         req.userId = user.id; 
         req.platformId = user.platformId;
-        
-        // ⭐ FIX: Explicitly cast the user.platformName (which comes from the DB as the enum type)
-        // to PlatformName to satisfy the requirement on req.platformName defined in express.d.ts.
         req.platformName = user.platformName as PlatformName; 
         
         next();
@@ -36,4 +34,26 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
             error: errorMessage,
         });
     }
+};
+
+/**
+ * Middleware to authenticate the user and enforce that the authenticated user is the Game Master.
+ * Requires the standard authentication to run first.
+ */
+export const authenticateGameMaster = (req: Request, res: Response, next: NextFunction) => {
+    // 1. Run standard user authentication first to populate req.userId
+    // We pass a function that is called *only* if authenticateUser succeeds.
+    authenticateUser(req, res, () => {
+        // 2. Enforce Game Master ID check
+        if (req.userId === ADMIN_USER_ID) {
+            // User is authenticated and is the Game Master.
+            next();
+        } else {
+            // User is authenticated but is NOT the Game Master.
+            return res.status(403).json({ 
+                message: "Access Denied. This endpoint is restricted to the administrator (User ID 21).",
+                action: 'authorization_failure'
+            });
+        }
+    });
 };
