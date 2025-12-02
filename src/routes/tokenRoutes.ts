@@ -31,7 +31,7 @@ router.post('/submit-challenge', authenticateUser, async (req: Request, res: Res
         });
 
         // 1. Now safe to fetch the user's current daily submission context
-        // 🛑 FIX: Pass the string 'userId' directly. Safe because the service function now accepts string|number.
+        // 🛑 Pass the string 'userId' directly. Safe because the service function now accepts string|number.
         const context = await getCurrentDailySubmissionContext(userId);
         const { dailySubmissionCount, baseCostPerSession } = context;
 

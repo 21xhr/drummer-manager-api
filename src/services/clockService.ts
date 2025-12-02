@@ -1,9 +1,7 @@
 // src/services/clockService.ts
 
 import prisma from '../prisma';
-import { User, Challenge } from '@prisma/client';
-// Import the entire module as 'Prisma' to ensure the namespace is correct
-import * as Prisma from '@prisma/client';
+import { DurationType, ChallengeStatus, CadenceUnit } from '@prisma/client';
 import { archiveExpiredChallenges } from './challengeService'; 
 
 // ------------------------------------------------------------------
@@ -97,11 +95,11 @@ export async function checkOneOffContiguity(): Promise<number> {
     const updateResult = await prisma.challenge.updateMany({
         where: {
             status: 'IN_PROGRESS',
-            durationType: Prisma.DurationType.ONE_OFF,
+            durationType: DurationType.ONE_OFF,
             isExecuting: false, // Prevents premature archival of a currently running challenge.
         },
         data: {
-            status: Prisma.ChallengeStatus.FAILED, 
+            status: ChallengeStatus.FAILED, 
             failureReason: 'Contiguity rule broken: Not completed by daily maintenance.',
             // timestampCompleted remains unset (null), which is correct for a failure.
         }
@@ -126,8 +124,8 @@ export async function enforceRecurringChallengeCadence(): Promise<number> {
     // 1. Find all IN_PROGRESS Recurring Challenges that are NOT currently executing
     const recurringChallenges = await prisma.challenge.findMany({
         where: {
-            status: Prisma.ChallengeStatus.IN_PROGRESS,
-            durationType: Prisma.DurationType.RECURRING,
+            status: ChallengeStatus.IN_PROGRESS,
+            durationType: DurationType.RECURRING,
             isExecuting: false,
         }
     });
@@ -148,11 +146,11 @@ export async function enforceRecurringChallengeCadence(): Promise<number> {
         let periodDays = 7; // Default to Weekly
         
         // Determine the period length in days
-        if (challenge.cadenceUnit === Prisma.CadenceUnit.DAILY) {
+        if (challenge.cadenceUnit === CadenceUnit.DAILY) {
             periodDays = 1;
-        } else if (challenge.cadenceUnit === Prisma.CadenceUnit.MONTHLY) {
+        } else if (challenge.cadenceUnit === CadenceUnit.MONTHLY) {
             periodDays = 30; 
-        } else if (challenge.cadenceUnit === Prisma.CadenceUnit.CUSTOM_DAYS) {
+        } else if (challenge.cadenceUnit === CadenceUnit.CUSTOM_DAYS) {
             const match = challenge.sessionCadenceText?.match(/every (\d+) days/);
             periodDays = match ? parseInt(match[1], 10) : 7; 
         }
@@ -171,7 +169,7 @@ export async function enforceRecurringChallengeCadence(): Promise<number> {
                 await prisma.challenge.update({
                     where: { challengeId: challenge.challengeId },
                     data: {
-                        status: Prisma.ChallengeStatus.FAILED, 
+                        status: ChallengeStatus.FAILED, 
                         failureReason: `Cadence rule broken: Failed to complete ${requiredCount} sessions within the ${challenge.cadenceUnit} period.`,
                         timestampCompleted: now.toISOString(), 
                     }
