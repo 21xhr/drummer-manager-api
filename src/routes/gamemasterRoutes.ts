@@ -1,14 +1,80 @@
 // src/routes/gamemasterRoutes.ts
 import { Router, Request, Response } from 'express';
-// import * as Prisma from '@prisma/client';
 import { ChallengeStatus } from '@prisma/client';
-import * as Prisma from '@prisma/client';
 import * as challengeService from '../services/challengeService';
 import logger from '../logger'; // Winston Logger
 import { getServiceErrorStatus } from '../utils/routeUtils';
-import { authenticateUser, authenticateGameMaster } from '../middleware/authMiddleware';
+import { authenticateGameMaster } from '../middleware/authMiddleware';
 
 const router = Router();
+
+
+// ------------------------------------------------------------------
+// ⭐ 1. CORE COMMAND ENTRYPOINT
+// The API endpoint that receives commands and data from the external system (e.g., Lumia Stream).
+// ------------------------------------------------------------------
+
+/**
+ * Handles all game commands sent by the external bot/loyalty system.
+ * The request body is expected to contain all necessary context: user, platform, command.
+ */
+router.post('/command', async (req: Request, res: Response) => {
+    // ⚠️ IMPORTANT: We will implement authentication middleware here later!
+    // For now, allow all calls to this entrypoint.
+    
+    const { 
+        command, 
+        user, 
+        platform 
+    } = req.body;
+
+    // Use platformId for logging, as 'user' might not be a full User object yet
+    const platformId = user?.platformId || 'UNKNOWN';
+
+    if (!command || !user || !platform) {
+        logger.error('Invalid command request: missing command, user, or platform context.');
+        return res.status(400).json({ error: 'Missing required fields (command, user, platform).' });
+    }
+
+    // For now, we only log the incoming command to verify the endpoint works.
+    logger.info(`Received command: ${command} from user: ${platformId} on platform: ${platform.name}`);
+
+    // TODO: Implement a dispatcher function to call specific service logic (e.g., processPush, processSubmit).
+
+    // Return a 200 OK for now, assuming the command was received for processing.
+    return res.status(200).json({ 
+        message: `Command received: ${command}. Processing in progress.`,
+        command
+    });
+});
+
+
+// ------------------------------------------------------------------
+// ⭐ 2. GAME STATE ENTRYPOINT
+// Used to trigger events like "stream start/end" or "daily maintenance".
+// ------------------------------------------------------------------
+
+/**
+ * Endpoint for triggering game state events (e.g., Stream Start/End, Daily Tick).
+ */
+router.post('/state-event', async (req: Request, res: Response) => {
+    // ⚠️ IMPORTANT: We will implement authentication middleware here later!
+    const { eventType, data } = req.body;
+    
+    if (!eventType) {
+        return res.status(400).json({ error: 'Missing required field (eventType).' });
+    }
+
+    logger.info(`Received state event: ${eventType}`);
+
+    // TODO: Implement logic to handle stream events and daily maintenance.
+    
+    return res.status(200).json({ 
+        message: `State event received: ${eventType}.`,
+        eventType 
+    });
+});
+
 
 // -----------------------------------------------------------
 // EXECUTE CHALLENGE
@@ -101,3 +167,6 @@ router.put('/challenge/:challengeId/status', authenticateGameMaster, async (req:
         });
     }
 });
+
+
+export default router;

@@ -10,10 +10,11 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 
 import prisma from './prisma'; 
-import userRoutes from './routes/userRoutes'; 
-import streamRoutes from './routes/streamRoutes';
 import clockRoutes from './routes/clockRoutes';
+import gamemasterRoutes from './routes/gamemasterRoutes';
+import streamRoutes from './routes/streamRoutes';
 import tokenRoutes from './routes/tokenRoutes';
+import userRoutes from './routes/userRoutes'; 
 
 import { initializeStreamState, getCurrentStreamDay } from './services/streamService'; 
 import { archiveExpiredChallenges } from './services/challengeService';
@@ -67,10 +68,11 @@ app.use(cors(corsOptions)); // ⭐ Apply CORS Middleware
 app.use(express.json());
 
 // --- Application Routers (API Endpoints) ---
-app.use('/api/v1/user', userRoutes); 
-app.use('/api/v1/stream', streamRoutes);
 app.use('/api/v1/clock', clockRoutes);
+app.use('/api/gamemaster', gamemasterRoutes); // <-- ADD THIS LINE
+app.use('/api/v1/stream', streamRoutes);
 app.use('/api/v1/token', tokenRoutes);
+app.use('/api/v1/user', userRoutes); 
 
 // --- Basic Health Check Route ---
 app.get('/', async (req: Request, res: Response) => {
