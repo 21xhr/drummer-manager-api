@@ -10,7 +10,6 @@ declare module 'express-serve-static-core' {
         // Properties added by authenticateUser middleware
         userId: number;
         platformId: string;
-        // ⭐ FIX: Use the Prisma enum for strong type checking ⭐
         platformName: PlatformName; 
     }
 }

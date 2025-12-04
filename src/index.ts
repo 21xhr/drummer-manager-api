@@ -16,11 +16,7 @@ import streamRoutes from './routes/streamRoutes';
 import tokenRoutes from './routes/tokenRoutes';
 import userRoutes from './routes/userRoutes'; 
 
-import { initializeStreamState, getCurrentStreamDay } from './services/streamService'; 
-import { archiveExpiredChallenges } from './services/challengeService';
-import { processDailyUserTick } from './services/clockService'; 
-
-import { incrementGlobalDayStat } from './services/streamService'; 
+import { initializeStreamState } from './services/streamService'; 
 
 
 // --- Server Setup ---

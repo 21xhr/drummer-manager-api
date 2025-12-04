@@ -10,7 +10,7 @@ const router = Router();
 
 
 // ------------------------------------------------------------------
-// ⭐ 1. CORE COMMAND ENTRYPOINT
+// ⭐ CORE COMMAND ENTRYPOINT
 // The API endpoint that receives commands and data from the external system (e.g., Lumia Stream).
 // ------------------------------------------------------------------
 
@@ -50,7 +50,7 @@ router.post('/command', async (req: Request, res: Response) => {
 
 
 // ------------------------------------------------------------------
-// ⭐ 2. GAME STATE ENTRYPOINT
+// ⭐ GAME STATE ENTRYPOINT
 // Used to trigger events like "stream start/end" or "daily maintenance".
 // ------------------------------------------------------------------
 
@@ -77,7 +77,7 @@ router.post('/state-event', async (req: Request, res: Response) => {
 
 
 // -----------------------------------------------------------
-// EXECUTE CHALLENGE
+// ⭐ EXECUTE CHALLENGE
 // -----------------------------------------------------------
 router.post('/challenges/execute', authenticateGameMaster, async (req: Request, res: Response) => {
     // Note: The authorization check is now handled entirely by authenticateGameMaster middleware.
@@ -124,7 +124,7 @@ router.post('/challenges/execute', authenticateGameMaster, async (req: Request, 
 
 
 // -----------------------------------------------------------
-// SET CHALLENGE STATUS (ADMIN)
+// ⭐ SET CHALLENGE STATUS (ADMIN)
 // -----------------------------------------------------------
 /**
  * Allows the Game Master to set an arbitrary status for a challenge.
