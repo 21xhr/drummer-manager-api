@@ -1,10 +1,20 @@
 // src/routes/gamemasterRoutes.ts
+/** 
+ * routes the core command through dispatchCommand and handles the admin endpoints 
+ * (/challenges/execute, /challenge/:challengeId/status) using your authenticateGameMaster middleware. 
+ * This is the correct entry point for all chat commands. 
+ */
 import { Router, Request, Response } from 'express';
 import { ChallengeStatus } from '@prisma/client';
 import * as challengeService from '../services/challengeService';
 import logger from '../logger'; // Winston Logger
 import { getServiceErrorStatus } from '../utils/routeUtils';
 import { authenticateGameMaster } from '../middleware/authMiddleware';
+import { dispatchCommand } from '../utils/commandDispatcher';
+
+// ⭐ CRITICAL FIX: Add this line to force TypeScript to load your custom Request types.
+// We are importing a non-existent value, but the import statement forces the module's types to be recognized.
+import {} from '../types/express.d'; // Note: Omit the .ts or .d.ts extension
 
 const router = Router();
 
@@ -20,32 +30,33 @@ const router = Router();
  */
 router.post('/command', async (req: Request, res: Response) => {
     // ⚠️ IMPORTANT: We will implement authentication middleware here later!
-    // For now, allow all calls to this entrypoint.
     
     const { 
         command, 
         user, 
-        platform 
+        platform,
+        args
     } = req.body;
 
-    // Use platformId for logging, as 'user' might not be a full User object yet
-    const platformId = user?.platformId || 'UNKNOWN';
-
     if (!command || !user || !platform) {
-        logger.error('Invalid command request: missing command, user, or platform context.');
+        logger.error(`Invalid command request: missing context.`, req.body);
         return res.status(400).json({ error: 'Missing required fields (command, user, platform).' });
     }
 
-    // For now, we only log the incoming command to verify the endpoint works.
-    logger.info(`Received command: ${command} from user: ${platformId} on platform: ${platform.name}`);
+    // ⭐ CORE CHANGE: Call the central dispatcher function
+    // The dispatcher handles validation, user lookup, and routing the logic.
+    const result = await dispatchCommand(
+        {
+            command,
+            user,
+            platform,
+            args: args || null, // Pass args, ensuring it's null if undefined
+        }, 
+        req.hostname
+    );
 
-    // TODO: Implement a dispatcher function to call specific service logic (e.g., processPush, processSubmit).
-
-    // Return a 200 OK for now, assuming the command was received for processing.
-    return res.status(200).json({ 
-        message: `Command received: ${command}. Processing in progress.`,
-        command
-    });
+    // Send the structured result back to the client
+    return res.status(200).json(result); 
 });
 
 

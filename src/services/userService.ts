@@ -48,3 +48,69 @@ export async function findOrCreateUser(platformUser: PlatformUser): Promise<User
   return user;
 }
 
+
+/**
+ * Fetches and formats comprehensive user statistics for the !mystats chat command.
+ * @param userId - The ID of the user requesting stats.
+ * @returns A formatted string containing the user's primary metrics.
+ */
+export async function processUserStats(userId: number): Promise<string> {
+    
+    // Fetch user record with all the necessary metrics
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            platformId: true,
+            lastKnownBalance: true,
+            totalNumbersSpent: true,
+            totalChallengesSubmitted: true,
+            totalRemovalsExecuted: true,
+            totalDisruptsExecuted: true,
+            totalPushesExecuted: true,
+            totalDigoutsExecuted: true, // Added
+            totalReceivedFromRemovals: true, // Added
+            totalCausedByRemovals: true, // Added
+            dailySubmissionCount: true,
+        },
+    });
+
+    if (!user) {
+        throw new Error("User record not found.");
+    }
+
+    // ⭐ Format numbers for readability (e.g., 1,234)
+    // Note: BigInts (like totalCausedByRemovals) need to be converted to String before toLocaleString()
+    const format = (n: number | BigInt) => (typeof n === 'bigint' ? n.toString() : n).toLocaleString();
+
+    // 1. Core Financial Stats
+    const balance = format(user.lastKnownBalance);
+    const spent = format(user.totalNumbersSpent);
+    const receivedFromRemovals = format(user.totalReceivedFromRemovals);
+
+    // 2. Economic Impact (Liabilities)
+    const causedByRemovals = format(user.totalCausedByRemovals); 
+    
+    // 3. Command Execution Counts
+    const submissions = format(user.totalChallengesSubmitted);
+    const pushes = format(user.totalPushesExecuted);
+    const removals = format(user.totalRemovalsExecuted);
+    const disrupts = format(user.totalDisruptsExecuted);
+    const digouts = format(user.totalDigoutsExecuted); // Added
+
+    // 4. Status/Context
+    const dailyCount = user.dailySubmissionCount; // N for quadratic cost
+
+    const statsMessage = 
+        `📊 **@${user.platformId}'s Stats**\n` +
+        `\n` + 
+        `💰 **[ECONOMIC]**\n` +
+        `  BALANCE: **${balance}** NUMBERS\n` +
+        `  SPENT: ${spent} | RECEIVED from !remove: ${receivedFromRemovals}\n` +
+        `  LIABILITY (Caused by your !remove): ${causedByRemovals}\n` +
+        `\n` +
+        `🛠️ **[ACTIVITY]**\n` +
+        `  SUBMISSIONS: ${submissions} (N-Count: ${dailyCount})\n` +
+        `  PUSHES: ${pushes} | REMOVALS: ${removals} | DIGOUTS: ${digouts} | DISRUPTS: ${disrupts}`;
+        
+    return statsMessage;
+}

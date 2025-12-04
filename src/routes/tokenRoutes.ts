@@ -1,86 +1,10 @@
 // src/routes/tokenRoutes.ts
 
 import { Router, Request, Response } from 'express';
-import { PlatformName } from '@prisma/client';
-import { authenticateUser } from '../middleware/authMiddleware';
-import { generateToken, validateDuration, verifyToken } from '../services/jwtService'; 
-import { findOrCreateUser } from '../services/userService';
-import { getCurrentDailySubmissionContext } from '../services/challengeService';
+import { validateDuration, verifyToken } from '../services/jwtService'; 
 import logger from '../logger';
 
 const router = Router();
-
-/**
- * * Generates a secure, single-use URL/token for the web form challenge submission.
- * This is the entry point from the chat command (!challengesubmit).
- */
-router.post('/submit-challenge', authenticateUser, async (req: Request, res: Response) => {
-    // userId is the numeric DB ID, often typed as a string from middleware/JWT.
-    const userId = req.userId;
-    const { platformId, platformName, duration } = req.body;
-
-    try {
-        const tokenDuration = validateDuration(duration);
-        
-        // 🔑 CRITICAL: Initialize user record if it doesn't exist. 
-        // This ensures the dailySubmissionCount and dailyChallengeResetAt fields are present
-        // before we attempt to read them in getCurrentDailySubmissionContext.
-        await findOrCreateUser({ 
-            platformId, 
-            platformName: platformName as PlatformName // Cast platformName to the Prisma Enum
-        });
-
-        // 1. Now safe to fetch the user's current daily submission context
-        // 🛑 Pass the string 'userId' directly. Safe because the service function now accepts string|number.
-        const context = await getCurrentDailySubmissionContext(userId);
-        const { dailySubmissionCount, baseCostPerSession } = context;
-
-        // Generate token
-        const token = generateToken({ userId, platformId, platformName }, tokenDuration);
-        
-         // ⭐ Dynamic URL Construction
-        const isLocalHost = req.hostname === 'localhost' || req.hostname === '127.0.0.1' || req.hostname === '0.0.0.0';
-        
-        const WEBFORM_BASE_URL = 
-            isLocalHost
-            ? `http://192.168.1.37:5500` 
-            : process.env.WEBFORM_BASE_URL || "https://drummer-manager-website.vercel.app";
-
-        const secureUrl = `${WEBFORM_BASE_URL}/challengesubmitform/index.html?token=${token}`;
-        
-        // 2. Update the response message and add context to details
-        const formattedCost = baseCostPerSession.toLocaleString();
-        
-        // Construct the new message string for the chat command answer
-        const chatResponse = 
-            `Please use the following secure link to submit your challenge (valid for ${tokenDuration}). ` +
-            `Your daily submission count is **${dailySubmissionCount}** (Base Cost: **${formattedCost}** NUMBERS). ` +
-            `Link: ${secureUrl}`;
-
-        // Return the secure URL and enriched context to the chat bot/client
-        return res.status(200).json({
-            message: chatResponse, 
-            action: 'token_generation_success',
-            details: {
-                token: token,
-                secureUrl: secureUrl,
-                duration: tokenDuration,
-                dailySubmissionCount: dailySubmissionCount,
-                baseCostPerSession: baseCostPerSession 
-            }
-        });
-
-    } catch (error) {
-        logger.error('Token Generation Error:', error);
-        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-        
-        return res.status(500).json({
-            message: 'Failed to generate secure submission token.',
-            action: 'token_generation_failure',
-            error: errorMessage,
-        });
-    }
-});
 
 
 /**
