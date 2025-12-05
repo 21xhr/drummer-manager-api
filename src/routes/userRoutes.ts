@@ -1,7 +1,6 @@
 // src/routes/userRoutes.ts
 import { Router, Request, Response } from 'express'; 
 import * as challengeService from '../services/challengeService'; 
-import { findOrCreateUser } from '../services/userService'; 
 import logger from '../logger'; // Winston Logger
 import { RefundOption } from '../services/challengeService';
 import { verifyToken } from '../services/jwtService'; 
@@ -126,11 +125,10 @@ router.post('/submit/web', async (req: Request, res: Response) => {
         // We ensure it is a valid PlatformName string from the enum.
         platformName = payload.platformName as PlatformName;        
         
-        // findOrCreateUser expects one object argument, not two strings.
-        // It's technically redundant here since we have the userId from the token, 
-        // but we keep it to ensure the user record is initialized (e.g., setting required timestamps like dailyChallengeResetAt) 
-        // if they were brand new before the submission transaction proceeds.
-        await findOrCreateUser({ platformId, platformName });
+        // Note: Here, user record is guaranteed to exist
+        // because the processSubmissionLinkGeneration (which runs after findOrCreateUser
+        // via the dispatcher or middleware) created the JWT token.
+        // We rely solely on the existing record linked to userId.
 
     } catch (error) {
         logger.error('JWT Validation Error:', error);

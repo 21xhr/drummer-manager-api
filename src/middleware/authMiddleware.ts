@@ -1,4 +1,9 @@
 // src/middleware/authMiddleware.ts
+/** 
+ * This is the authentication layer for API endpoints (e.g., /api/v1/user/submit). 
+ * It establishes req.userId for the Express route handler. 
+ * It's a completely separate flow from the chat dispatcher which justifies why findOrCreateUser use does not constitute redundancy.
+ */ 
 import { Request, Response, NextFunction } from 'express';
 import { findOrCreateUser } from '../services/userService'; 
 import logger from '../logger';

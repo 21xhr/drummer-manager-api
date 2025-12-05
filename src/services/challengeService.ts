@@ -2,9 +2,7 @@
 
 import prisma from '../prisma';
 import { User, Challenge, ChallengeStatus, CadenceUnit, DurationType } from '@prisma/client';
-import { PlatformName } from '@prisma/client'; 
 import { isStreamLive, getCurrentStreamSessionId} from './streamService';
-import { findOrCreateUser } from './userService'; 
 import { generateToken, validateDuration } from './jwtService';
 import { addNumbersViaLumia, deductNumbersViaLumia } from './lumiaService';
 import logger from '../logger';
@@ -82,23 +80,15 @@ export async function processSubmissionLinkGeneration(
     reqHostname: string,
 ): Promise<{ chatResponse: string, details: any }> {
     
-    // 1. Get cost context and initialize user (if needed)
-    // CRITICAL: We need to find or create the user here to ensure the dailyChallengeResetAt 
-    // and dailySubmissionCount fields are ready for getCurrentDailySubmissionContext.
-    await findOrCreateUser({ 
-        platformId, 
-        platformName: platformName as PlatformName // Cast to Prisma Enum
-    });
-    
-    // 2. Fetch the user's current daily submission context to get N and cost
+    // 1. Fetch the user's current daily submission context to get N and cost
     const { dailySubmissionCount, baseCostPerSession } = await getCurrentDailySubmissionContext(userId);
 
-    // 3. Generate the JWT token
+    // 2. Generate the JWT token
     const tokenDuration = validateDuration(duration); // Use validateDuration from jwtService
     // NOTE: The TokenPayload interface in jwtService requires userId, platformId, platformName
     const token = generateToken({ userId, platformId, platformName }, tokenDuration);
     
-    // 4. Dynamic URL Construction
+    // 3. Dynamic URL Construction
     const isLocalHost = reqHostname === 'localhost' || reqHostname === '127.0.0.1' || reqHostname === '0.0.0.0';
     
     const WEBFORM_BASE_URL = 
@@ -108,7 +98,7 @@ export async function processSubmissionLinkGeneration(
 
     const secureUrl = `${WEBFORM_BASE_URL}/challengesubmitform/index.html?token=${token}`;
     
-    // 5. Construct the response
+    // 4. Construct the response
     const formattedCost = baseCostPerSession.toLocaleString();
     
     const chatResponse = 
