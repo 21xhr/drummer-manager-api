@@ -224,7 +224,7 @@ export async function processPushQuote(
     where: { challengeId: challengeId },
   });
 
-  if (!challenge || challenge.status !== 'ACTIVE') {
+  if (!challenge || challenge.status !== ChallengeStatus.ACTIVE) {
     // This check strictly enforces the rule: Pushes only promote Active Challenges.
     // This implicitly blocks challenges that are InProgress (regardless of session count), Completed, etc.
     throw new Error(`Challenge ID ${challengeId} not found or is not 'Active'. Pushes are only allowed on 'Active' challenges.`);
@@ -351,7 +351,7 @@ export async function processPushConfirm(
     await tx.tempQuote.update({ where: { quoteId: quote.quoteId }, data: { isLocked: true } });
 
     const challenge = await tx.challenge.findUnique({ where: { challengeId: quote.challengeId } });
-    if (!challenge || challenge.status !== 'ACTIVE') {
+    if (!challenge || challenge.status !== ChallengeStatus.ACTIVE) {
       await tx.tempQuote.delete({ where: { quoteId: quote.quoteId } }); 
       throw new Error(`Challenge ID ${quote.challengeId} is no longer 'Active' and cannot be pushed.`);
     }
@@ -491,9 +491,9 @@ export async function processDigout(userId: number, challengeId: number) {
             throw new Error(`User ID ${userId} not found during transaction.`);
         }
 
-        if (challenge.status !== 'ARCHIVED') {
+        if (challenge.status !== ChallengeStatus.ARCHIVED) {
             // Clarified message: Digout is only for time-expired challenges.
-            const eligibleStatus = 'ARCHIVED'; 
+            const eligibleStatus = ChallengeStatus.ARCHIVED; 
             throw new Error(`Challenge #${challengeId} cannot be dug out. Only status '${eligibleStatus}' is eligible. Current status is '${challenge.status}'.`);
         }
 
@@ -564,7 +564,7 @@ export async function processDigout(userId: number, challengeId: number) {
         const updatedChallenge = await tx.challenge.update({
             where: { challengeId: challengeId },
             data: {
-                status: 'ACTIVE',
+                status: ChallengeStatus.ACTIVE,
                 streamDaysSinceActivation: 0,
                 timestampLastActivation: transactionTimestamp, // ⭐ Use constant
                 hasBeenDiggedOut: true,
@@ -656,7 +656,7 @@ export async function processChallengeSubmission(
             data: {
                 challengeText: challengeText, // Required field
                 proposerUserId: userId, // Required field
-                status: 'ACTIVE', // Required field (Always starts Active)
+                status: ChallengeStatus.ACTIVE, // Required field (Always starts Active)
                 category: "General", // Required field (Defaulted here)
                 durationType: durationType, // Required field
                 pushBaseCost: submissionCost, // Store the calculated cost here
@@ -741,11 +741,11 @@ export async function archiveExpiredChallenges(): Promise<number> {
         // 1. Find and update all active challenges that have reached or passed the 21-day limit.
         const updateResult = await tx.challenge.updateMany({
             where: {
-                status: 'ACTIVE',
+                status: ChallengeStatus.ACTIVE,
                 streamDaysSinceActivation: { gte: 21 }, // Greater than or equal to 21
             },
             data: {
-                status: 'ARCHIVED',
+                status: ChallengeStatus.ARCHIVED,
             },
         });
 
@@ -769,7 +769,7 @@ export async function finalizeInProgressChallenge(): Promise<Challenge | null> {
     
     // ... (find executingChallenge)
     const executingChallenge = await prisma.challenge.findFirst({
-        where: { status: 'IN_PROGRESS', isExecuting: true },
+        where: { status: ChallengeStatus.IN_PROGRESS, isExecuting: true },
     });
 
     if (!executingChallenge) {
@@ -789,7 +789,7 @@ export async function finalizeInProgressChallenge(): Promise<Challenge | null> {
     };
 
     if (isCompleted) {
-        updateData.status = 'Completed';
+        updateData.status = ChallengeStatus.COMPLETED;
         updateData.timestampCompleted = transactionTimestamp;
     } 
     // Else: Status remains 'InProgress'.
@@ -799,7 +799,7 @@ export async function finalizeInProgressChallenge(): Promise<Challenge | null> {
         data: updateData
     });
     
-    const statusText = isCompleted ? 'Completed' : `finished session ${nextSessionCount} of ${completedChallenge.totalSessions}. Status remains InProgress.`;
+    const statusText = isCompleted ? ChallengeStatus.COMPLETED : `finished session ${nextSessionCount} of ${completedChallenge.totalSessions}. Status remains InProgress.`;
     console.log(`[ChallengeService] Challenge #${completedChallenge.challengeId} finalized as ${statusText}.`);
 
     return completedChallenge;
@@ -818,7 +818,7 @@ export async function processExecuteChallenge(challengeId: number): Promise<Chal
         const previousChallenge = await tx.challenge.findFirst({ where: { isExecuting: true } });
 
         if (previousChallenge) {
-            // ⭐ LOGIC: Session OUT - Increment count, THEN check for completion
+            // ⭐ Session OUT - Increment count, THEN check for completion
             const nextSessionCount = previousChallenge.currentSessionCount + 1;
             const isCompleted = nextSessionCount >= previousChallenge.totalSessions;
             
@@ -827,25 +827,38 @@ export async function processExecuteChallenge(challengeId: number): Promise<Chal
                 currentSessionCount: nextSessionCount
             };
 
-            // ⭐ NEW LOGIC: Increment Cadence Progress for Recurring Challenges
+            // ⭐ Increment Cadence Progress for Recurring Challenges
             // This ensures we track how many sessions were done *this* period (e.g., this week)
             if (previousChallenge.durationType === 'RECURRING') {
                 updateData.cadenceProgressCounter = { increment: 1 };
             }
 
             if (isCompleted) {
-                // Rule: Set status to 'Completed' if final session finishes
-                updateData.status = 'Completed';
+                // Rule: Set status to 'COMPLETED' if final session finishes
+                updateData.status = ChallengeStatus.COMPLETED;
                 updateData.timestampCompleted = transactionTimestamp;
             } 
-            // Else: Status remains 'InProgress'.
+            // Else: Status remains 'IN_PROGRESS'.
             
+            // Update and stage the finalization of the previous challenge
             await tx.challenge.update({
                 where: { challengeId: previousChallenge.challengeId },
                 data: updateData
             });
 
-            const statusText = isCompleted ? 'Completed' : `finished session ${nextSessionCount} of ${previousChallenge.totalSessions}. Status remains InProgress.`;
+            // ⭐ CRITICAL: If the challenge just finalized is the one we want to execute, 
+            // we exit gracefully, returning the finalized state.
+            if (isCompleted && previousChallenge.challengeId === challengeId) {
+                const completedChallenge = await tx.challenge.findUnique({ 
+                    where: { challengeId: challengeId } // Fetch the staged completed state
+                });
+                if (!completedChallenge) {
+                    throw new Error(`Critical error: Completed challenge ${challengeId} not found.`);
+                }
+                return completedChallenge; // Exits the transaction, committing the COMPLETED status.
+            }
+
+            const statusText = isCompleted ? ChallengeStatus.COMPLETED : `finished session ${nextSessionCount} of ${previousChallenge.totalSessions}. Status remains InProgress.`;
             console.log(`[ChallengeService] Previous challenge #${previousChallenge.challengeId} ${statusText} before launch.`);
         }
 
@@ -857,13 +870,13 @@ export async function processExecuteChallenge(challengeId: number): Promise<Chal
         if (!challenge) { throw new Error(`Challenge ID ${challengeId} not found.`); }
         
         // Only Active (first session) or InProgress (resuming) challenges can be Executed.
-        if (challenge.status !== 'ACTIVE' && challenge.status !== 'IN_PROGRESS') {
-            throw new Error(`Challenge #${challengeId} cannot be executed. Status must be 'Active' or 'InProgress'`);
+        if (challenge.status !== ChallengeStatus.ACTIVE && challenge.status !== ChallengeStatus.IN_PROGRESS) {
+            throw new Error(`Challenge #${challengeId} cannot be executed. Status must be 'ACTIVE' or 'IN_PROGRESS'`);
         }
 
         // 3. Execute the new challenge
         // Set status to 'InProgress' ONLY if it's coming from 'Active' (first session)
-        const newStatus = challenge.status === 'ACTIVE' ? 'IN_PROGRESS' : challenge.status;
+        const newStatus = challenge.status === ChallengeStatus.ACTIVE ? ChallengeStatus.IN_PROGRESS : challenge.status;
 
         const updateData: any = {
             status: newStatus, 
@@ -872,7 +885,7 @@ export async function processExecuteChallenge(challengeId: number): Promise<Chal
         };
 
         // ⭐ CRITICAL: Set cadencePeriodStart ONLY when transitioning from ACTIVE to IN_PROGRESS
-        if (challenge.status === 'ACTIVE' && challenge.durationType === 'RECURRING') {
+        if (challenge.status === ChallengeStatus.ACTIVE && challenge.durationType === 'RECURRING') {
             updateData.cadencePeriodStart = transactionTimestamp;
         }
 
@@ -894,7 +907,7 @@ export async function processExecuteChallenge(challengeId: number): Promise<Chal
  */
 export async function getActiveChallenges() {
     return prisma.challenge.findMany({
-        where: { status: 'ACTIVE' },
+        where: { status: ChallengeStatus.ACTIVE },
         orderBy: { totalNumbersSpent: 'desc' },
     });
 }
@@ -947,7 +960,6 @@ export async function processRemove(
     // --- STEP 1: ATOMIC DATABASE TRANSACTION (Local State Change: Challenge/Global) ---
     const result: ProcessRemoveTransactionResult = await prisma.$transaction(async (tx): Promise<ProcessRemoveTransactionResult> => {
         // 1. Validation and Fetch
-        // 1. Validation and Fetch
         const challenge = await tx.challenge.findUnique({
             where: { challengeId: challengeId },
         });
@@ -960,7 +972,16 @@ export async function processRemove(
             throw new Error(`Challenge #${challengeId} can only be removed by the author.`);
         }
 
-        if (['Archived', 'Auctioning','InProgress', 'Completed', 'Removed'].includes(challenge.status)) { 
+        // Explicitly type the array as ChallengeStatus[] to satisfy the compiler
+        const unremovableStatuses: ChallengeStatus[] = [
+            ChallengeStatus.ARCHIVED, 
+            ChallengeStatus.AUCTIONED, 
+            ChallengeStatus.IN_PROGRESS, 
+            ChallengeStatus.COMPLETED, 
+            ChallengeStatus.REMOVED
+        ];
+
+        if (unremovableStatuses.includes(challenge.status)) { 
              throw new Error(`Challenge #${challengeId} cannot be removed while in status: ${challenge.status}.`);
         }  
         
@@ -1056,7 +1077,7 @@ export async function processRemove(
         const updatedChallenge = await tx.challenge.update({
             where: { challengeId: challengeId },
             data: {                            
-                status: 'REMOVED', 
+                status: ChallengeStatus.REMOVED, 
                 isExecuting: false
             },
         });

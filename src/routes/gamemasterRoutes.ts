@@ -102,18 +102,31 @@ router.post('/challenges/execute', authenticateGameMaster, async (req: Request, 
     try {
         const executingChallenge = await challengeService.processExecuteChallenge(parseInt(challengeId));
         
+        let responseMessage: string;
+        let responseAction: string;
+
+        if (executingChallenge.status === ChallengeStatus.COMPLETED) {
+            // Case 1: The service layer returned a COMPLETED challenge (final session finished).
+            responseMessage = `Challenge #${executingChallenge.challengeId} has been **COMPLETED**! It has been finalized.`;
+            responseAction = 'challenge_completed';
+        } else {
+            // Case 2: The challenge is either IN_PROGRESS or ACTIVE and has been set to execute.
+            responseMessage = `Challenge #${executingChallenge.challengeId} is now **EXECUTING**! The previous challenge has been finalized.`;
+            responseAction = 'challenge_executed';
+        }
+        
         // AUDIT LOG (Success)
-        logger.info(`EXECUTE Success: Challenge #${executingChallenge.challengeId} launched by Admin User ${authorUserId}.`, {
+        logger.info(`EXECUTE Success: Challenge #${executingChallenge.challengeId} finished/launched by Admin User ${authorUserId}. Status: ${executingChallenge.status}`, {
             challengeId: executingChallenge.challengeId,
             proposerUserId: executingChallenge.proposerUserId,
             platformId: req.platformId,
-            action: 'challenge_executed'
+            action: responseAction // Log the correct action
         });
 
         // RETURN RESPONSE
         return res.status(200).json({
-            message: `Challenge #${executingChallenge.challengeId} is now **EXECUTING**! The previous challenge has been finalized.`,
-            action: 'challenge_executed',
+            message: responseMessage, // Use the dynamic message
+            action: responseAction,   // Use the dynamic action
             data: {
                 challengeId: executingChallenge.challengeId,
                 status: executingChallenge.status,

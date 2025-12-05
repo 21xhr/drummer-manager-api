@@ -12,6 +12,7 @@ interface PlatformUser {
   // You can add more initial fields here if the platform provides them
 }
 
+
 /**
  * Finds a User record by platform ID or creates a new one if it doesn't exist.
  * Now primarily handles initial user creation and returns the existing user on subsequent calls.

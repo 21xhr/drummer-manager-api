@@ -64,7 +64,7 @@ app.use(express.json());
 
 // --- Application Routers (API Endpoints) ---
 app.use('/api/v1/clock', clockRoutes);
-app.use('/api/gamemaster', gamemasterRoutes); // <-- ADD THIS LINE
+app.use('/api/gamemaster', gamemasterRoutes);
 app.use('/api/v1/stream', streamRoutes);
 app.use('/api/v1/token', tokenRoutes);
 app.use('/api/v1/user', userRoutes); 
