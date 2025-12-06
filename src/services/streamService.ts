@@ -3,6 +3,7 @@
 // ensuring it only happens once per calendar day, regardless of how many stream sessions per day. 
 // It also contains the official source of truth for the isStreamLive() check.
 import prisma from '../prisma';
+import { ChallengeStatus } from '@prisma/client';
 import { archiveExpiredChallenges, finalizeInProgressChallenge } from './challengeService';
 
 // Use string literals for better state management and scaling (e.g., 'BREAK', 'PRE-STREAM' later)
@@ -95,7 +96,7 @@ export async function processStreamLiveEvent(streamStartTime: Date): Promise<voi
         // 2. Update Challenge Clocks (21-Day Counter) 
         const activeChallenges = await tx.challenge.findMany({
             where: {
-                status: 'ACTIVE',
+                status: ChallengeStatus.ACTIVE,
                 streamDaysSinceActivation: { lt: 21 } 
             },
         });
