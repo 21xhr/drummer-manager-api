@@ -15,9 +15,27 @@ export function startChallengeScheduler() {
     cron.schedule(SESSION_TICK_CRON, async () => {
         try {
             const result = await processAutomaticSessionTick();
+            
             if (result) {
-                // Log action only if a tick occurred
-                logger.info(`[Scheduler] Processed tick for Challenge #${result.challengeId}. New count: ${result.currentSessionCount}.`);
+                const { challenge, eventType } = result; // Use destructuring for cleaner code
+
+                // Log action
+                logger.info(`[Scheduler] Processed tick for Challenge #${challenge.challengeId}. Event: ${eventType}.`);
+
+                // Event Triggering Logic
+                // This is where you would call your external APIs based on the eventType
+                
+                if (eventType === 'SESSION_TICKED') {
+                    // Example: Trigger a 'Session Ticked' light or chat message
+                    // await externalApi.triggerLumiaEvent('session_ticked', result.challenge); 
+                    console.log(`[Scheduler Event] Firing event: SESSION_TICKED for Challenge #${result.challenge.challengeId}`);
+                }
+                
+                if (eventType === 'SESSION_COMPLETED') {
+                    // Example: Trigger a 'Challenge Completed' fanfare
+                    // await externalApi.triggerLumiaEvent('challenge_completed_fanfare', result.challenge);
+                    console.log(`[Scheduler Event] Firing event: CHALLENGE_COMPLETED for Challenge #${result.challenge.challengeId}`);
+                }
             }
         } catch (error) {
             logger.error('[Scheduler] Error during session tick:', error);

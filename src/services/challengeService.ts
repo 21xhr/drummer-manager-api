@@ -15,6 +15,11 @@ const DISRUPT_COST = 2100; // Fixed cost for Disrupt
 const SESSION_DURATION_MS = 21 * 60 * 1000; // Define the session duration (21 minutes in milliseconds)
 export type RefundOption = 'community_forfeit' | 'author_and_chest' | 'author_and_pushers';
 
+// Define the new return type interface (or type alias)
+interface SessionTickResult {
+    challenge: Challenge;
+    eventType: 'SESSION_TICKED' | 'SESSION_COMPLETED';
+}
 
 // --- Global Variable for Dynamic Import ---
 let uuidv4: Function | null = null;
@@ -124,7 +129,7 @@ export async function processSubmissionLinkGeneration(
  * If the 21-minute duration has elapsed, it increments the session count and updates the status.
  * @returns The updated challenge or null if no action was taken.
  */
-export async function processAutomaticSessionTick(): Promise<Challenge | null> {
+export async function processAutomaticSessionTick(): Promise<SessionTickResult | null> {
     const now = new Date();
     
     // 1. Find the currently executing challenge
@@ -157,10 +162,14 @@ export async function processAutomaticSessionTick(): Promise<Challenge | null> {
     return prisma.$transaction(async (tx) => {
         const nextSessionCount = executingChallenge.currentSessionCount + 1;
         const isCompleted = nextSessionCount >= executingChallenge.totalSessions;
+        
+        const now = new Date(); // Re-fetch 'now' inside transaction for precision
 
         const updateData: any = {
             currentSessionCount: nextSessionCount,
-            timestampLastSessionTick: now, // Reset the tick timer
+            // ⭐ CRITICAL: Reset the tick timer to NOW to start the next 21-minute period.
+            // This prevents "catching up" by immediately detecting another expired session.
+            timestampLastSessionTick: now, 
         };
 
         if (isCompleted) {
@@ -184,10 +193,12 @@ export async function processAutomaticSessionTick(): Promise<Challenge | null> {
             data: updateData
         });
 
-        // ❓ Handle auto-start of the next challenge here if desired, 
-        // otherwise it waits for the GM to manually execute the next one.
-
-        return updatedChallenge;
+        // ⭐ Return data needed for external event triggering
+        return {
+            challenge: updatedChallenge,
+            // Identify the event type for the scheduler to use
+            eventType: isCompleted ? 'SESSION_COMPLETED' : 'SESSION_TICKED', 
+        };
     });
 }
 
@@ -898,7 +909,7 @@ export async function archiveExpiredChallenges(): Promise<number> {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
-// FINALIZE EXECUTING "InProgress" CHALLENGE
+// FINALIZE EXECUTING "InProgress" CHALLENGE | DAILY MAINTENANCE
 ////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Finds the currently executing challenge (is_executing: true) and...
