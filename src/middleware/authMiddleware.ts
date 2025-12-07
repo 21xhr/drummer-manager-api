@@ -46,6 +46,7 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
     }
 };
 
+
 /**
  * Middleware to authenticate the user and enforce that the authenticated user is the Game Master.
  * Requires the standard authentication to run first.

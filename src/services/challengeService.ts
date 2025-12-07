@@ -15,11 +15,20 @@ const DISRUPT_COST = 2100; // Fixed cost for Disrupt
 const SESSION_DURATION_MS = 21 * 60 * 1000; // Define the session duration (21 minutes in milliseconds)
 export type RefundOption = 'community_forfeit' | 'author_and_chest' | 'author_and_pushers';
 
-// Define the new return type interface (or type alias)
+
+// Define the return type interface (or type alias)
 interface SessionTickResult {
     challenge: Challenge;
     eventType: 'SESSION_TICKED' | 'SESSION_COMPLETED';
 }
+
+
+// Define the return type for the execute function
+interface ExecuteResult {
+    executingChallenge: Challenge; // The challenge we just launched/re-launched
+    wasPreviousChallengeStopped: boolean; // True if a previous challenge was finalized
+}
+
 
 // --- Global Variable for Dynamic Import ---
 let uuidv4: Function | null = null;
@@ -131,7 +140,9 @@ export async function processSubmissionLinkGeneration(
  */
 export async function processAutomaticSessionTick(): Promise<SessionTickResult | null> {
     const now = new Date();
-    
+    // TEMPORARY DEBUG LOG
+    logger.info('Auto Tick: Checking for executing challenge...'); // Add this at the top
+
     // 1. Find the currently executing challenge
     const executingChallenge = await prisma.challenge.findFirst({
         where: { isExecuting: true },
@@ -960,19 +971,18 @@ export async function finalizeInProgressChallenge(): Promise<Challenge | null> {
 ////////////////////////////////////////////////////////////////////////////////////////
 // PROCESS EXECUTE CHALLENGE
 ////////////////////////////////////////////////////////////////////////////////////////
-export async function processExecuteChallenge(challengeId: number): Promise<Challenge> {
-    
-    // Note: The alert logic (SESSIONS_REMAINING_ALERT) is only needed in the Tick function now.
+export async function processExecuteChallenge(challengeId: number): Promise<ExecuteResult> {
     
     return prisma.$transaction(async (tx) => {
         const transactionTimestamp = new Date().toISOString();
 
         // 1. Finalize the previously executing challenge (if any)
         const previousChallenge = await tx.challenge.findFirst({ where: { isExecuting: true } });
+        
+        // Store the boolean result of whether a previous challenge was found/stopped
+        let wasPreviousChallengeStopped = false; 
 
         if (previousChallenge) {
-            // ⭐ REMOVED: nextSessionCount, isCompleted, CRITICAL ALERT LOGIC, Cadence Increment.
-            // ⭐ REPLACEMENT: Just set isExecuting to false and clear the session tick time.
             
             await tx.challenge.update({
                 where: { challengeId: previousChallenge.challengeId },
@@ -983,9 +993,10 @@ export async function processExecuteChallenge(challengeId: number): Promise<Chal
                 }
             });
             console.log(`[ChallengeService] Previous challenge #${previousChallenge.challengeId} manually stopped before launch.`);
+            wasPreviousChallengeStopped = true; // Set the flag to true
         }
 
-        // 2. Validate and fetch the challenge to be executed (Unchanged)
+        // 2. Validate and fetch the challenge to be executed
         const challenge = await tx.challenge.findUnique({
             where: { challengeId: challengeId },
         });
@@ -1004,21 +1015,25 @@ export async function processExecuteChallenge(challengeId: number): Promise<Chal
             status: newStatus, 
             isExecuting: true,
             sessionStartTimestamp: transactionTimestamp,
-            // ⭐ CRITICAL NEW FIELD: Start the 21-minute clock NOW!
-            timestampLastSessionTick: new Date(), 
+            timestampLastSessionTick: new Date(), // CRITICAL: Start the 21-minute clock NOW!
         };
 
-        // Set cadencePeriodStart ONLY when transitioning from ACTIVE to IN_PROGRESS (Unchanged)
+        // Set cadencePeriodStart ONLY when transitioning from ACTIVE to IN_PROGRESS
         if (challenge.status === ChallengeStatus.ACTIVE && challenge.durationType === 'RECURRING') {
             updateData.cadencePeriodStart = transactionTimestamp;
         }
 
+        // Rename the returned variable to match the return block
         const executingChallenge = await tx.challenge.update({
             where: { challengeId: challengeId },
             data: updateData
         });
 
-        return executingChallenge;
+        // Use the correct variable names in the return object
+        return {
+            executingChallenge: executingChallenge, 
+            wasPreviousChallengeStopped: wasPreviousChallengeStopped, 
+        };
     });
 }
 

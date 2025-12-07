@@ -100,31 +100,31 @@ router.post('/challenges/execute', authenticateGameMaster, async (req: Request, 
     }
 
     try {
-        // The service executes the session rollover: finalizes the previous challenge (if any)
-        // and sets the challengeId requested to isExecuting: true.
-        const executingChallenge = await challengeService.processExecuteChallenge(parseInt(challengeId));
+        const result = await challengeService.processExecuteChallenge(parseInt(challengeId));
+        const executingChallenge = result.executingChallenge;
+        const wasPreviousChallengeStopped = result.wasPreviousChallengeStopped;
         
+        // Declare these variables outside the if/else blocks
         let responseMessage: string;
         let responseAction: string;
-
-        // The service handles the status change of the PREVIOUS challenge internally.
-        // We focus the response on the challenge specified in the request (the NEW one).
         
+        const messageSuffix = wasPreviousChallengeStopped 
+            ? ' The previous challenge session was finalized.'
+            : ' No previous challenge was active.'; 
+
         if (executingChallenge.isExecuting) {
             // Case 1: Successful execution/rollover.
-            // We assume the previous challenge was finalized successfully by the service.
-            
-            responseMessage = `✅ EXECUTION SUCCESS. Challenge #${executingChallenge.challengeId} is now **EXECUTING** (Session ${executingChallenge.currentSessionCount}/${executingChallenge.totalSessions}). The previous challenge session was finalized.`;
-            responseAction = 'challenge_executed';
-            
+            responseMessage = `✅ EXECUTION SUCCESS. Challenge #${executingChallenge.challengeId} is now **EXECUTING** (Session ${executingChallenge.currentSessionCount}/${executingChallenge.totalSessions}).${messageSuffix}`;
+            responseAction = 'challenge_executed';    
+        
+        // The missing closing brace was here.
         } else if (executingChallenge.status === ChallengeStatus.COMPLETED) {
-            // Case 2: The challenge we requested to execute (challengeId) was returned as COMPLETED.
-            // This means it had zero sessions, or the flow is incorrect. Treat as a warning.
+            // Case 2: The challenge we requested to execute was returned as COMPLETED.
             responseMessage = `⚠️ EXECUTION WARNING: Challenge #${executingChallenge.challengeId} immediately returned **COMPLETED** upon execution request (Session ${executingChallenge.currentSessionCount}/${executingChallenge.totalSessions}). Check challenge setup.`;
             responseAction = 'challenge_execution_warning';
             
         } else {
-             // Case 3: The challenge couldn't be executed for other reasons (e.g., status was DUG_OUT or REMOVED).
+             // Case 3: The challenge couldn't be executed for other reasons.
              responseMessage = `❌ EXECUTION FAILED: Challenge #${executingChallenge.challengeId} could not be set to execute. Status: ${executingChallenge.status}.`;
              responseAction = 'challenge_execute_failure';
         }
@@ -139,7 +139,7 @@ router.post('/challenges/execute', authenticateGameMaster, async (req: Request, 
 
         // RETURN RESPONSE
         return res.status(200).json({
-            message: responseMessage, 
+            message: responseMessage,
             action: responseAction,
             data: {
                 challengeId: executingChallenge.challengeId,

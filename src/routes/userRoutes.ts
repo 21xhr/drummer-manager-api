@@ -156,7 +156,7 @@ router.post('/submit/web', async (req: Request, res: Response) => {
             error: "Missing required challenge fields (text, sessions, or duration)." 
         });
     }
-    // ⭐ UPDATE: Cadence validation for recurring challenges
+    // ⭐ Cadence validation for recurring challenges
     if (durationType === 'RECURRING' && (!sessionCadenceText || !cadenceUnit)) {
         return res.status(400).json({ error: "Both Session Cadence Text and Cadence Unit are required for Recurring challenges." });
     }
@@ -214,9 +214,8 @@ router.post('/submit/web', async (req: Request, res: Response) => {
                     sessionCadenceText: newChallenge.sessionCadenceText, 
                     status: newChallenge.status,
                 },
-                // ⭐ CRITICAL FIX: Read currentBalance from the updatedAccount object.
                 userStats: {
-                    currentBalance: updatedAccount.currentBalance, // <-- NEW FIELD
+                    currentBalance: updatedAccount.currentBalance,
                     dailySubmissionCount: updatedUser.dailySubmissionCount,
                     totalChallengesSubmitted: updatedUser.totalChallengesSubmitted,
                     totalNumbersSpent: updatedUser.totalNumbersSpent,

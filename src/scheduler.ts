@@ -7,7 +7,7 @@ import logger from './logger';
 // Schedule the task to run every minute
 // Cron pattern: * * * * *
 // Syntax: (minute, hour, day of month, month, day of week)
-const SESSION_TICK_CRON = '* * * * *'; 
+const SESSION_TICK_CRON = '*/10 * * * * *'; // Runs every 10 seconds
 
 export function startChallengeScheduler() {
     logger.info('Starting Challenge Scheduler...');
