@@ -46,7 +46,24 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
     }
 };
 
-// NOTE: authenticateGameMaster does not need changes as it relies on the fixed authenticateUser.
+/**
+ * Middleware to authenticate the user and enforce that the authenticated user is the Game Master.
+ * Requires the standard authentication to run first.
+ */
 export const authenticateGameMaster = (req: Request, res: Response, next: NextFunction) => {
-    // ... (No change needed here)
+    // 1. Run standard user authentication first to populate req.userId
+    // We pass a function that is called *only* if authenticateUser succeeds.
+    authenticateUser(req, res, () => {
+        // 2. Enforce Game Master ID check
+        if (req.userId === ADMIN_USER_ID) {
+            // User is authenticated and is the Game Master.
+            next();
+        } else {
+            // User is authenticated but is NOT the Game Master.
+            return res.status(403).json({ 
+                message: "Access Denied. This endpoint is restricted to the administrator (User ID 21).",
+                action: 'authorization_failure'
+            });
+        }
+    });
 };
