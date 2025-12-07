@@ -169,10 +169,12 @@ router.post('/submit/web', async (req: Request, res: Response) => {
 
     // 3. Process Submission Transaction
     try {
-        // ⭐ CRITICAL: Execute the Challenge Submission business logic.
-        // The return object provides the created challenge details, the final cost, and the user's updated balance.
-        const { newChallenge, cost, updatedUser } = await challengeService.processChallengeSubmission(
+        // ⭐ CRITICAL: The service must now return the updated Account used for deduction.
+        // We expect the return object to include 'updatedAccount'
+        const { newChallenge, cost, updatedUser, updatedAccount } = await challengeService.processChallengeSubmission(
             userId, // Authenticated via JWT
+            platformId, // Pass platform ID
+            platformName, // Pass platform Name
             challengeText,
             sessions, // Use the parsed integer
             durationType,
@@ -212,9 +214,9 @@ router.post('/submit/web', async (req: Request, res: Response) => {
                     sessionCadenceText: newChallenge.sessionCadenceText, 
                     status: newChallenge.status,
                 },
-                // ⭐ CRITICAL: Include all user stats from updatedUser
+                // ⭐ CRITICAL FIX: Read currentBalance from the updatedAccount object.
                 userStats: {
-                    lastKnownBalance: updatedUser.lastKnownBalance,
+                    currentBalance: updatedAccount.currentBalance, // <-- NEW FIELD
                     dailySubmissionCount: updatedUser.dailySubmissionCount,
                     totalChallengesSubmitted: updatedUser.totalChallengesSubmitted,
                     totalNumbersSpent: updatedUser.totalNumbersSpent,
@@ -250,6 +252,8 @@ router.post('/push/quote', authenticateUser, async (req: Request, res: Response)
     try {
         const { quoteId, quotedCost, challenge } = await challengeService.processPushQuote(
             userId,
+            req.platformId,
+            req.platformName,
             parseInt(challengeId),
             parseInt(quantity)
         );
@@ -299,6 +303,8 @@ router.post('/push/confirm', authenticateUser, async (req: Request, res: Respons
     try {
         const { updatedChallenge, transactionCost, quantity } = await challengeService.processPushConfirm(
             userId,
+            req.platformId, 
+            req.platformName, 
             quoteId
         );
         
@@ -348,8 +354,12 @@ router.post('/digout', authenticateUser, async (req: Request, res: Response) => 
     }
 
     try {
-        const { updatedChallenge, updatedUser, cost } = await challengeService.processDigout(
+        // ⭐ CRITICAL: The service must now return the updated Account used for deduction.
+        // We expect the return object to include 'updatedAccount'
+        const { updatedChallenge, updatedUser, updatedAccount, cost } = await challengeService.processDigout(
             userId,
+            req.platformId, // Pass platform ID
+            req.platformName, // Pass platform Name
             parseInt(challengeId)
         );
         
@@ -357,7 +367,7 @@ router.post('/digout', authenticateUser, async (req: Request, res: Response) => 
         logger.info(`DIGOUT Success: #${updatedChallenge.challengeId} cost ${cost} by User ${userId}`, {
             challengeId: updatedChallenge.challengeId,
             cost: cost,
-            newBalance: updatedUser.lastKnownBalance,
+            newBalance: updatedAccount.currentBalance, // <-- CRITICAL FIX: Read from updatedAccount
             platformId: req.platformId,
             action: 'digout_success'
         });
@@ -370,9 +380,10 @@ router.post('/digout', authenticateUser, async (req: Request, res: Response) => 
                 challengeId: updatedChallenge.challengeId,
                 cost: cost,
                 status: updatedChallenge.status,
-                newBalance: updatedUser.lastKnownBalance
+                newBalance: updatedAccount.currentBalance // <-- CRITICAL FIX: Read from updatedAccount
             }
         });
+
     } catch (error) {
         logger.error('Digout Error:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
@@ -394,7 +405,11 @@ router.post('/disrupt', authenticateUser, async (req: Request, res: Response) =>
 
     try {
         // Calls the placeholder function created earlier
-        const message = await challengeService.processDisrupt(userId);
+        const message = await challengeService.processDisrupt(
+            userId,
+            req.platformId, 
+            req.platformName
+        );
         
         // AUDIT LOG (Success)
         logger.info(`DISRUPT Success: Cost 2100 by User ${userId}`, {

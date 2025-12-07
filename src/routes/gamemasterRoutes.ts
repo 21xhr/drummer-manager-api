@@ -12,7 +12,7 @@ import { getServiceErrorStatus } from '../utils/routeUtils';
 import { authenticateGameMaster } from '../middleware/authMiddleware';
 import { dispatchCommand } from '../utils/commandDispatcher';
 
-// ⭐ CRITICAL FIX: Add this line to force TypeScript to load your custom Request types.
+// ⭐ Add this line to force TypeScript to load your custom Request types.
 // We are importing a non-existent value, but the import statement forces the module's types to be recognized.
 import {} from '../types/express.d'; // Note: Omit the .ts or .d.ts extension
 

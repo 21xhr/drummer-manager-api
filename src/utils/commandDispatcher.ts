@@ -45,16 +45,20 @@ export async function dispatchCommand(payload: CommandPayload, hostname: string)
     
     let dbUser;
     
+    // We rely on the CommandPayload to provide the platform context for transactional calls.
+    const platformId: string = user.platformId;
+    const platformName: PlatformName = platform.name as PlatformName;
+    
     try {
         // ⭐ MANDATORY STEP 1: Find or Create the User
         dbUser = await userService.findOrCreateUser({
-            platformId: user.platformId,
-            platformName: platform.name as PlatformName // Cast the string to the PlatformName enum
+            platformId: platformId,
+            platformName: platformName 
         });
 
         logger.info(`Dispatching API command`, {
             userId: dbUser.id,
-            platformId: dbUser.platformId,
+            platformId: platformId,
             fullCommand: fullCommand,
             context: 'DISPATCHER_START'
         });
@@ -72,7 +76,13 @@ export async function dispatchCommand(payload: CommandPayload, hostname: string)
             if (firstArg === 'confirm') {
                 // COMMAND: !push confirm [optional quoteId]
                 const quoteId = parsedArgs[1]; // quoteId is optional
-                const result = await challengeService.processPushConfirm(dbUser.id, quoteId);
+                
+                const result = await challengeService.processPushConfirm(
+                    dbUser.id, 
+                    platformId, 
+                    platformName, 
+                    quoteId
+                );
                 return {
                     message: `✅ Pushed ${result.quantity}x to Challenge #${result.updatedChallenge.challengeId}! Cost: ${result.transactionCost} NUMBERS.`
                 };
@@ -88,7 +98,14 @@ export async function dispatchCommand(payload: CommandPayload, hostname: string)
                 };
             }
             
-            const result = await challengeService.processPushQuote(dbUser.id, challengeId, quantity);
+            // ⭐ FIX: Added platformId and platformName
+            const result = await challengeService.processPushQuote(
+                dbUser.id, 
+                platformId, 
+                platformName, 
+                challengeId, 
+                quantity
+            );
             
             return {
                 message: `[PUSH QUOTE] Challenge #${challengeId}: Pushing ${quantity}x will cost ${result.quotedCost} NUMBERS. Confirm with **!push confirm** within 30 seconds.`
@@ -106,8 +123,8 @@ export async function dispatchCommand(payload: CommandPayload, hostname: string)
                 
                 const linkResult = await challengeService.processSubmissionLinkGeneration(
                     dbUser.id, 
-                    dbUser.platformId, 
-                    dbUser.platformName, 
+                    platformId,
+                    platformName, 
                     durationArg,
                     hostname // Pass hostname for URL construction
                 );
@@ -129,7 +146,12 @@ export async function dispatchCommand(payload: CommandPayload, hostname: string)
                     };
                 }
 
-                const digoutResult = await challengeService.processDigout(dbUser.id, digoutChallengeId);
+                const digoutResult = await challengeService.processDigout(
+                    dbUser.id, 
+                    platformId, 
+                    platformName, 
+                    digoutChallengeId
+                );
                 
                 return {
                     message: `⛏️ Challenge #${digoutChallengeId} was successfully Dug Out! Status reset to ACTIVE. Cost: ${digoutResult.cost} NUMBERS.`
@@ -160,7 +182,11 @@ export async function dispatchCommand(payload: CommandPayload, hostname: string)
 
             case '!disrupt':
                 // COMMAND: !disrupt
-                const disruptMessage = await challengeService.processDisrupt(dbUser.id);
+                const disruptMessage = await challengeService.processDisrupt(
+                    dbUser.id, 
+                    platformId, 
+                    platformName
+                );
                 return { message: disruptMessage };
             
             case '!qlogic':

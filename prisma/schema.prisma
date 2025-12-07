@@ -38,41 +38,70 @@ enum CadenceUnit {
   CUSTOM_DAYS // X sessions every Y days
 }
 
+
+/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+model Account {
+  id                        Int             @id @default(autoincrement()) @map("account_id")
+  
+  // IDENTITY
+  userId                    Int             @map("user_id") // FOREIGN KEY to the central user
+  platformId                String          @map("platform_id")
+  platformName              PlatformName    @map("platform_name") // Using the Enum!
+  
+  // HYBRID BALANCE (Mirroring Lumia)
+  currentBalance            Int             @default(0) @map("current_balance") // The SoT for this specific platform balance
+  
+  // PLATFORM-SPECIFIC TIMESTAMPS (For accurate activity tracking per-platform)
+  lastBalanceUpdate         DateTime?       @map("last_balance_update")
+  lastActivityTimestamp     DateTime?       @map("last_activity_timestamp")
+  lastLiveActivityTimestamp DateTime?       @map("last_live_activity_timestamp")
+  
+  // RELATIONSHIP
+  user                      User            @relation("UserAccounts", fields: [userId], references: [id])
+
+  // CRITICAL UNIQUE CONSTRAINT
+  @@unique([platformId, platformName])
+  @@map("accounts")
+}
+
+
 /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 model User {
-  id                                       Int         @id @default(autoincrement()) @map("user_id")
-  platformId                               String      @map("user_platform_id")
-  platformName                             String      @map("platform_name")
-  lastKnownBalance                         Int         @default(0) @map("last_known_balance")
-  lastBalanceUpdate                        DateTime?   @map("last_balance_update")
-  lastActivityTimestamp                    DateTime?   @map("last_activity_timestamp")
-  lastLiveActivityTimestamp                DateTime?   @map("last_live_activity_timestamp")
-  lastSeenStreamDay                        Int         @default(0) @map("last_seen_stream_day")
-  activeOfflineDaysCount                   Int         @default(0) @map("active_offline_days_count")
-  activeStreamDaysCount                    Int         @default(0) @map("active_stream_days_count")
-  totalNumbersSpentGameWide                Int         @default(0) @map("total_numbers_spent_game_wide")
-  totalNumbersReturnedFromRemovalsGameWide Int         @default(0) @map("total_numbers_returned_from_removals_game_wide")
-  totalCausedByRemovals                    BigInt      @default(0) @map("total_caused_by_removals") // Tracks total NUMBERS the user has caused to be forfeited/refunded from removals
-  totalToCommunityChest                    BigInt      @default(0) @map("total_to_community_chest") // Tracks total liability directed to the Community Chest by this user's removals.
-  totalToPushers                           BigInt      @default(0) @map("total_to_pushers") // Tracks total liability directed to Pushers by this user's removals.
+  id                                      Int       @id @default(autoincrement()) @map("user_id")  
+  // NOTE: the activity timestamps are moved to the account level for accuracy!
+  lastActivityTimestamp                 DateTime? @map("last_activity_timestamp") // Keeping for *overall* user activity
+  lastLiveActivityTimestamp             DateTime? @map("last_live_activity_timestamp") // Keeping for *overall* user activity
+  
+  lastSeenStreamDay                     Int       @default(0) @map("last_seen_stream_day")
+  activeOfflineDaysCount                Int       @default(0) @map("active_offline_days_count")
+  activeStreamDaysCount                 Int       @default(0) @map("active_stream_days_count")
+  
+  // All total/game-wide stats remain here
+  totalNumbersSpentGameWide             Int       @default(0) @map("total_numbers_spent_game_wide")
+  totalNumbersReturnedFromRemovalsGameWide Int    @default(0) @map("total_numbers_returned_from_removals_game_wide")
+  totalCausedByRemovals                 BigInt    @default(0) @map("total_caused_by_removals")
+  totalToCommunityChest                 BigInt    @default(0) @map("total_to_community_chest")
+  totalToPushers                        BigInt    @default(0) @map("total_to_pushers")
 
   // Game Metrics (User)
-  dailyChallengeResetAt                    DateTime    @map("daily_challenge_reset_at")
-  dailySubmissionCount                     Int         @default(0) @map("daily_submission_count")
-  totalChallengesSubmitted                 Int         @default(0) @map("total_challenges_submitted")
-  totalRemovalsExecuted                    Int         @default(0) @map("total_removals_executed")
-  totalReceivedFromRemovals                Int         @default(0) @map("total_received_from_removals")
-  totalNumbersSpent                        Int         @default(0) @map("total_numbers_spent")
-  totalDigoutsExecuted                     Int         @map("total_digouts_executed") @default(0)
-  totalPushesExecuted                      Int         @default(0) // Tracks total number of *pushes* (quantity) made by the user.
-  totalDisruptsExecuted Int @default(0) // Tracks total disrupt commands run by the user.
+  dailyChallengeResetAt                 DateTime  @map("daily_challenge_reset_at")
+  dailySubmissionCount                  Int       @default(0) @map("daily_submission_count")
+  totalChallengesSubmitted              Int       @default(0) @map("total_challenges_submitted")
+  totalRemovalsExecuted                 Int       @default(0) @map("total_removals_executed")
+  totalReceivedFromRemovals             Int       @default(0) @map("total_received_from_removals")
+  totalNumbersSpent                     Int       @default(0) @map("total_numbers_spent")
+  totalDigoutsExecuted                  Int       @map("total_digouts_executed") @default(0)
+  totalPushesExecuted                   Int       @default(0)
+  totalDisruptsExecuted                 Int       @default(0)
 
-  challenges                               Challenge[] @relation("Proposer")
-  pushes                                   Push[]
-  tempQuotes                               TempQuote[]
+  // Relationships (now one-to-many to Account)
+  challenges                            Challenge[] @relation("Proposer")
+  pushes                                Push[]
+  tempQuotes                            TempQuote[]
+  accounts                              Account[] @relation("UserAccounts")
 
-  @@unique([platformId, platformName])
   @@map("users")
 }
 
@@ -186,20 +215,4 @@ model Stream {
   totalRemovalsInSession                    Int       @default(0) @map("total_removals_in_session")
 
   @@map("streams")
-}
-
-/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-model Mission {
-  missionId     Int       @id @default(autoincrement()) @map("mission_id")
-  title         String?   @map("title")
-  description   String    @map("description")
-  targetType    String    @map("target_type")
-  targetValue   Int       @map("target_value")
-  currentValue  Int       @default(0) @map("current_value")
-  isExecuting   Boolean   @default(false) @map("is_executing")
-  dateCreated   DateTime  @map("date_created")
-  dateCompleted DateTime? @map("date_completed")
-
-  @@map("missions")
 }

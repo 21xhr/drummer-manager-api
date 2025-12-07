@@ -1,7 +1,7 @@
 // src/services/challengeService.ts
 
 import prisma from '../prisma';
-import { User, Challenge, ChallengeStatus, CadenceUnit, DurationType } from '@prisma/client';
+import { Account, Challenge, ChallengeStatus, CadenceUnit, DurationType, PlatformName, User } from '@prisma/client';
 import { isStreamLive, getCurrentStreamSessionId} from './streamService';
 import { generateToken, validateDuration } from './jwtService';
 import { addNumbersViaLumia, deductNumbersViaLumia } from './lumiaService';
@@ -215,6 +215,8 @@ function applyLiveDiscount(cost: number): number {
 ////////////////////////////////////////////////////////////////////////////////////////
 export async function processPushQuote(
   userId: number,
+  platformId: string, 
+  platformName: PlatformName,
   challengeId: number,
   quantity: number
 ): Promise<{ quoteId: string; quotedCost: number; challenge: Challenge }> {
@@ -250,18 +252,25 @@ export async function processPushQuote(
     quotedCost = applyLiveDiscount(quotedCost); // <-- Keep this if function is implemented!
 
   // --- 4.5. CRITICAL: BALANCE PRE-CHECK ---
-  const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { lastKnownBalance: true } 
+  // Fetch the specific Account instead of the User
+  const account = await prisma.account.findUnique({
+      where: { 
+          platformId_platformName: { 
+              platformId: platformId,
+              platformName: platformName 
+          }
+      },
+      select: { currentBalance: true } 
   });
   
-  if (!user) {
-      throw new Error(`User ID ${userId} not found during push quote generation.`);
+  if (!account) {
+      throw new Error(`Account not found for user ${userId} on platform ${platformName}.`);
   }
 
+  // Check Account balance
   // Optimistic check: if the user's current known balance is less than the quote, fail fast.
-  if (user.lastKnownBalance < quotedCost) {
-      throw new Error(`Insufficient balance. Quoted push cost is ${quotedCost} NUMBERS.`);
+  if (account.currentBalance < quotedCost) {
+      throw new Error(`Insufficient balance on ${platformName} account. Quoted push cost is ${quotedCost} NUMBERS.`);
   }
 
   // --- 5. Save the generated quote to the temporary quote table.
@@ -293,8 +302,10 @@ export async function processPushQuote(
 ////////////////////////////////////////////////////////////////////////////////////////
 export async function processPushConfirm(
   userId: number,
+  platformId: string,
+  platformName: PlatformName,
   quoteId?: string 
-): Promise<{ updatedChallenge: Challenge; transactionCost: number; quantity: number }> {
+): Promise<{ updatedChallenge: Challenge; transactionCost: number; quantity: number, updatedAccount: Account }> {
     const currentStreamSessionId = getCurrentStreamSessionId(); 
     const transactionTimestamp = new Date().toISOString();
 
@@ -357,39 +368,42 @@ export async function processPushConfirm(
     }
 
     // --- 3.5. CRITICAL: BALANCE CHECK & LUMIA DEDUCTION ---
-    const user = await tx.user.findUnique({
-        where: { id: userId },
-        // ⭐ CRITICAL: Select platformId for the external deduction call
-        select: { lastKnownBalance: true, platformId: true } 
+    // Fetch the specific Account instead of the User
+    const accountContext = await tx.account.findUnique({
+        where: {
+             platformId_platformName: {
+                platformId: platformId, 
+                platformName: platformName
+            }
+        },
+        select: { currentBalance: true } 
     });
     
-    if (!user) {
-        throw new Error(`User ID ${userId} not found during push confirmation.`);
+    if (!accountContext) {
+        throw new Error(`Account not found for user ${userId} on platform ${platformName}.`);
     }
     
-    if (!user.platformId) {
-        await tx.tempQuote.delete({ where: { quoteId: quote.quoteId } });
-        throw new Error("User is missing required platform identity for payment.");
-    }
-    
+    // Remove the now-redundant check for `user.platformId`
+
     const pushTransactionCost = quote.quotedCost;
 
-    // Optimistic Local Balance Check (for quick failure)
-    if (user.lastKnownBalance < pushTransactionCost) {
+    // Optimistic Local Balance Check (Check Account balance)
+    if (accountContext.currentBalance < pushTransactionCost) {
         await tx.tempQuote.delete({ where: { quoteId: quote.quoteId } });
-        throw new Error(`Insufficient balance. Push costs ${pushTransactionCost} NUMBERS.`);
+        throw new Error(`Insufficient balance on ${platformName} account. Push costs ${pushTransactionCost} NUMBERS.`);
     }
 
     // ⭐ CRITICAL: Execute Authoritative Deduction via Lumia API
     let newAuthoritativeBalance: number;
         
     try {
-        const lumiaResult = await deductNumbersViaLumia(user.platformId, pushTransactionCost); 
+        // Use the platformId passed in the function signature
+        const lumiaResult = await deductNumbersViaLumia(platformId, pushTransactionCost); 
         newAuthoritativeBalance = lumiaResult.newBalance; 
 
     } catch (error) {
         // If Lumia fails, delete the quote and re-throw the error to rollback the entire Prisma transaction
-        logger.error(`Lumia Push Deduction Failed for User ${userId} (Cost: ${pushTransactionCost}): ${error instanceof Error ? error.message : 'Unknown error'}`, { userId, platformId: user.platformId });
+        logger.error(`Lumia Push Deduction Failed for User ${userId} (Cost: ${pushTransactionCost}): ${error instanceof Error ? error.message : 'Unknown error'}`, { userId, platformId: platformId });
         await tx.tempQuote.delete({ where: { quoteId: quote.quoteId } }); 
         const errorMessage = error instanceof Error ? error.message : 'Unknown payment failure.';
         throw new Error(`Payment failed. ${errorMessage.includes('Insufficient funds') ? 'Insufficient funds.' : 'Lumia connection error.'}`);
@@ -416,12 +430,10 @@ export async function processPushConfirm(
         }
     });
 
-    // C. Update User: Update the individual user's spending.
+    // C. Update User: Update the individual user's spending metrics (No balance update here)
     await tx.user.update({
         where: { id: userId },
         data: {
-            // ⭐ CRITICAL: Use the authoritative balance from Lumia
-            lastKnownBalance: newAuthoritativeBalance, 
             totalNumbersSpent: { increment: pushTransactionCost },
             totalPushesExecuted: { increment: quote.quantity },
             lastActivityTimestamp: transactionTimestamp,
@@ -429,6 +441,18 @@ export async function processPushConfirm(
                 lastLiveActivityTimestamp: transactionTimestamp,
             }),
         },
+    });
+    // ⭐ Update Account Balance: Update the specific Account with the authoritative balance
+    const updatedAccount = await tx.account.update({
+        where: {
+            platformId_platformName: {
+                platformId: platformId, 
+                platformName: platformName
+            }
+        },
+        data: {
+            currentBalance: newAuthoritativeBalance,
+        }
     });
 
     // D. Update Global Ledger (User ID 1): Increment the community's game-wide spending.
@@ -454,7 +478,7 @@ export async function processPushConfirm(
     // --- 5. CLEANUP ---
     await tx.tempQuote.delete({ where: { quoteId: quote.quoteId } });
 
-    return { updatedChallenge, transactionCost: pushTransactionCost, quantity: quote.quantity };
+    return { updatedChallenge, transactionCost: pushTransactionCost, quantity: quote.quantity, updatedAccount: updatedAccount as Account };
   });
 }
 
@@ -468,7 +492,13 @@ export async function processPushConfirm(
  * @param challengeId - The ID of the challenge to dig out.
  * @returns The updated Challenge and User records.
  */
-export async function processDigout(userId: number, challengeId: number) {
+export async function processDigout(
+    userId: number,
+    platformId: string, // ⭐ NEW PARAMETER
+    platformName: PlatformName, // ⭐ NEW PARAMETER
+    challengeId: number
+): Promise<{ updatedChallenge: Challenge; updatedUser: User; updatedAccount: Account; cost: number }> {
+
     const currentStreamSessionId = getCurrentStreamSessionId();
     const transactionTimestamp = new Date().toISOString();
 
@@ -478,18 +508,22 @@ export async function processDigout(userId: number, challengeId: number) {
             where: { challengeId: challengeId },
         });
 
-        const user = await tx.user.findUnique({
-            where: { id: userId },
-            select: { id: true, lastKnownBalance: true, platformId: true } // ⭐ CRITICAL: Select platformId for the external deduction call
+        // ⭐ FIX 1: Fetch the specific Account instead of the User
+        const accountContext = await tx.account.findUnique({
+            where: {
+                 platformId_platformName: {
+                    platformId: platformId, 
+                    platformName: platformName
+                }
+            },
+            select: { currentBalance: true } 
         });
 
-        if (!challenge) {
-            throw new Error(`Challenge ID ${challengeId} not found.`);
-        }
+        if (!challenge) { throw new Error(`Challenge ID ${challengeId} not found.`); }
         
-        if (!user) {
-            throw new Error(`User ID ${userId} not found during transaction.`);
-        }
+        if (!accountContext) { throw new Error(`Account not found for user ${userId} on platform ${platformName}.`); }
+
+        // ⭐ FIX 2: Remove the check for `user.platformId`
 
         if (challenge.status !== ChallengeStatus.ARCHIVED) {
             // Clarified message: Digout is only for time-expired challenges.
@@ -501,36 +535,38 @@ export async function processDigout(userId: number, challengeId: number) {
             throw new Error(`Challenge #${challengeId} has already been dug out once and cannot be revived again.`);
         }
 
-        if (!user.platformId) {
-            throw new Error("User is missing required platform identity for payment.");
-        }
+        // if (!user.platformId) {
+        //     throw new Error("User is missing required platform identity for payment.");
+        // }
 
         // 2. Calculate Cost (21% of total_numbers_spent, rounded up)
-        const digoutTransactionCost = Math.ceil(challenge.totalNumbersSpent * DIGOUT_COST_PERCENTAGE); // Renamed for clarity
+        const digoutTransactionCost = Math.ceil(challenge.totalNumbersSpent * DIGOUT_COST_PERCENTAGE); 
 
-        if (user.lastKnownBalance < digoutTransactionCost) { 
-            throw new Error(`Insufficient balance. Digout costs ${digoutTransactionCost} NUMBERS.`);
+        // Check Account balance
+        if (accountContext.currentBalance < digoutTransactionCost) { 
+            throw new Error(`Insufficient balance on ${platformName} account. Digout costs ${digoutTransactionCost} NUMBERS.`);
         }
 
         // ⭐ CRITICAL: Execute Authoritative Deduction via Lumia API
         let newAuthoritativeBalance: number;
         
         try {
-            const lumiaResult = await deductNumbersViaLumia(user.platformId, digoutTransactionCost); 
+            // Use the platformId passed in the function signature
+            const lumiaResult = await deductNumbersViaLumia(platformId, digoutTransactionCost); 
             newAuthoritativeBalance = lumiaResult.newBalance; 
         } catch (error) {
-            logger.error(`Lumia Digout Deduction Failed for User ${userId} (Cost: ${digoutTransactionCost}): ${error instanceof Error ? error.message : 'Unknown error'}`, { userId, platformId: user.platformId });
+            logger.error(`Lumia Digout Deduction Failed for User ${userId} (Cost: ${digoutTransactionCost}): ${error instanceof Error ? error.message : 'Unknown error'}`, { userId, platformId: platformId });
             const errorMessage = error instanceof Error ? error.message : 'Unknown payment failure.';
             throw new Error(`Payment failed. ${errorMessage.includes('Insufficient funds') ? 'Insufficient funds.' : 'Lumia connection error.'}`);
         }
 
         // 3. Execute Transaction: Deduct cost, update user, and update challenge
         
-        // Deduct cost from user balance and update individual spending
+        // Update User: Deduct cost from user spending and update individual spending metrics
         const updatedUser = await tx.user.update({
             where: { id: userId },
             data: {
-                lastKnownBalance: newAuthoritativeBalance,
+                // REMOVE lastKnownBalance update from User
                 totalNumbersSpent: { increment: digoutTransactionCost },
                 totalDigoutsExecuted: { increment: 1 },
                 lastActivityTimestamp: transactionTimestamp,
@@ -538,6 +574,19 @@ export async function processDigout(userId: number, challengeId: number) {
                     lastLiveActivityTimestamp: transactionTimestamp,
                 }),
             },
+        });
+
+        // Update Account Balance: Update the specific Account with the authoritative balance
+        const updatedAccount = await tx.account.update({
+            where: {
+                platformId_platformName: {
+                    platformId: platformId, 
+                    platformName: platformName
+                }
+            },
+            data: {
+                currentBalance: newAuthoritativeBalance,
+            }
         });
 
         // Update Global Ledger (User ID 1): Increment the community's game-wide spending.
@@ -566,7 +615,7 @@ export async function processDigout(userId: number, challengeId: number) {
             data: {
                 status: ChallengeStatus.ACTIVE,
                 streamDaysSinceActivation: 0,
-                timestampLastActivation: transactionTimestamp, // ⭐ Use constant
+                timestampLastActivation: transactionTimestamp, 
                 hasBeenDiggedOut: true,
             },
         });
@@ -574,7 +623,8 @@ export async function processDigout(userId: number, challengeId: number) {
         // 4. Return results
         return { 
             updatedChallenge, 
-            updatedUser: updatedUser as User, // Cast for return type safety, 
+            updatedUser: updatedUser as User,
+            updatedAccount: updatedAccount as Account,
             cost: digoutTransactionCost
         };
     });
@@ -586,12 +636,14 @@ export async function processDigout(userId: number, challengeId: number) {
 ////////////////////////////////////////////////////////////////////////////////////////
 export async function processChallengeSubmission(
     userId: number,
+    platformId: string, 
+    platformName: PlatformName, 
     challengeText: string,
     totalSessions: number,
     durationType: DurationType,
     sessionCadenceText?: string,
     cadenceUnit?: CadenceUnit
-): Promise<{ newChallenge: Challenge, cost: number, updatedUser: User }> {
+): Promise<{ newChallenge: Challenge, cost: number, updatedUser: User, updatedAccount: Account }> { // ⭐ UPDATED RETURN TYPE
     const currentStreamSessionId = getCurrentStreamSessionId();
     const transactionTimestamp = new Date().toISOString();
 
@@ -614,31 +666,37 @@ export async function processChallengeSubmission(
         const { dailySubmissionCount: N, baseCostPerSession: submissionCost } = 
             await getCurrentDailySubmissionContext(userId); 
         
-        // 2. Fetch User Context
-        const userContext = await tx.user.findUnique({
-            where: { id: userId },
-            select: { lastKnownBalance: true, platformId: true } 
+        // 2. Fetch User and Account Context
+        // Fetch the specific Account using all three keys
+        const accountContext = await tx.account.findUnique({
+            where: {
+                 platformId_platformName: {
+                    platformId: platformId, 
+                    platformName: platformName
+                }
+            }
         });
 
-        if (!userContext) { throw new Error("User not found during submission process."); }
-        if (!userContext.platformId) { throw new Error("User is missing required platform identity for payment."); }
+        // 3. Validation
+        // If the user was just created in authMiddleware, the account is guaranteed to exist.
+        if (!accountContext) { throw new Error(`Account not found for user ${userId} on platform ${platformName}.`); }
 
-        // 3. Optimistic Local Balance Check (for fast UX feedback)
-        if (userContext.lastKnownBalance < submissionCost) {
-            throw new Error(`Insufficient balance. Challenge submission costs ${submissionCost} NUMBERS.`);
+        // Optimistic Local Balance Check (Check Account.currentBalance)
+        if (accountContext.currentBalance < submissionCost) {
+            throw new Error(`Insufficient balance on ${platformName} account. Challenge submission costs ${submissionCost} NUMBERS.`);
         }
         
         // 4. CRITICAL: Execute Authoritative Deduction via Lumia API
         let newAuthoritativeBalance: number;
         
         try {
-            // Call the external API for the actual deduction
-            const lumiaResult = await deductNumbersViaLumia(userContext.platformId, submissionCost); 
+            // Pass the correct platformId and cost to the external API
+            const lumiaResult = await deductNumbersViaLumia(platformId, submissionCost); 
             newAuthoritativeBalance = lumiaResult.newBalance; // Store the new authoritative balance
 
         } catch (error) {
             // If Lumia fails, re-throw the error to rollback the entire Prisma transaction
-            logger.error(`Lumia Deduction Failed for User ${userId} (Cost: ${submissionCost}): ${error instanceof Error ? error.message : 'Unknown error'}`, { userId, platformId: userContext.platformId });
+            logger.error(`Lumia Deduction Failed for User ${userId} (Cost: ${submissionCost}): ${error instanceof Error ? error.message : 'Unknown error'}`, { userId, platformId: accountContext.platformId });
             
             const errorMessage = error instanceof Error ? error.message : 'Unknown payment failure.';
             // Only expose a user-friendly message
@@ -675,11 +733,11 @@ export async function processChallengeSubmission(
             }
         });
 
-        // 6. Update User Stats: Deduct balance, update spending, and submission count
+        // 6. Update User Stats: Update the central User metrics (Submission count, spending)
         const userUpdateResult = await tx.user.update({ // Store the update result
             where: { id: userId },
             data: {
-                lastKnownBalance: newAuthoritativeBalance, 
+                // Remove lastKnownBalance update from User
                 totalNumbersSpent: { increment: submissionCost }, 
                 totalChallengesSubmitted: { increment: 1 },
                 lastActivityTimestamp: new Date().toISOString(),
@@ -688,23 +746,31 @@ export async function processChallengeSubmission(
                     lastLiveActivityTimestamp: transactionTimestamp,
                 }),
             },
-            // ⭐ CRITICAL: Select the required fields for the return value
+            // Update Selection - Ensure we select fields required by the router (now `updatedUser` metrics)
             select: {
                 id: true, 
-                lastKnownBalance: true, 
                 dailySubmissionCount: true, 
                 totalChallengesSubmitted: true,
                 totalNumbersSpent: true,
-                // --- RECOMMENDED ADDITIONS BASED ON SCHEMA.PRISMA ---
-                platformId: true,           // Identity: Required for system logic
-                platformName: true,         // Identity: Display user's platform
-                dailyChallengeResetAt: true, // State: Critical for frontend countdown/info
-                // Key Metrics for User Stats Summary
+                // Remove lastKnownBalance, platformId, platformName from select list
+                // Add any other User fields required by your `User` type here
                 totalPushesExecuted: true,
                 totalDigoutsExecuted: true,
                 totalRemovalsExecuted: true,
                 totalReceivedFromRemovals: true,
-                // Add any other User fields required by your `User` type here
+            }
+        });
+
+        // Update Account Balance: Update the specific Account with the authoritative balance
+        const updatedAccount = await tx.account.update({
+            where: {
+                platformId_platformName: {
+                    platformId: platformId, 
+                    platformName: platformName
+                }
+            },
+            data: {
+                currentBalance: newAuthoritativeBalance,
             }
         });
 
@@ -720,7 +786,8 @@ export async function processChallengeSubmission(
         return { 
             newChallenge, 
             cost: submissionCost, 
-            updatedUser: userUpdateResult as User
+            updatedUser: userUpdateResult as User,
+            updatedAccount: updatedAccount as Account
         };
     });
 }
@@ -1051,17 +1118,7 @@ export async function processRemove(
             });
         }
         
-        // D. Update Community Chest (ID 1) Balance (If money is forfeited)
-        if (toCommunityChest > 0) {
-            await tx.user.update({
-                where: { id: 1 },
-                data: {
-                    lastKnownBalance: { increment: toCommunityChest },
-                }
-            });
-        }
-
-        // E. Update Author's Per-User Stats (Tracking metrics)
+        // C. Update Author's Per-User Stats (Tracking metrics)
         await tx.user.update({
             where: { id: authorUserId },
             data: {
@@ -1114,14 +1171,27 @@ export async function processRemove(
     if (requiresExternalRefund && attemptedRefundCount > 0) {
         
         // 2a. Fetch platform IDs for all users requiring an external refund
-        const userIdsToRefund = result.allExternalRefundsToProcess.map(r => r.userId);
-        const usersToRefund = await prisma.user.findMany({
-            where: { id: { in: userIdsToRefund } },
-            // Need the platformId for the external Lumia API call
-            select: { id: true, platformId: true } 
-        });
-        
-        const platformIdMap = new Map(usersToRefund.map(u => [u.id, u.platformId]));
+const userIdsToRefund = result.allExternalRefundsToProcess.map(r => r.userId);
+
+// Fetch ALL Accounts belonging to the users being refunded. 
+// We must assume the refund is applied to ONE account. Let's arbitrarily choose the first one found 
+// (or you can adjust this logic if you have a rule, like "Twitch account only").
+const accountsToRefund = await prisma.account.findMany({
+    where: { userId: { in: userIdsToRefund } },
+    select: { userId: true, platformId: true } 
+});
+
+// Create a map from userId to platformId using the first Account found for that user.
+// This is a simplification; a more robust system might require tracking which platform 
+// they were originally pushing from. Since the Push model only tracks `userId`, 
+// we must default to a single Account per User for the refund.
+const platformIdMap = new Map<number, string>();
+accountsToRefund.forEach(account => {
+    // Only map the first account found for each user
+    if (!platformIdMap.has(account.userId)) {
+        platformIdMap.set(account.userId, account.platformId);
+    }
+});
 
         // 2b. Execute external refund calls (using Promise.all for potential parallel execution)
         const refundPromises = result.allExternalRefundsToProcess.map(async (refund) => {
@@ -1174,56 +1244,77 @@ export async function processRemove(
  * Executes a placeholder 'Disrupt' command, applying a fixed cost while tracking metrics.
  * Actual disrupt logic will be implemented post-launch.
  */
-export async function processDisrupt(userId: number): Promise<string> {
+export async function processDisrupt(
+    userId: number,
+    platformId: string, // ⭐ NEW PARAMETER
+    platformName: PlatformName // ⭐ NEW PARAMETER
+): Promise<string> {
+
     const currentStreamSessionId = getCurrentStreamSessionId();
     const transactionTimestamp = new Date().toISOString();
     
     return prisma.$transaction(async (tx) => {
-        // 1. Fetch User and check balance
-        const user = await tx.user.findUnique({
-            where: { id: userId },
-            select: { lastKnownBalance: true, platformId: true } // ⭐ CRITICAL: Select platformId for the external deduction call
+        // 1. Fetch User and Account and check balance
+        // Fetch the specific Account instead of the User
+        const accountContext = await tx.account.findUnique({
+            where: {
+                 platformId_platformName: {
+                    platformId: platformId, 
+                    platformName: platformName
+                }
+            },
+            select: { currentBalance: true } 
         });
 
-        if (!user) {
-            throw new Error(`User ID ${userId} not found during transaction.`);
-        }
-        
-        if (!user.platformId) {
-            throw new Error("User is missing required platform identity for payment.");
+        if (!accountContext) {
+            throw new Error(`Account not found for user ${userId} on platform ${platformName}.`);
         }
 
-        // Optimistic Local Balance Check
-        if (user.lastKnownBalance < DISRUPT_COST) {
-            throw new Error(`Insufficient balance. Disrupt costs ${DISRUPT_COST} NUMBERS.`);
+        // Optimistic Local Balance Check (Check Account balance)
+        if (accountContext.currentBalance < DISRUPT_COST) {
+            throw new Error(`Insufficient balance on ${platformName} account. Disrupt costs ${DISRUPT_COST} NUMBERS.`);
         }
 
-        // ⭐ CRITICAL: Execute Authoritative Deduction via Lumia API
+        // Execute Authoritative Deduction via Lumia API
         let newAuthoritativeBalance: number;
         
         try {
-            const lumiaResult = await deductNumbersViaLumia(user.platformId, DISRUPT_COST); 
+            // Use the platformId passed in the function signature
+            const lumiaResult = await deductNumbersViaLumia(platformId, DISRUPT_COST); 
             newAuthoritativeBalance = lumiaResult.newBalance; 
         } catch (error) {
-            logger.error(`Lumia Disrupt Deduction Failed for User ${userId} (Cost: ${DISRUPT_COST}): ${error instanceof Error ? error.message : 'Unknown error'}`, { userId, platformId: user.platformId });
+            logger.error(`Lumia Disrupt Deduction Failed for User ${userId} (Cost: ${DISRUPT_COST}): ${error instanceof Error ? error.message : 'Unknown error'}`, { userId, platformId: platformId });
             const errorMessage = error instanceof Error ? error.message : 'Unknown payment failure.';
             throw new Error(`Payment failed. ${errorMessage.includes('Insufficient funds') ? 'Insufficient funds.' : 'Lumia connection error.'}`);
         }
 
         // 2. Execute Transaction: Deduct cost and update metrics
         
-        // A. Update User Stats
+        // A. Update User Stats: REMOVE BALANCE UPDATE
         await tx.user.update({
             where: { id: userId },
             data: {
-                lastKnownBalance: newAuthoritativeBalance,
+                // REMOVE lastKnownBalance update from User
                 totalNumbersSpent: { increment: DISRUPT_COST },
                 totalDisruptsExecuted: { increment: 1 },
-                lastActivityTimestamp: transactionTimestamp, // ⭐ Use constant
+                lastActivityTimestamp: transactionTimestamp,
                 ...(currentStreamSessionId && {
-                    lastLiveActivityTimestamp: transactionTimestamp, // ⭐ Use constant
+                    lastLiveActivityTimestamp: transactionTimestamp,
                 }),
             },
+        });
+
+        // Update Account Balance: Update the specific Account with the authoritative balance
+        await tx.account.update({
+            where: {
+                platformId_platformName: {
+                    platformId: platformId, 
+                    platformName: platformName
+                }
+            },
+            data: {
+                currentBalance: newAuthoritativeBalance,
+            }
         });
 
         // B. Update Global Ledger (User ID 1)
@@ -1253,7 +1344,7 @@ export async function processDisrupt(userId: number): Promise<string> {
         return (
             "Congratulations, you just paid 2100 NUMBERS to commit pre-release performance art. " +
             "You've disrupted exactly nothing, but your commitment to chaos is noted. " +
-            "We promise to make it hurt later. (Maybe.)"
+            "We promise to make it hurt later. (Maybe...)"
         );
     });
 }
