@@ -126,6 +126,7 @@ model Challenge {
   status                ChallengeStatus @map("status")
   failureReason             String?     @map("failure_reason")
   isExecuting               Boolean     @default(false) @map("is_executing")
+  timestampLastSessionTick DateTime? @map("timestamp_last_session_tick") // Tracks the last time a session tick occurred for this challenge
   hasBeenAuctioned          Boolean     @default(false) @map("has_been_auctioned")
   hasBeenDiggedOut          Boolean     @default(false) @map("has_been_digged_out")
   auctionCost               Int         @default(0) @map("auction_cost")
