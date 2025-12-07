@@ -12,6 +12,7 @@ const DIGOUT_COST_PERCENTAGE = 0.21; // 21%
 const LIVE_DISCOUNT_MULTIPLIER = 0.79; // 1 - 0.21
 const SUBMISSION_BASE_COST = 210; // Base cost for challenge submission
 const DISRUPT_COST = 2100; // Fixed cost for Disrupt
+const SESSION_DURATION_MS = 21 * 60 * 1000; // Define the session duration (21 minutes in milliseconds)
 export type RefundOption = 'community_forfeit' | 'author_and_chest' | 'author_and_pushers';
 
 
@@ -38,7 +39,6 @@ function parseCadenceRequiredCount(sessionCadenceText: string | undefined): numb
     const match = sessionCadenceText.match(/^(\d+)/);
     return match ? parseInt(match[1], 10) : 1; 
 }
-
 
 
 /**
@@ -116,6 +116,79 @@ export async function processSubmissionLinkGeneration(
             baseCostPerSession: baseCostPerSession 
         }
     };
+}
+
+
+/**
+ * Checks the currently executing challenge for session completion via timestamp.
+ * If the 21-minute duration has elapsed, it increments the session count and updates the status.
+ * @returns The updated challenge or null if no action was taken.
+ */
+export async function processAutomaticSessionTick(): Promise<Challenge | null> {
+    const now = new Date();
+    
+    // 1. Find the currently executing challenge
+    const executingChallenge = await prisma.challenge.findFirst({
+        where: { isExecuting: true },
+        select: {
+            challengeId: true,
+            totalSessions: true,
+            currentSessionCount: true,
+            timestampLastSessionTick: true,
+            isExecuting: true,
+        }
+    });
+
+    if (!executingChallenge || !executingChallenge.timestampLastSessionTick) {
+        // No challenge executing or the tick time hasn't been set yet (initial state)
+        return null; 
+    }
+    
+    const timeElapsedMs = now.getTime() - executingChallenge.timestampLastSessionTick.getTime();
+
+    if (timeElapsedMs < SESSION_DURATION_MS) {
+        // Session duration has not yet elapsed
+        return null;
+    }
+    
+    // 2. The session has expired (21 minutes passed) - Process the tick!
+    logger.info(`Auto Tick: Session expired for Challenge #${executingChallenge.challengeId}. Processing session increment.`);
+
+    return prisma.$transaction(async (tx) => {
+        const nextSessionCount = executingChallenge.currentSessionCount + 1;
+        const isCompleted = nextSessionCount >= executingChallenge.totalSessions;
+
+        const updateData: any = {
+            currentSessionCount: nextSessionCount,
+            timestampLastSessionTick: now, // Reset the tick timer
+        };
+
+        if (isCompleted) {
+            updateData.status = ChallengeStatus.COMPLETED;
+            updateData.isExecuting = false; // Stop executing
+            updateData.timestampCompleted = now.toISOString();
+            logger.info(`Auto Tick: Challenge #${executingChallenge.challengeId} is COMPLETED.`);
+        }
+
+        // Near-completion check
+        const SESSIONS_REMAINING_ALERT = 3;
+        const sessionsRemaining = executingChallenge.totalSessions - nextSessionCount;
+
+        if (sessionsRemaining > 0 && sessionsRemaining <= SESSIONS_REMAINING_ALERT) {
+            console.log(`[ChallengeService] ALERT: Challenge #${executingChallenge.challengeId} is entering its final ${sessionsRemaining} sessions! (Auto Tick)`);
+        }
+        
+        // 3. Update the database
+        const updatedChallenge = await tx.challenge.update({
+            where: { challengeId: executingChallenge.challengeId },
+            data: updateData
+        });
+
+        // ❓ Handle auto-start of the next challenge here if desired, 
+        // otherwise it waits for the GM to manually execute the next one.
+
+        return updatedChallenge;
+    });
 }
 
 
@@ -878,9 +951,8 @@ export async function finalizeInProgressChallenge(): Promise<Challenge | null> {
 ////////////////////////////////////////////////////////////////////////////////////////
 export async function processExecuteChallenge(challengeId: number): Promise<Challenge> {
     
-    // Define the threshold for "near completion" alert
-    const SESSIONS_REMAINING_ALERT = 3;
-
+    // Note: The alert logic (SESSIONS_REMAINING_ALERT) is only needed in the Tick function now.
+    
     return prisma.$transaction(async (tx) => {
         const transactionTimestamp = new Date().toISOString();
 
@@ -888,61 +960,21 @@ export async function processExecuteChallenge(challengeId: number): Promise<Chal
         const previousChallenge = await tx.challenge.findFirst({ where: { isExecuting: true } });
 
         if (previousChallenge) {
-            // ⭐ Session OUT - Increment count, THEN check for completion
-            const nextSessionCount = previousChallenge.currentSessionCount + 1;
-            const isCompleted = nextSessionCount >= previousChallenge.totalSessions;
+            // ⭐ REMOVED: nextSessionCount, isCompleted, CRITICAL ALERT LOGIC, Cadence Increment.
+            // ⭐ REPLACEMENT: Just set isExecuting to false and clear the session tick time.
             
-            const updateData: any = { 
-                isExecuting: false,
-                currentSessionCount: nextSessionCount
-            };
-
-            // ⭐ CRITICAL: NEAR-COMPLETION ALERT LOGIC
-            const sessionsRemaining = previousChallenge.totalSessions - nextSessionCount;
-
-            // Check if we are within the alert range AND not completed yet
-            if (sessionsRemaining > 0 && sessionsRemaining <= SESSIONS_REMAINING_ALERT) {
-                console.log(`[ChallengeService] ALERT: Challenge #${previousChallenge.challengeId} is entering its final ${sessionsRemaining} sessions!`);
-                // If you later need a DB flag, you would add updateData.isNearCompletion = true here
-            }
-            // END ALERT LOGIC
-
-            // ⭐ Increment Cadence Progress for Recurring Challenges
-            // This ensures we track how many sessions were done *this* period (e.g., this week)
-            if (previousChallenge.durationType === 'RECURRING') {
-                updateData.cadenceProgressCounter = { increment: 1 };
-            }
-
-            if (isCompleted) {
-                // Rule: Set status to 'COMPLETED' if final session finishes
-                updateData.status = ChallengeStatus.COMPLETED;
-                updateData.timestampCompleted = transactionTimestamp;
-            } 
-            // Else: Status remains 'IN_PROGRESS'.
-            
-            // Update and stage the finalization of the previous challenge
             await tx.challenge.update({
                 where: { challengeId: previousChallenge.challengeId },
-                data: updateData
-            });
-
-            // ⭐ CRITICAL: If the challenge just finalized is the one we want to execute, 
-            // we exit gracefully, returning the finalized state.
-            if (isCompleted && previousChallenge.challengeId === challengeId) {
-                const completedChallenge = await tx.challenge.findUnique({ 
-                    where: { challengeId: challengeId } // Fetch the staged completed state
-                });
-                if (!completedChallenge) {
-                    throw new Error(`Critical error: Completed challenge ${challengeId} not found.`);
+                data: {
+                    isExecuting: false,
+                    // Clearing the tick ensures the scheduler ignores it immediately.
+                    timestampLastSessionTick: null, 
                 }
-                return completedChallenge; // Exits the transaction, committing the COMPLETED status.
-            }
-
-            const statusText = isCompleted ? ChallengeStatus.COMPLETED : `finished session ${nextSessionCount} of ${previousChallenge.totalSessions}. Status remains InProgress.`;
-            console.log(`[ChallengeService] Previous challenge #${previousChallenge.challengeId} ${statusText} before launch.`);
+            });
+            console.log(`[ChallengeService] Previous challenge #${previousChallenge.challengeId} manually stopped before launch.`);
         }
 
-        // 2. Validate the challenge to be executed
+        // 2. Validate and fetch the challenge to be executed (Unchanged)
         const challenge = await tx.challenge.findUnique({
             where: { challengeId: challengeId },
         });
@@ -955,16 +987,17 @@ export async function processExecuteChallenge(challengeId: number): Promise<Chal
         }
 
         // 3. Execute the new challenge
-        // Set status to 'InProgress' ONLY if it's coming from 'Active' (first session)
         const newStatus = challenge.status === ChallengeStatus.ACTIVE ? ChallengeStatus.IN_PROGRESS : challenge.status;
 
         const updateData: any = {
             status: newStatus, 
             isExecuting: true,
             sessionStartTimestamp: transactionTimestamp,
+            // ⭐ CRITICAL NEW FIELD: Start the 21-minute clock NOW!
+            timestampLastSessionTick: new Date(), 
         };
 
-        // ⭐ CRITICAL: Set cadencePeriodStart ONLY when transitioning from ACTIVE to IN_PROGRESS
+        // Set cadencePeriodStart ONLY when transitioning from ACTIVE to IN_PROGRESS (Unchanged)
         if (challenge.status === ChallengeStatus.ACTIVE && challenge.durationType === 'RECURRING') {
             updateData.cadencePeriodStart = transactionTimestamp;
         }

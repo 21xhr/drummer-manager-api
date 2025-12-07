@@ -16,7 +16,7 @@ import tokenRoutes from './routes/tokenRoutes';
 import userRoutes from './routes/userRoutes'; 
 
 import { initializeStreamState } from './services/streamService'; 
-
+import { startChallengeScheduler } from './scheduler'; 
 
 // --- Server Setup ---
 const app = express();
@@ -33,7 +33,6 @@ const DEV_ORIGINS = [
     "http://127.0.0.1:5500",
     "http://192.168.1.37:*"
 ];
-
 
 // ⭐ CORS Configuration (Must come before app.use(express.json()))
 const corsOptions = {
@@ -99,6 +98,10 @@ async function startServer() {
   try {
     // 🚨 State Initialization: Must run and await before the server listens for requests.
     await initializeStreamState(); 
+
+    // ⭐ Start the continuous session scheduler
+    startChallengeScheduler();
+    
   } catch (error) {
     // CRITICAL: Log the specific initialization failure
     console.error("CRITICAL ERROR: Failed during application state initialization (initializeStreamState). Server cannot start.", error);
@@ -110,7 +113,7 @@ async function startServer() {
   const HOST = '0.0.0.0';
 
   // --- Start the server ---
-  // FIX 2: This call is now valid because PORT is guaranteed to be a number.
+  // This call is now valid because PORT is guaranteed to be a number.
   app.listen(PORT, HOST, () => {
     // The console message can now use the HOST to show network accessibility
     console.log(`\n🚀 Drummer Manager API is live and network accessible at http://${HOST}:${PORT}`);
