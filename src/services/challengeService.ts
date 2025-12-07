@@ -878,6 +878,9 @@ export async function finalizeInProgressChallenge(): Promise<Challenge | null> {
 ////////////////////////////////////////////////////////////////////////////////////////
 export async function processExecuteChallenge(challengeId: number): Promise<Challenge> {
     
+    // Define the threshold for "near completion" alert
+    const SESSIONS_REMAINING_ALERT = 3;
+
     return prisma.$transaction(async (tx) => {
         const transactionTimestamp = new Date().toISOString();
 
@@ -893,6 +896,16 @@ export async function processExecuteChallenge(challengeId: number): Promise<Chal
                 isExecuting: false,
                 currentSessionCount: nextSessionCount
             };
+
+            // ⭐ CRITICAL: NEAR-COMPLETION ALERT LOGIC
+            const sessionsRemaining = previousChallenge.totalSessions - nextSessionCount;
+
+            // Check if we are within the alert range AND not completed yet
+            if (sessionsRemaining > 0 && sessionsRemaining <= SESSIONS_REMAINING_ALERT) {
+                console.log(`[ChallengeService] ALERT: Challenge #${previousChallenge.challengeId} is entering its final ${sessionsRemaining} sessions!`);
+                // If you later need a DB flag, you would add updateData.isNearCompletion = true here
+            }
+            // END ALERT LOGIC
 
             // ⭐ Increment Cadence Progress for Recurring Challenges
             // This ensures we track how many sessions were done *this* period (e.g., this week)
