@@ -139,13 +139,16 @@ export async function processSubmissionLinkGeneration(
  * @returns The updated challenge or null if no action was taken.
  */
 export async function processAutomaticSessionTick(): Promise<SessionTickResult | null> {
-    const now = new Date();
+    const now = new Date(); 
+    const currentTimeMs = now.getTime();
+    
     // TEMPORARY DEBUG LOG
-    logger.info('Auto Tick: Checking for executing challenge...'); // Add this at the top
+    logger.info('Auto Tick: Checking for executing challenge...'); 
 
     // 1. Find the currently executing challenge
     const executingChallenge = await prisma.challenge.findFirst({
         where: { isExecuting: true },
+        // Ensure ALL required fields for the logic below are selected
         select: {
             challengeId: true,
             totalSessions: true,
@@ -155,16 +158,30 @@ export async function processAutomaticSessionTick(): Promise<SessionTickResult |
         }
     });
 
-    if (!executingChallenge || !executingChallenge.timestampLastSessionTick) {
-        // No challenge executing or the tick time hasn't been set yet (initial state)
+    if (!executingChallenge) {
         return null; 
     }
-    
-    const timeElapsedMs = now.getTime() - executingChallenge.timestampLastSessionTick.getTime();
 
+    // Check for null on timestampLastSessionTick and return early if null
+    // This handles the case where a challenge might be set to isExecuting=true but the clock wasn't initialized
+    if (!executingChallenge.timestampLastSessionTick) {
+        // This is safe because we checked if (!executingChallenge) above
+        logger.warn(`Auto Tick: Skipping Challenge #${executingChallenge.challengeId}. Clock not initialized/is NULL.`);
+        return null;
+    }
+
+    // TypeScript narrowing fix
+    // As we've checked for null on timestampLastSessionTick and returned early if null
+    // TypeScript from now knows executingChallenge and timestampLastSessionTick are non-null.
+    const sessionLastTickMs = executingChallenge.timestampLastSessionTick.getTime();
+    
+    // Calculate elapsed time
+    const timeElapsedMs = currentTimeMs - sessionLastTickMs;
+
+    // The core check: Has the 21-minute duration elapsed?
     if (timeElapsedMs < SESSION_DURATION_MS) {
         // Session duration has not yet elapsed
-        return null;
+        return null; 
     }
     
     // 2. The session has expired (21 minutes passed) - Process the tick!
@@ -174,21 +191,20 @@ export async function processAutomaticSessionTick(): Promise<SessionTickResult |
         const nextSessionCount = executingChallenge.currentSessionCount + 1;
         const isCompleted = nextSessionCount >= executingChallenge.totalSessions;
         
-        const now = new Date(); // Re-fetch 'now' inside transaction for precision
+        const txNow = new Date(); 
 
         const updateData: any = {
             currentSessionCount: nextSessionCount,
-            // ⭐ CRITICAL: Reset the tick timer to NOW to start the next 21-minute period.
-            // This prevents "catching up" by immediately detecting another expired session.
-            timestampLastSessionTick: now, 
+            isExecuting: false, //CRITICAL The challenge STOPS execution after ONE automatic tick.
+            timestampLastSessionTick: null, // CRITICAL: Clear the tick timestamp to prevent re-ticking (re-incrementing) on next check.
         };
 
         if (isCompleted) {
             updateData.status = ChallengeStatus.COMPLETED;
-            updateData.isExecuting = false; // Stop executing
-            updateData.timestampCompleted = now.toISOString();
+            updateData.timestampCompleted = txNow.toISOString();
             logger.info(`Auto Tick: Challenge #${executingChallenge.challengeId} is COMPLETED.`);
-        }
+        } 
+        // If NOT completed, the status remains IN_PROGRESS, but isExecuting is false.
 
         // Near-completion check
         const SESSIONS_REMAINING_ALERT = 3;
@@ -204,10 +220,9 @@ export async function processAutomaticSessionTick(): Promise<SessionTickResult |
             data: updateData
         });
 
-        // ⭐ Return data needed for external event triggering
+        // Return data needed for external event triggering
         return {
             challenge: updatedChallenge,
-            // Identify the event type for the scheduler to use
             eventType: isCompleted ? 'SESSION_COMPLETED' : 'SESSION_TICKED', 
         };
     });
