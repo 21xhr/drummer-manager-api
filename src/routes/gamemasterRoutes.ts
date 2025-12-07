@@ -129,8 +129,19 @@ router.post('/challenges/execute', authenticateGameMaster, async (req: Request, 
              responseAction = 'challenge_execute_failure';
         }
         
-        // AUDIT LOG (Success)
-        logger.info(`EXECUTE Success: Challenge #${executingChallenge.challengeId} finished/launched by Admin User ${authorUserId}. Status: ${executingChallenge.status}`, {
+        // Determine the core action for the log
+        let logActionPhrase: string;
+        
+        if (wasPreviousChallengeStopped) {
+            // A previous challenge was finalized (finished) before the new one started.
+            logActionPhrase = 'Finished previous challenge and launched/re-launched';
+        } else {
+            // No previous challenge was running, this is purely a launch/re-launch.
+            logActionPhrase = 'Launched/re-launched';
+        }
+        
+        // AUDIT LOG (Success) - Use the determined phrase
+        logger.info(`EXECUTE Success: ${logActionPhrase} Challenge #${executingChallenge.challengeId} by Admin User ${authorUserId}. Status: ${executingChallenge.status}`, {
             challengeId: executingChallenge.challengeId,
             proposerUserId: executingChallenge.proposerUserId,
             platformId: req.platformId,
