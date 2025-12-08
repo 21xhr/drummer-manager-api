@@ -613,7 +613,7 @@ export async function processDigout(
     const currentStreamSessionId = getCurrentStreamSessionId();
     const transactionTimestamp = new Date().toISOString();
 
-    return prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
         // 1. Fetch Challenge and User for validation
         const challenge = await tx.challenge.findUnique({
             where: { challengeId: challengeId },
@@ -730,9 +730,6 @@ export async function processDigout(
                 hasBeenDiggedOut: true,
             },
         });
-
-        // PUBLISH EVENT: CHALLENGE_DIGGED_OUT
-        publishChallengeEvent(ChallengeEvents.CHALLENGE_DIGGED_OUT, updatedChallenge);
         
         // 4. Return results
         return { 
@@ -741,7 +738,13 @@ export async function processDigout(
             updatedAccount: updatedAccount as Account,
             cost: digoutTransactionCost
         };
-    });
+    }); // <-- The transaction block ends here. If successful, 'result' is populated.
+    
+    // OPTIMIZATION: Publish the event AFTER the transaction commits
+    publishChallengeEvent(ChallengeEvents.CHALLENGE_DIGGED_OUT, result.updatedChallenge);
+
+    // 4. Return results (using the result of the transaction)
+    return result;
 }
 
 
