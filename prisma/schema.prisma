@@ -139,6 +139,7 @@ model Challenge {
   timestampCompleted        DateTime?   @map("timestamp_completed")
   uniquePusher              Int         @default(0) @map("unique_pusher")
   pushBaseCost              Int         @default(21) @map("push_base_cost")
+  submissionCost            Int         @map("submission_cost") // No default needed, as it's calculated on creation
   proposer                  User        @relation("Proposer", fields: [proposerUserId], references: [id])
   timestampLastStreamDayTicked   DateTime    @default(now()) // Tracks the last time streamDaysSinceActivation was incremented. To guard against double-ticking
   

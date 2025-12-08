@@ -11,9 +11,10 @@ import logger from '../logger';
 // --- GLOBAL CONFIGURATION (SCREAMING_SNAKE_CASE) ---
 const DIGOUT_COST_PERCENTAGE = 0.21; // 21%
 const LIVE_DISCOUNT_MULTIPLIER = 0.79; // 1 - 0.21
-const SUBMISSION_BASE_COST = 210; // Base cost for challenge submission
-const DISRUPT_COST = 2100; // Fixed cost for Disrupt
-const SESSION_DURATION_MS = 21 * 1000; // Define the session duration (21 minutes in milliseconds)
+const SUBMISSION_BASE_COST = 210;
+const PUSH_BASE_COST = 21;
+const DISRUPT_COST = 2100; 
+const SESSION_DURATION_MS = 21 * 60 * 1000; // 21 minutes in milliseconds
 export type RefundOption = 'community_forfeit' | 'author_and_chest' | 'author_and_pushers';
 
 
@@ -117,8 +118,8 @@ export async function processSubmissionLinkGeneration(
     const formattedCost = baseCostPerSession.toLocaleString();
     
     const chatResponse = 
-        `Please use the following secure link to submit your challenge (valid for ${tokenDuration}). ` +
-        `Your daily submission count is **${dailySubmissionCount}** (Base Cost: **${formattedCost}** NUMBERS). ` +
+        `Please use the following secure link to submit your challenge (valid for ${tokenDuration}).\n` + 
+        `Your daily submission count is **${dailySubmissionCount}** (Base Cost: **${formattedCost}** NUMBERS).\n` + // Added line break here too for better flow
         `Link: ${secureUrl}`;
 
     return {
@@ -760,7 +761,7 @@ export async function processChallengeSubmission(
     durationType: DurationType,
     sessionCadenceText?: string,
     cadenceUnit?: CadenceUnit
-): Promise<{ newChallenge: Challenge, cost: number, updatedUser: User, updatedAccount: Account }> { // ⭐ UPDATED RETURN TYPE
+): Promise<{ newChallenge: Challenge, cost: number, updatedUser: User, updatedAccount: Account }> { 
     const currentStreamSessionId = getCurrentStreamSessionId();
     const transactionTimestamp = new Date().toISOString();
 
@@ -834,7 +835,8 @@ export async function processChallengeSubmission(
                 status: ChallengeStatus.ACTIVE, // Required field (Always starts Active)
                 category: "General", // Required field (Defaulted here)
                 durationType: durationType, // Required field
-                pushBaseCost: submissionCost, // Store the calculated cost here
+                pushBaseCost: PUSH_BASE_COST,
+                submissionCost: submissionCost,
                 // --- CADENCE FIELDS ---
                 ...(sessionCadenceText && { sessionCadenceText: sessionCadenceText }),
                 ...(cadenceUnit && { cadenceUnit: cadenceUnit }),
