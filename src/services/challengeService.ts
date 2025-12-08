@@ -12,7 +12,7 @@ const DIGOUT_COST_PERCENTAGE = 0.21; // 21%
 const LIVE_DISCOUNT_MULTIPLIER = 0.79; // 1 - 0.21
 const SUBMISSION_BASE_COST = 210; // Base cost for challenge submission
 const DISRUPT_COST = 2100; // Fixed cost for Disrupt
-const SESSION_DURATION_MS = 21 * 60 * 1000; // Define the session duration (21 minutes in milliseconds)
+const SESSION_DURATION_MS = 21 * 1000; // Define the session duration (21 minutes in milliseconds)
 export type RefundOption = 'community_forfeit' | 'author_and_chest' | 'author_and_pushers';
 
 
