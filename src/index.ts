@@ -18,14 +18,15 @@ import userRoutes from './routes/userRoutes';
 import { initializeStreamState } from './services/streamService'; 
 import { startChallengeScheduler } from './scheduler'; 
 import { initializeConsoleSubscribers } from './eventSubscribers/consoleLogger';
+import { initializeNotificationService } from './eventSubscribers/notificationService'; 
 
 // --- Server Setup ---
 const app = express();
-// ⭐ Ensure PORT is always a number by casting the entire expression.
+// Ensure PORT is always a number by casting the entire expression.
 const PORT = Number(process.env.PORT || 3000);
 
 // --- Middleware ---
-// ⭐ Define the allowed origins for CORS (Used for production reference)
+// Define the allowed origins for CORS (Used for production reference)
 const PROD_ORIGIN = "https://drummer-manager-website.vercel.app";
 // Note: DEV_ORIGINS is only used for logging/debugging context now, the main rule is below.
 const DEV_ORIGINS = [
@@ -35,7 +36,7 @@ const DEV_ORIGINS = [
     "http://192.168.1.37:*"
 ];
 
-// ⭐ CORS Configuration (Must come before app.use(express.json()))
+// CORS Configuration (Must come before app.use(express.json()))
 const corsOptions = {
     // CRITICAL FIX: Use a custom function to allow ALL requests in development 
     // that are NOT production, bypassing all local network header issues.
@@ -59,7 +60,7 @@ const corsOptions = {
     credentials: true,
     optionsSuccessStatus: 204
 };
-app.use(cors(corsOptions)); // ⭐ Apply CORS Middleware
+app.use(cors(corsOptions)); // Apply CORS Middleware
 app.use(express.json());
 
 // --- Application Routers (API Endpoints) ---
@@ -103,6 +104,7 @@ async function startServer() {
     startChallengeScheduler();
     // Initialize Event Subscribers
     initializeConsoleSubscribers();
+    initializeNotificationService();
     
   } catch (error) {
     // CRITICAL: Log the specific initialization failure
