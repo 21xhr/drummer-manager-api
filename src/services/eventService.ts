@@ -7,16 +7,16 @@ import logger from '../logger';
 
 // 1. Define Event Names (to avoid typos)
 export enum ChallengeEvents {
-    // Fired when a session ticks (count increases, but not completed)
-    SESSION_TICKED = 'challenge:session_ticked', 
-    // Fired when the final session completes
-    CHALLENGE_COMPLETED = 'challenge:completed',
-    
-    // We can add these later if needed:
-    // Fired when the GM manually starts a challenge
-    CHALLENGE_EXECUTED = 'challenge:executed',
-    // Fired when the GM manually stops a challenge
-    CHALLENGE_STOPPED = 'challenge:stopped',
+    SESSION_TICKED = 'challenge:session_ticked', // Fired when a session ticks (count increases, but not completed)
+    CHALLENGE_COMPLETED = 'challenge:completed', // Fired when the final session completes    
+    CHALLENGE_EXECUTED = 'challenge:executed', // Fired when the GM manually starts a challenge
+    CHALLENGE_SUBMITTED = 'challenge:submitted',
+    CHALLENGE_REMOVED = 'challenge:removed', // For GM permanent delete
+    CHALLENGE_REMOVED_BY_AUTHOR = 'challenge:removed_by_author', // For !remove command
+    CHALLENGE_DIGGED_OUT = 'challenge:digged_out', // For player !digout command
+    CHALLENGE_ACTIVATED_BY_GM = 'challenge:activated_by_gm', // For GM status override
+
+    // CHALLENGE_STOPPED = 'challenge:stopped', // Fired when the GM manually stops a challenge
 }
 
 // 2. Define the Event Dispatcher

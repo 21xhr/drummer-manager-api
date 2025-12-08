@@ -5,6 +5,7 @@ import { Account, Challenge, ChallengeStatus, CadenceUnit, DurationType, Platfor
 import { isStreamLive, getCurrentStreamSessionId} from './streamService';
 import { generateToken, validateDuration } from './jwtService';
 import { addNumbersViaLumia, deductNumbersViaLumia } from './lumiaService';
+import { publishChallengeEvent, ChallengeEvents } from './eventService';
 import logger from '../logger';
 
 // --- GLOBAL CONFIGURATION (SCREAMING_SNAKE_CASE) ---
@@ -730,6 +731,9 @@ export async function processDigout(
             },
         });
 
+        // PUBLISH EVENT: CHALLENGE_DIGGED_OUT
+        publishChallengeEvent(ChallengeEvents.CHALLENGE_DIGGED_OUT, updatedChallenge);
+        
         // 4. Return results
         return { 
             updatedChallenge, 
@@ -893,6 +897,10 @@ export async function processChallengeSubmission(
             });
         }
 
+        // 9. PUBLISH EVENT: CHALLENGE_SUBMITTED
+        publishChallengeEvent(ChallengeEvents.CHALLENGE_SUBMITTED, newChallenge);
+
+        // 10. Return results
         return { 
             newChallenge, 
             cost: submissionCost, 
@@ -1044,6 +1052,11 @@ export async function processExecuteChallenge(challengeId: number): Promise<Exec
             data: updateData
         });
 
+        if (executingChallenge.isExecuting) {
+            // PUBLISH EVENT: CHALLENGE_EXECUTED
+            publishChallengeEvent(ChallengeEvents.CHALLENGE_EXECUTED, executingChallenge);
+        }
+
         // Use the correct variable names in the return object
         return {
             executingChallenge: executingChallenge, 
@@ -1068,9 +1081,9 @@ export async function getActiveChallenges() {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
-// PROCESS CHALLENGES REMOVAL
+// PROCESS CHALLENGES REMOVERS
 ////////////////////////////////////////////////////////////////////////////////////////
- /**
+/**
  * Allows the Challenge author to remove their Challenge, refunding 21% of
  * the total spent cost back to all contributing pushers via an external API call.
  * @param authorUserId - The ID of the user executing the command (must be the author).
@@ -1078,37 +1091,37 @@ export async function getActiveChallenges() {
  */
 // Type definition for the return value of the Prisma transaction
 type ProcessRemoveTransactionResult = {
-    updatedChallenge: Challenge; 
+    updatedChallenge: Challenge;
     allExternalRefundsToProcess: { userId: number, refundAmount: number }[];
-    totalRefundsAmount: number; 
+    totalRefundsAmount: number;
     option: RefundOption;
-    fundsSinkText: string; 
-    toAuthor: number; 
+    fundsSinkText: string;
+    toAuthor: number;
     toExternalPushers: number;
     toCommunityChest: number;
 };
 
 export async function processRemove(
-    authorUserId: number, 
+    authorUserId: number,
     challengeId: number,
     option: RefundOption = 'community_forfeit' // Default to Community Forfeit
-): Promise<{ 
-    updatedChallenge: Challenge, 
-    refundsProcessed: number, 
-    totalRefundsAmount: number, 
-    failedRefunds: number, 
-    fundsSink: string, 
-    toAuthor: number, 
-    toCommunityChest: number, 
+): Promise<{
+    updatedChallenge: Challenge,
+    refundsProcessed: number,
+    totalRefundsAmount: number,
+    failedRefunds: number,
+    fundsSink: string,
+    toAuthor: number,
+    toCommunityChest: number,
     toExternalPushers: number,
     option: RefundOption
- }> {
-    
+}> {
+
     const refundsToProcess: { userId: number, refundAmount: number }[] = [];
     let totalRefundsAmount = 0; // The 21% amount
-    
+
     // Fetch the current Stream Session ID ONCE before the transaction begins
-    const currentStreamSessionId = getCurrentStreamSessionId(); 
+    const currentStreamSessionId = getCurrentStreamSessionId();
     const transactionTimestamp = new Date().toISOString();
 
     // --- STEP 1: ATOMIC DATABASE TRANSACTION (Local State Change: Challenge/Global) ---
@@ -1128,17 +1141,17 @@ export async function processRemove(
 
         // Explicitly type the array as ChallengeStatus[] to satisfy the compiler
         const unremovableStatuses: ChallengeStatus[] = [
-            ChallengeStatus.ARCHIVED, 
-            ChallengeStatus.AUCTIONED, 
-            ChallengeStatus.IN_PROGRESS, 
-            ChallengeStatus.COMPLETED, 
+            ChallengeStatus.ARCHIVED,
+            ChallengeStatus.AUCTIONED,
+            ChallengeStatus.IN_PROGRESS,
+            ChallengeStatus.COMPLETED,
             ChallengeStatus.REMOVED
         ];
 
-        if (unremovableStatuses.includes(challenge.status)) { 
+        if (unremovableStatuses.includes(challenge.status)) {
              throw new Error(`Challenge #${challengeId} cannot be removed while in status: ${challenge.status}.`);
-        }  
-        
+        }
+
         // 2. Calculate Refunds (Separate Author's portion from Pushers' portions)
         let authorRefundAmount = 0;
         let pushersRefundAmount = 0;
@@ -1151,9 +1164,9 @@ export async function processRemove(
         });
 
         for (const contribution of pusherContributions) {
-            const spent = contribution._sum?.cost || 0; 
-            const refund = Math.floor(spent * 0.21); 
-            
+            const spent = contribution._sum?.cost || 0;
+            const refund = Math.floor(spent * 0.21);
+
             if (refund > 0) {
                 if (contribution.userId === authorUserId) {
                     authorRefundAmount = refund;
@@ -1163,11 +1176,11 @@ export async function processRemove(
                 }
             }
         }
-        
+
         const totalRefundsAmount = authorRefundAmount + pushersRefundAmount;
 
         // --- 3. DETERMINE DISTRIBUTION & UPDATE LEDGERS ---
-        
+
         let toCommunityChest = 0;
         let toExternalPushers = 0;
         let toAuthor = 0;
@@ -1188,7 +1201,7 @@ export async function processRemove(
 
         // A. Global Ledger (ID 1): Track Gross Refund (UNCHANGED)
         await tx.user.updateMany({
-            where: { id: 1 }, 
+            where: { id: 1 },
             data: {
                 totalNumbersReturnedFromRemovalsGameWide: { increment: totalRefundsAmount }
             }
@@ -1204,15 +1217,15 @@ export async function processRemove(
                 }
             });
         }
-        
+
         // C. Update Author's Per-User Stats (Tracking metrics)
         await tx.user.update({
             where: { id: authorUserId },
             data: {
                 totalRemovalsExecuted: { increment: 1 },
                 lastActivityTimestamp: transactionTimestamp,
-                totalCausedByRemovals: { increment: totalRefundsAmount }, 
-                totalToCommunityChest: { increment: toCommunityChest }, 
+                totalCausedByRemovals: { increment: totalRefundsAmount },
+                totalToCommunityChest: { increment: toCommunityChest },
                 totalToPushers: { increment: toExternalPushers },
             }
         });
@@ -1220,26 +1233,26 @@ export async function processRemove(
         // 5. Update Challenge Status (CRITICAL STATE CHANGE)
         const updatedChallenge = await tx.challenge.update({
             where: { challengeId: challengeId },
-            data: {                            
-                status: ChallengeStatus.REMOVED, 
+            data: {
+                status: ChallengeStatus.REMOVED,
                 isExecuting: false
             },
         });
 
         // --- Prepare the Consolidated External Refund List (TS/Logic FIX) ---
         // Start with the list of non-author pushers
-        const allExternalRefundsToProcess = [...pushersRefundsToProcess]; 
+        const allExternalRefundsToProcess = [...pushersRefundsToProcess];
 
         // If the author's share is meant for refund (Options B or C), add them to the list
-        if (toAuthor > 0) { 
+        if (toAuthor > 0) {
             // Add the author to the list that needs to be processed by the external API in Step 2
             allExternalRefundsToProcess.push({ userId: authorUserId, refundAmount: toAuthor });
         }
 
-        return { 
-            updatedChallenge, 
+        return {
+            updatedChallenge,
             allExternalRefundsToProcess, // This is the consolidated list returned as 'result'
-            totalRefundsAmount, 
+            totalRefundsAmount,
             option: option as RefundOption, // Cast to the expected type
             fundsSinkText,
             toAuthor,
@@ -1251,39 +1264,39 @@ export async function processRemove(
     // --- STEP 2: EXTERNAL REFUND CALLS (Lumia API INTEGRATION POINT) ---
     const successfulRefunds: { userId: number, amount: number }[] = [];
     const attemptedRefundCount = result.allExternalRefundsToProcess.length; // Max possible refunds
-    
+
     // Only process external calls if the option involved External Refunds (Options B or C)
     const requiresExternalRefund = result.option === 'author_and_chest' || result.option === 'author_and_pushers';
-    
+
     if (requiresExternalRefund && attemptedRefundCount > 0) {
-        
+
         // 2a. Fetch platform IDs for all users requiring an external refund
-const userIdsToRefund = result.allExternalRefundsToProcess.map(r => r.userId);
+        const userIdsToRefund = result.allExternalRefundsToProcess.map(r => r.userId);
 
-// Fetch ALL Accounts belonging to the users being refunded. 
-// We must assume the refund is applied to ONE account. Let's arbitrarily choose the first one found 
-// (or you can adjust this logic if you have a rule, like "Twitch account only").
-const accountsToRefund = await prisma.account.findMany({
-    where: { userId: { in: userIdsToRefund } },
-    select: { userId: true, platformId: true } 
-});
+        // Fetch ALL Accounts belonging to the users being refunded.
+        // We must assume the refund is applied to ONE account. Let's arbitrarily choose the first one found
+        // (or you can adjust this logic if you have a rule, like "Twitch account only").
+        const accountsToRefund = await prisma.account.findMany({
+            where: { userId: { in: userIdsToRefund } },
+            select: { userId: true, platformId: true }
+        });
 
-// Create a map from userId to platformId using the first Account found for that user.
-// This is a simplification; a more robust system might require tracking which platform 
-// they were originally pushing from. Since the Push model only tracks `userId`, 
-// we must default to a single Account per User for the refund.
-const platformIdMap = new Map<number, string>();
-accountsToRefund.forEach(account => {
-    // Only map the first account found for each user
-    if (!platformIdMap.has(account.userId)) {
-        platformIdMap.set(account.userId, account.platformId);
-    }
-});
+        // Create a map from userId to platformId using the first Account found for that user.
+        // This is a simplification; a more robust system might require tracking which platform
+        // they were originally pushing from. Since the Push model only tracks `userId`,
+        // we must default to a single Account per User for the refund.
+        const platformIdMap = new Map<number, string>();
+        accountsToRefund.forEach(account => {
+            // Only map the first account found for each user
+            if (!platformIdMap.has(account.userId)) {
+                platformIdMap.set(account.userId, account.platformId);
+            }
+        });
 
         // 2b. Execute external refund calls (using Promise.all for potential parallel execution)
         const refundPromises = result.allExternalRefundsToProcess.map(async (refund) => {
             const platformId = platformIdMap.get(refund.userId);
-            
+
             if (!platformId) {
                 logger.error(`Refund Failed: User ${refund.userId} is missing platformId.`);
                 return; // Failed to refund, no platform ID
@@ -1291,15 +1304,15 @@ accountsToRefund.forEach(account => {
 
             try {
                 // ⭐ CRITICAL: Call the authoritative credit API
-                await addNumbersViaLumia(platformId, refund.refundAmount); 
-                
+                await addNumbersViaLumia(platformId, refund.refundAmount);
+
                 // Track success (no need to update local balance here as Lumia is authoritative)
                 successfulRefunds.push({ userId: refund.userId, amount: refund.refundAmount });
-                
+
             } catch (error) {
                 // 🛠️ FIX: Safely check if 'error' is an Error object before accessing '.message'
                 const errorMessage = error instanceof Error ? error.message : 'Unknown payment error during refund.';
-                
+
                 logger.error(`Lumia Refund Failed for User ${refund.userId} (Amount: ${refund.refundAmount}): ${errorMessage}`, { userId: refund.userId, platformId });
             }
         });
@@ -1309,12 +1322,17 @@ accountsToRefund.forEach(account => {
     }
 
     // --- STEP 3: FINAL RESPONSE ---
+
+    // PUBLISH EVENT: CHALLENGE_REMOVED_BY_AUTHOR
+    // The event payload includes the updated challenge status (REMOVED)
+    publishChallengeEvent(ChallengeEvents.CHALLENGE_REMOVED_BY_AUTHOR, result.updatedChallenge);
+
     return {
         updatedChallenge: result.updatedChallenge,
         refundsProcessed: successfulRefunds.length,
         totalRefundsAmount: result.totalRefundsAmount,
         // Calculate failed refunds by subtracting successful attempts from the total possible attempts
-        failedRefunds: attemptedRefundCount - successfulRefunds.length, 
+        failedRefunds: attemptedRefundCount - successfulRefunds.length,
         fundsSink: result.fundsSinkText,
         toAuthor: result.toAuthor,
         toCommunityChest: result.toCommunityChest,
@@ -1476,6 +1494,19 @@ export async function setChallengeStatusByAdmin(
         });
         
         console.log(`[ChallengeService] GM set Challenge #${challengeId} status to ${newStatus}.`);
+
+        // ⭐ NEW: Event Dispatching based on the new status
+        if (newStatus === ChallengeStatus.COMPLETED) {
+            // GM force-completed the challenge
+            publishChallengeEvent(ChallengeEvents.CHALLENGE_COMPLETED, updatedChallenge);
+        } else if (newStatus === ChallengeStatus.REMOVED) {
+            // GM set the final status to REMOVED
+            publishChallengeEvent(ChallengeEvents.CHALLENGE_REMOVED, updatedChallenge);
+        } else if (newStatus === ChallengeStatus.ACTIVE) {
+            // GM is manually activating/reviving a challenge
+            publishChallengeEvent(ChallengeEvents.CHALLENGE_ACTIVATED_BY_GM, updatedChallenge); 
+        }
+
         return updatedChallenge;
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown database error during status update.';
