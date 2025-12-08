@@ -17,6 +17,7 @@ import userRoutes from './routes/userRoutes';
 
 import { initializeStreamState } from './services/streamService'; 
 import { startChallengeScheduler } from './scheduler'; 
+import { initializeConsoleSubscribers } from './eventSubscribers/consoleLogger';
 
 // --- Server Setup ---
 const app = express();
@@ -96,11 +97,12 @@ app.get('/', async (req: Request, res: Response) => {
 async function startServer() {
   
   try {
-    // 🚨 State Initialization: Must run and await before the server listens for requests.
+    // 🚨 State Initialization: Must run and await before the server starts & listens for requests.
     await initializeStreamState(); 
-
-    // ⭐ Start the continuous session scheduler
+    // Start the continuous session scheduler
     startChallengeScheduler();
+    // Initialize Event Subscribers
+    initializeConsoleSubscribers();
     
   } catch (error) {
     // CRITICAL: Log the specific initialization failure
@@ -109,7 +111,7 @@ async function startServer() {
   }
 
   // --- Start the server ---
-  // ⭐ CRITICAL: Add the host 0.0.0.0 to bind to all interfaces
+  // CRITICAL: Add the host 0.0.0.0 to bind to all interfaces
   const HOST = '0.0.0.0';
 
   // --- Start the server ---
