@@ -33,6 +33,7 @@ router.post('/verify', async (req: Request, res: Response) => {
             message: 'Token verified successfully.',
             platformId: payload.platformId,
             platformName: payload.platformName,
+            username: payload.username,
             // ⭐ Use optional chaining (?.) and check if payload.exp exists.
             expiresIn: payload.exp ? validateDuration(`${(payload.exp * 1000 - Date.now()) / 60000}m`) : 'N/A'
         });

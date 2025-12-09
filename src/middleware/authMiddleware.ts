@@ -14,20 +14,22 @@ const ADMIN_USER_ID = 21;
 // Middleware to standardize user input and ensure user registration
 export const authenticateUser = async (req: Request, res: Response, next: NextFunction) => {
     // These values are guaranteed to be the external identity the user used.
-    const { platformId, platformName } = req.body; 
+    // Destructure the required fields directly from the expected structure.
+    const platformId = req.body.user?.userId;
+    const platformName = req.body.platform?.name; // Assuming platform context is now nested
+    const username = req.body.user?.username || platformId; // Use username for display, fall back to ID
 
     if (!platformId || !platformName) {
         return res.status(400).json({ error: "Missing platformId or platformName in request body." });
     }
 
     try {
-        const usernameFallback = platformId; // Use the immutable ID as a temporary display name
         // 1. Find or Create the central User and the corresponding Account record.
         // The refactored findOrCreateUser handles the new schema correctly.
         const user = await findOrCreateUser({ 
             platformId, 
             platformName: platformName as PlatformName,
-            username: usernameFallback // Pass a fallback value to satisfy the upsert logic
+            username: username // Pass a fallback value to satisfy the upsert logic
         });
         
         // 2. Attach identity to the request object.

@@ -10,6 +10,7 @@ interface TokenPayload extends JwtPayload {
     userId: number;
     platformId: string;
     platformName: string;
+    username: string;
 }
 
 /**

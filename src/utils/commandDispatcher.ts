@@ -128,6 +128,7 @@ export async function dispatchCommand(payload: CommandPayload, hostname: string)
                     dbUser.id, 
                     platformId,
                     platformName, 
+                    usernameToStore,
                     durationArg,
                     hostname // Pass hostname for URL construction
                 );

@@ -92,6 +92,7 @@ export async function processSubmissionLinkGeneration(
     userId: number, 
     platformId: string, 
     platformName: string, 
+    username: string,
     duration: string | undefined, 
     reqHostname: string,
 ): Promise<{ chatResponse: string, details: any }> {
@@ -101,8 +102,8 @@ export async function processSubmissionLinkGeneration(
 
     // 2. Generate the JWT token
     const tokenDuration = validateDuration(duration); // Use validateDuration from jwtService
-    // NOTE: The TokenPayload interface in jwtService requires userId, platformId, platformName
-    const token = generateToken({ userId, platformId, platformName }, tokenDuration);
+    // NOTE: The TokenPayload interface in jwtService requires userId, platformId, platformName, username
+    const token = generateToken({ userId, platformId, platformName, username }, tokenDuration);
     
     // 3. Dynamic URL Construction
     const isLocalHost = reqHostname === 'localhost' || reqHostname === '127.0.0.1' || reqHostname === '0.0.0.0';
@@ -504,7 +505,7 @@ export async function processPushConfirm(
         throw new Error(`Insufficient balance on ${platformName} account. Push costs ${pushTransactionCost} NUMBERS.`);
     }
 
-    // ⭐ CRITICAL: Execute Authoritative Deduction via Lumia API
+    // CRITICAL: Execute Authoritative Deduction via Lumia API
     let newAuthoritativeBalance: number;
         
     try {
@@ -553,7 +554,7 @@ export async function processPushConfirm(
             }),
         },
     });
-    // ⭐ Update Account Balance: Update the specific Account with the authoritative balance
+    // Update Account Balance: Update the specific Account with the authoritative balance
     const updatedAccount = await tx.account.update({
         where: {
             platformId_platformName: {
@@ -605,8 +606,8 @@ export async function processPushConfirm(
  */
 export async function processDigout(
     userId: number,
-    platformId: string, // ⭐ NEW PARAMETER
-    platformName: PlatformName, // ⭐ NEW PARAMETER
+    platformId: string,
+    platformName: PlatformName,
     challengeId: number
 ): Promise<{ updatedChallenge: Challenge; updatedUser: User; updatedAccount: Account; cost: number }> {
 
@@ -1381,8 +1382,8 @@ export async function processRemove(
  */
 export async function processDisrupt(
     userId: number,
-    platformId: string, // ⭐ NEW PARAMETER
-    platformName: PlatformName // ⭐ NEW PARAMETER
+    platformId: string,
+    platformName: PlatformName
 ): Promise<string> {
 
     const currentStreamSessionId = getCurrentStreamSessionId();

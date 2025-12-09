@@ -156,7 +156,7 @@ router.post('/submit/web', async (req: Request, res: Response) => {
             error: "Missing required challenge fields (text, sessions, or duration)." 
         });
     }
-    // ⭐ Cadence validation for recurring challenges
+    // Cadence validation for recurring challenges
     if (durationType === 'RECURRING' && (!sessionCadenceText || !cadenceUnit)) {
         return res.status(400).json({ error: "Both Session Cadence Text and Cadence Unit are required for Recurring challenges." });
     }
@@ -169,14 +169,14 @@ router.post('/submit/web', async (req: Request, res: Response) => {
 
     // 3. Process Submission Transaction
     try {
-        // ⭐ CRITICAL: The service must now return the updated Account used for deduction.
+        // CRITICAL: The service must now return the updated Account used for deduction.
         // We expect the return object to include 'updatedAccount'
         const { newChallenge, cost, updatedUser, updatedAccount } = await challengeService.processChallengeSubmission(
             userId, // Authenticated via JWT
-            platformId, // Pass platform ID
-            platformName, // Pass platform Name
+            platformId,
+            platformName,
             challengeText,
-            sessions, // Use the parsed integer
+            sessions, 
             durationType,
             sessionCadenceText, 
             cadenceUnit         
