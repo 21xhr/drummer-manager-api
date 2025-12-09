@@ -1235,6 +1235,32 @@ export async function processRemove(
             }
         });
 
+        // D. Update Community Chest Ledger (User ID 1) and Balance
+        if (toCommunityChest > 0) {
+            
+            // D1. Update the Community Chest's Aggregate Metrics (User ID 1)
+            // This is the global running total for the chest.
+            await tx.user.update({
+                where: { id: 1 },
+                data: {
+                    totalToCommunityChest: { increment: toCommunityChest },
+                }
+            });
+            
+            // D2. Update the designated Community Chest Account balance
+            await tx.account.update({
+                where: {
+                    platformId_platformName: {
+                        platformId: 'community_chest', // Dedicated fixed platformId
+                        platformName: PlatformName.GAME_MASTER // Designated sink platform
+                    }
+                },
+                data: {
+                    currentBalance: { increment: toCommunityChest }
+                }
+            });
+        }
+        
         // 5. Update Challenge Status (CRITICAL STATE CHANGE)
         const updatedChallenge = await tx.challenge.update({
             where: { challengeId: challengeId },
