@@ -9,6 +9,7 @@ import { getNextDailyResetTime } from './challengeService';
 interface PlatformUser {
   platformId: string;
   platformName: PlatformName;
+  username?: string; // Make this optional (username is for display, not core identity)
   // You can add more initial fields here if the platform provides them
 }
 
@@ -65,7 +66,8 @@ async function createNewCentralUser(): Promise<User> {
  * @returns The existing or newly created User record.
  */
 export async function findOrCreateUser(platformUser: PlatformUser): Promise<User> {
-    const { platformId, platformName } = platformUser;
+    const { platformId, platformName, username } = platformUser; 
+    const transactionTimestamp = new Date();
 
     // 1. Check if an Account already exists for this platform identity.
     const existingAccount = await prisma.account.findUnique({
@@ -82,7 +84,16 @@ export async function findOrCreateUser(platformUser: PlatformUser): Promise<User
 
     if (existingAccount) {
         // Account found: return the linked central User.
-        return existingAccount.user;
+        // Update the username on the existing account
+        await prisma.account.update({
+             where: { id: existingAccount.id },
+             data: {
+                 username: username,
+                 lastActivityTimestamp: transactionTimestamp,
+                 // Include other fields you want to update on activity
+             }
+         });
+         return existingAccount.user;
     }
 
     // 2. Account not found: This is a brand new user/account pair.
@@ -96,6 +107,7 @@ export async function findOrCreateUser(platformUser: PlatformUser): Promise<User
             userId: newUser.id,
             platformId: platformId,
             platformName: platformName,
+            username: username, // Save the username on creation
             currentBalance: INITIAL_BALANCE, // Set the initial balance on the platform account
             lastActivityTimestamp: new Date(),
             lastLiveActivityTimestamp: new Date(),
@@ -121,12 +133,13 @@ export async function processUserStats(userId: number): Promise<string> {
         where: { id: userId },
         select: {
             id: true, // Internal User ID
-            // Include ALL accounts to get platform names, IDs, and balances
+            // Include ALL accounts to get platform names, IDs, balances
             accounts: {
                 select: {
                     platformId: true,
                     platformName: true,
                     currentBalance: true,
+                    username: true,
                 },
                 // Order by platform name for stable display order
                 orderBy: { platformName: 'asc' }, 
@@ -159,8 +172,11 @@ export async function processUserStats(userId: number): Promise<string> {
         unifiedBalance += account.currentBalance;
         
         // Example: TWITCH (@userA): 100 NUMBERS
+        // Using username now, but falling back to platformId if username is null
+        const display = account.username || account.platformId;
+        
         accountDetails.push(
-            `  - **${account.platformName}** (@${account.platformId}): **${account.currentBalance.toLocaleString()}** NUMBERS`
+            `  - **${account.platformName}** (@${display}): **${account.currentBalance.toLocaleString()}** NUMBERS`
         );
     });
 
@@ -192,7 +208,7 @@ export async function processUserStats(userId: number): Promise<string> {
         `  **TOTAL WEALTH:** **${format(unifiedBalance)}** NUMBERS\n` +
         `\n` +
         `  SPENT (Total): ${totalSpent} | RECEIVED from !remove: ${receivedFromRemovals}\n` +
-        `  LIABILITY (Caused by your !remove): ${causedByRemovals}\n` +
+        `  WAIVED (Refunds from your !remove): ${causedByRemovals}\n` +
         `\n` +
         `🛠️ **[ACTIVITY]**\n` +
         `  SUBMISSIONS: ${submissions} (N-Count: ${dailyCount})\n` +

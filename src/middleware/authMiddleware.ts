@@ -21,11 +21,13 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
     }
 
     try {
+        const usernameFallback = platformId; // Use the immutable ID as a temporary display name
         // 1. Find or Create the central User and the corresponding Account record.
         // The refactored findOrCreateUser handles the new schema correctly.
         const user = await findOrCreateUser({ 
             platformId, 
-            platformName: platformName as PlatformName 
+            platformName: platformName as PlatformName,
+            username: usernameFallback // Pass a fallback value to satisfy the upsert logic
         });
         
         // 2. Attach identity to the request object.

@@ -245,7 +245,6 @@ export async function getCurrentDailySubmissionContext(userId: number | string):
     dailySubmissionCount: number;
     baseCostPerSession: number;
 }> {
-    // CRITICAL FIX: Convert string ID to number for Prisma lookup if necessary
     const idToLookup = typeof userId === 'string' ? parseInt(userId, 10) : userId;
 
     // We use a transaction to ensure atomicity in case a reset is needed.

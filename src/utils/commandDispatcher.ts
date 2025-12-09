@@ -9,9 +9,9 @@ import { PlatformName } from '@prisma/client';
 interface CommandPayload {
     command: string; // e.g., "!push", "!challengesubmit"
     user: {
-        platformId: string;
-        name: string; // The user's chat name
-        displayName?: string; // Made optional for safer parsing
+        userId: string;       // Unique platform ID (immutable)
+        username: string;     // The user's login / channel name
+        displayname?: string; // The display name
     };
     platform: {
         name: string; // e.g., "TWITCH"
@@ -46,14 +46,18 @@ export async function dispatchCommand(payload: CommandPayload, hostname: string)
     let dbUser;
     
     // We rely on the CommandPayload to provide the platform context for transactional calls.
-    const platformId: string = user.platformId;
+    const platformId: string = user.userId;
     const platformName: PlatformName = platform.name as PlatformName;
-    
+    // NOTE: Lumia uses 'displayname' as one word. The volatility of displayname is a non-issue 
+    // because the platformId is what identifies the user in the database, not the username field.
+    const usernameToStore: string = user.displayname || user.username || platformId;
+
     try {
-        // ⭐ MANDATORY STEP 1: Find or Create the User
+        // MANDATORY STEP 1: Find or Create the User
         dbUser = await userService.findOrCreateUser({
             platformId: platformId,
-            platformName: platformName 
+            platformName: platformName,
+            username: usernameToStore
         });
 
         logger.info(`Dispatching API command`, {
@@ -64,7 +68,7 @@ export async function dispatchCommand(payload: CommandPayload, hostname: string)
         });
 
         // ------------------------------------------------------------------
-        // ⭐ MANDATORY STEP 2: DISPATCH LOGIC
+        // MANDATORY STEP 2: DISPATCH LOGIC
         // ------------------------------------------------------------------
         
         // ------------------------------------------------------------------
@@ -98,7 +102,6 @@ export async function dispatchCommand(payload: CommandPayload, hostname: string)
                 };
             }
             
-            // ⭐ FIX: Added platformId and platformName
             const result = await challengeService.processPushQuote(
                 dbUser.id, 
                 platformId, 
@@ -212,7 +215,7 @@ export async function dispatchCommand(payload: CommandPayload, hostname: string)
         // Central error handling for any failure in the service layer
         logger.error(`Critical Dispatch Error for command: ${fullCommand}`, {
             userId: dbUser?.id || 'N/A',
-            platformId: user.platformId,
+            platformId: user.userId, // This is the unique platform ID from Lumia
             error: error instanceof Error ? error.message : 'Unknown error',
             stack: error instanceof Error ? error.stack : undefined,
             context: 'DISPATCHER_ERROR'
