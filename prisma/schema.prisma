@@ -48,7 +48,8 @@ model Account {
   userId                    Int             @map("user_id") // FOREIGN KEY to the central user
   platformId                String          @map("platform_id")
   platformName              PlatformName    @map("platform_name") // Using the Enum!
-  
+  username                  String?         @map("username") // The mutable platform username/display name
+
   // HYBRID BALANCE (Mirroring Lumia)
   currentBalance            Int             @default(0) @map("current_balance") // The SoT for this specific platform balance
   

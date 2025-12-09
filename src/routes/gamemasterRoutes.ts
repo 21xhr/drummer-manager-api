@@ -12,8 +12,8 @@ import { getServiceErrorStatus } from '../utils/routeUtils';
 import { authenticateGameMaster } from '../middleware/authMiddleware';
 import { dispatchCommand } from '../utils/commandDispatcher';
 
-// ⭐ Add this line to force TypeScript to load your custom Request types.
-// We are importing a non-existent value, but the import statement forces the module's types to be recognized.
+// Force TypeScript to load your custom Request types.
+// We import a non-existent value, but the import statement forces the module's types to be recognized.
 import {} from '../types/express.d'; // Note: Omit the .ts or .d.ts extension
 
 const router = Router();
@@ -43,7 +43,7 @@ router.post('/command', async (req: Request, res: Response) => {
         return res.status(400).json({ error: 'Missing required fields (command, user, platform).' });
     }
 
-    // ⭐ CORE CHANGE: Call the central dispatcher function
+    // CORE CHANGE: Call the central dispatcher function
     // The dispatcher handles validation, user lookup, and routing the logic.
     const result = await dispatchCommand(
         {
