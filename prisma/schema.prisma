@@ -80,8 +80,8 @@ model User {
   activeStreamDaysCount                 Int       @default(0) @map("active_stream_days_count")
   
   // All total/game-wide stats remain here
-  totalNumbersSpentGameWide             Int       @default(0) @map("total_numbers_spent_game_wide")
-  totalNumbersReturnedFromRemovalsGameWide Int    @default(0) @map("total_numbers_returned_from_removals_game_wide")
+  totalNumbersSpentGameWide             BigInt       @default(0) @map("total_numbers_spent_game_wide")
+  totalNumbersReturnedFromRemovalsGameWide BigInt    @default(0) @map("total_numbers_returned_from_removals_game_wide")
   totalCausedByRemovals                 BigInt    @default(0) @map("total_caused_by_removals")
   totalToCommunityChest                 BigInt    @default(0) @map("total_to_community_chest")
   totalToPushers                        BigInt    @default(0) @map("total_to_pushers")
@@ -92,7 +92,7 @@ model User {
   totalChallengesSubmitted              Int       @default(0) @map("total_challenges_submitted")
   totalRemovalsExecuted                 Int       @default(0) @map("total_removals_executed")
   totalReceivedFromRemovals             Int       @default(0) @map("total_received_from_removals")
-  totalNumbersSpent                     Int       @default(0) @map("total_numbers_spent")
+  totalNumbersSpent                     BigInt       @default(0) @map("total_numbers_spent")
   totalDigoutsExecuted                  Int       @map("total_digouts_executed") @default(0)
   totalPushesExecuted                   Int       @default(0)
   totalDisruptsExecuted                 Int       @default(0)
@@ -133,7 +133,7 @@ model Challenge {
   auctionCost               Int         @default(0) @map("auction_cost")
   disruptCount              Int         @default(0) @map("disrupt_count")
   numbersRaised             Int         @default(0) @map("numbers_raised")
-  totalNumbersSpent         Int         @default(0) @map("total_numbers_spent")
+  totalNumbersSpent         BigInt         @default(0) @map("total_numbers_spent")
   totalPush                 Int         @default(0) @map("total_push")
   timestampSubmitted        DateTime    @map("timestamp_submitted")
   timestampLastActivation   DateTime    @map("timestamp_last_activation")
