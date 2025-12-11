@@ -61,7 +61,7 @@ export async function processDailyUserTick(currentStreamDay: number): Promise<vo
 
     console.log(`[ClockService] Processed daily tick for ${usersToUpdate.length} users.`);
 
-    // ⭐ SANITY CHECK: Ensure only one Challenge is marked as executing (or zero)
+    // SANITY CHECK: Ensure only one Challenge is marked as executing (or zero)
     try {
         const executingCount = await prisma.challenge.count({
             where: { isExecuting: true }
@@ -203,10 +203,21 @@ export async function enforceRecurringChallengeCadence(): Promise<number> {
 export async function runDailyMaintenance() {
     
     // 1. Advance the Real-World Day Counter and get the current stream day
-    const updatedStat = await prisma.streamStat.update({
-        where: { id: 1 }, // Assuming StreamStat is a singleton with ID 1
-        data: {
-            daysSinceInception: { increment: 1 }
+    // CRITICAL: Use upsert to ensure the singleton record (id: 1) exists on first run.
+    const updatedStat = await prisma.streamStat.upsert({
+        where: { id: 1 }, // Look for the singleton record
+        update: {
+            // If the record exists, increment the counters
+            daysSinceInception: { increment: 1 },
+            // Assuming streamDaysSinceInception is also incremented here.
+            streamDaysSinceInception: { increment: 1 } 
+        },
+        create: {
+            // If the record does NOT exist, create it, starting at day 1
+            id: 1, 
+            daysSinceInception: 1, 
+            streamDaysSinceInception: 1,
+            // Add any other required default fields for StreamStat here if they exist
         }
     });
     
@@ -226,7 +237,7 @@ export async function runDailyMaintenance() {
     const failedCount = await checkOneOffContiguity();
     console.log(`[Maintenance] Failed and Archived ${failedCount} ONE_OFF challenges due to discontinuity.`);
 
-    // ⭐ 5. RECURRING Cadence Enforcement
+    // 5. RECURRING Cadence Enforcement
     const failedCadenceCount = await enforceRecurringChallengeCadence();
     console.log(`[Maintenance] Failed ${failedCadenceCount} RECURRING challenges due to missed cadence pace.`);
     
