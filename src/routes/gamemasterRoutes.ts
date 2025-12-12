@@ -9,7 +9,7 @@ import { ChallengeStatus } from '@prisma/client';
 import * as challengeService from '../services/challengeService';
 import logger from '../logger'; // Winston Logger
 import { getServiceErrorStatus } from '../utils/routeUtils';
-import { authenticateGameMaster } from '../middleware/authMiddleware';
+import { authenticateUser, authenticateGameMaster } from '../middleware/authMiddleware';
 import { dispatchCommand } from '../utils/commandDispatcher';
 
 // Force TypeScript to load your custom Request types.
@@ -27,23 +27,24 @@ const router = Router();
 /**
  * Handles all game commands sent by the external bot/loyalty system.
  * The request body is expected to contain all necessary context: user, platform, command.
+ * NOTE: authenticateUser middleware handles user validation and persistence.
  */
-router.post('/command', async (req: Request, res: Response) => {
-    // ⚠️ IMPORTANT: We will implement authentication middleware here later!
+router.post('/command', authenticateUser, async (req: Request, res: Response) => {
+    // Auth is handled by authenticateUser middleware.
     
     const { 
         command, 
-        user, 
-        platform,
+        user, // Fields guaranteed to exist by authenticateUser
+        platform, // Fields guaranteed to exist by authenticateUser
         args
     } = req.body;
 
-    if (!command || !user || !platform) {
-        logger.error(`Invalid command request: missing context.`, req.body);
-        return res.status(400).json({ error: 'Missing required fields (command, user, platform).' });
+    if (!command) {
+        logger.error(`Invalid command request: missing command.`, req.body);
+        return res.status(400).json({ error: 'Missing required field (command).' });
     }
 
-    // CORE CHANGE: Call the central dispatcher function
+    // Call the central dispatcher function
     // The dispatcher handles validation, user lookup, and routing the logic.
     const result = await dispatchCommand(
         {
