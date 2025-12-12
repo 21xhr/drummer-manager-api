@@ -155,6 +155,8 @@ export async function processUserStats(userId: number): Promise<string> {
             totalReceivedFromRemovals: true, 
             totalCausedByRemovals: true, 
             dailySubmissionCount: true,
+            activeOfflineDaysCount: true, 
+            activeStreamDaysCount: true,
         },
     });
 
@@ -196,7 +198,11 @@ export async function processUserStats(userId: number): Promise<string> {
     const removals = format(user.totalRemovalsExecuted);
     const disrupts = format(user.totalDisruptsExecuted);
     const digouts = format(user.totalDigoutsExecuted); 
-    const dailyCount = user.dailySubmissionCount; 
+    const dailyCount = user.dailySubmissionCount;
+    // User Day Counts
+    const activeOffline = format(user.activeOfflineDaysCount);
+    const activeStream = format(user.activeStreamDaysCount);
+    const totalActiveDays = format(user.activeOfflineDaysCount + user.activeStreamDaysCount);
 
     // Construct the final message
     const statsMessage = 
@@ -211,6 +217,7 @@ export async function processUserStats(userId: number): Promise<string> {
         `  WAIVED (Refunds from your !remove): ${causedByRemovals}\n` +
         `\n` +
         `🛠️ **[ACTIVITY]**\n` +
+        `  DAYS ACTIVE: ${totalActiveDays} (Stream: ${activeStream} | Offline: ${activeOffline})\n` +
         `  SUBMISSIONS: ${submissions} (N-Count: ${dailyCount})\n` +
         `  PUSHES: ${pushes} | REMOVALS: ${removals} | DIGOUTS: ${digouts} | DISRUPTS: ${disrupts}`;
         

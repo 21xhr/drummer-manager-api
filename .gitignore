@@ -3,3 +3,11 @@ node_modules
 .env
 
 /generated/prisma
+
+# Build output folders
+dist/
+build/
+
+# Compiled TypeScript output (if generated at the root)
+*.js
+!*.ts
