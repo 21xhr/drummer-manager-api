@@ -47,6 +47,7 @@ router.post('/command', authenticateUser, async (req: Request, res: Response) =>
     // Call the central dispatcher function
     // The dispatcher handles validation, user lookup, and routing the logic.
     const result = await dispatchCommand(
+        req.userId,
         {
             command,
             user,

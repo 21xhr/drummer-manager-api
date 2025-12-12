@@ -34,34 +34,28 @@ function parseArgs(argsString: string | null): string[] {
 
 /**
  * Maps the incoming command string to the correct business logic handler.
- * This function also performs the mandatory first step: finding or creating the user.
- * @param payload The structured data from the external command system.
- * @returns A structured response object to send back to the client.
+ * User resolution is handled by the upstream Express middleware (authenticateUser).
  */
-export async function dispatchCommand(payload: CommandPayload, hostname: string) {
+export async function dispatchCommand(
+    dbUserId: number, // <-- The resolved database User ID
+    payload: CommandPayload, 
+    hostname: string
+) {
     const { command, user, platform, args } = payload;
     const fullCommand = `${command}${args ? ' ' + args : ''}`;
     const parsedArgs = parseArgs(args);
     
-    let dbUser;
-    
     // We rely on the CommandPayload to provide the platform context for transactional calls.
     const platformId: string = user.userId;
     const platformName: PlatformName = platform.name as PlatformName;
-    // NOTE: Lumia uses 'displayname' as one word. The volatility of displayname is a non-issue 
-    // because the platformId is what identifies the user in the database, not the username field.
     const usernameToStore: string = user.displayname || user.username || platformId;
 
     try {
-        // MANDATORY STEP 1: Find or Create the User
-        dbUser = await userService.findOrCreateUser({
-            platformId: platformId,
-            platformName: platformName,
-            username: usernameToStore
-        });
+        // MANDATORY STEP 1: User resolution is now handled upstream.
+        // We log using the resolved ID.
 
         logger.info(`Dispatching API command`, {
-            userId: dbUser.id,
+            userId: dbUserId, // Use the resolved ID
             platformId: platformId,
             fullCommand: fullCommand,
             context: 'DISPATCHER_START'
@@ -82,7 +76,7 @@ export async function dispatchCommand(payload: CommandPayload, hostname: string)
                 const quoteId = parsedArgs[1]; // quoteId is optional
                 
                 const result = await challengeService.processPushConfirm(
-                    dbUser.id, 
+                    dbUserId, 
                     platformId, 
                     platformName, 
                     quoteId
@@ -103,7 +97,7 @@ export async function dispatchCommand(payload: CommandPayload, hostname: string)
             }
             
             const result = await challengeService.processPushQuote(
-                dbUser.id, 
+                dbUserId, 
                 platformId, 
                 platformName, 
                 challengeId, 
@@ -125,7 +119,7 @@ export async function dispatchCommand(payload: CommandPayload, hostname: string)
                 const durationArg = args && args.length > 0 ? args[0] : undefined;
                 
                 const linkResult = await challengeService.processSubmissionLinkGeneration(
-                    dbUser.id, 
+                    dbUserId, 
                     platformId,
                     platformName, 
                     usernameToStore,
@@ -151,7 +145,7 @@ export async function dispatchCommand(payload: CommandPayload, hostname: string)
                 }
 
                 const digoutResult = await challengeService.processDigout(
-                    dbUser.id, 
+                    dbUserId, 
                     platformId, 
                     platformName, 
                     digoutChallengeId
@@ -173,7 +167,7 @@ export async function dispatchCommand(payload: CommandPayload, hostname: string)
                     };
                 }
                 
-                const removeResult = await challengeService.processRemove(dbUser.id, removeChallengeId, removeOption);
+                const removeResult = await challengeService.processRemove(dbUserId, removeChallengeId, removeOption);
                 
                 let removeMessage = `🗑️ Challenge #${removeChallengeId} removed by author. A total of ${removeResult.totalRefundsAmount} NUMBERS (21%) was refunded.`;
                 if (removeResult.fundsSink === 'Community Chest') {
@@ -187,7 +181,7 @@ export async function dispatchCommand(payload: CommandPayload, hostname: string)
             case '!disrupt':
                 // COMMAND: !disrupt
                 const disruptMessage = await challengeService.processDisrupt(
-                    dbUser.id, 
+                    dbUserId, 
                     platformId, 
                     platformName
                 );
@@ -200,7 +194,7 @@ export async function dispatchCommand(payload: CommandPayload, hostname: string)
             
             case '!mystats':
                 // COMMAND: !mystats
-                const statsMessage = await userService.processUserStats(dbUser.id);
+                const statsMessage = await userService.processUserStats(dbUserId);
                 return {
                     message: statsMessage
                 };
@@ -215,7 +209,7 @@ export async function dispatchCommand(payload: CommandPayload, hostname: string)
     } catch (error) {
         // Central error handling for any failure in the service layer
         logger.error(`Critical Dispatch Error for command: ${fullCommand}`, {
-            userId: dbUser?.id || 'N/A',
+            userId: dbUserId || 'N/A',
             platformId: user.userId, // This is the unique platform ID from Lumia
             error: error instanceof Error ? error.message : 'Unknown error',
             stack: error instanceof Error ? error.stack : undefined,
