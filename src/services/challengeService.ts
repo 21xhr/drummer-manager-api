@@ -407,7 +407,7 @@ export async function processPushQuote(
     // Optimistic check: if the user's current known balance is less than the quote, fail fast.
     if (account.currentBalance < quotedCost) {
        // Use the precise BigInt value in the error message for transparency
-        throw new Error(`Insufficient balance on ${platformName} account. Quoted push cost is ${quotedCostBigInt.toString()} NUMBERS.`);
+        throw new Error(`Insufficient balance on ${platformName} account. Current balance: ${account.currentBalance} NUMBERS. Quoted push cost is ${quotedCostBigInt.toString()} NUMBERS.`);
     }
 
     // --- 5. Save the generated quote to the temporary quote table.
@@ -525,7 +525,7 @@ export async function processPushConfirm(
     // Optimistic Local Balance Check (Check Account balance)
     if (accountContext.currentBalance < pushTransactionCost) {
         await tx.tempQuote.delete({ where: { quoteId: quote.quoteId } });
-        throw new Error(`Insufficient balance on ${platformName} account. Push costs ${pushTransactionCost} NUMBERS.`);
+        throw new Error(`Insufficient balance on ${platformName} account. Current balance: ${accountContext.currentBalance} NUMBERS. Push costs ${pushTransactionCost} NUMBERS.`);
     }
 
     // CRITICAL: Execute Authoritative Deduction via Lumia API
@@ -685,7 +685,7 @@ export async function processDigout(
 
         // Check Account balance
         if (accountContext.currentBalance < digoutTransactionCost) { 
-            throw new Error(`Insufficient balance on ${platformName} account. Digout costs ${digoutTransactionCost} NUMBERS.`);
+            throw new Error(`Insufficient balance on ${platformName} account. Current balance: ${accountContext.currentBalance} NUMBERS. Digout costs ${digoutTransactionCost} NUMBERS.`);
         }
 
         // CRITICAL: Execute Authoritative Deduction via Lumia API
@@ -829,7 +829,7 @@ export async function processChallengeSubmission(
 
         // Optimistic Local Balance Check (Check Account.currentBalance)
         if (accountContext.currentBalance < submissionCost) {
-            throw new Error(`Insufficient balance on ${platformName} account. Challenge submission costs ${submissionCost} NUMBERS.`);
+            throw new Error(`Insufficient balance on ${platformName} account. Current balance: ${accountContext.currentBalance} NUMBERS. Challenge submission costs ${submissionCost} NUMBERS.`);
         }
         
         // 4. CRITICAL: Execute Authoritative Deduction via Lumia API
@@ -1436,7 +1436,7 @@ export async function processDisrupt(
 
         // Optimistic Local Balance Check (Check Account balance)
         if (accountContext.currentBalance < DISRUPT_COST) {
-            throw new Error(`Insufficient balance on ${platformName} account. Disrupt costs ${DISRUPT_COST} NUMBERS.`);
+            throw new Error(`Insufficient balance on ${platformName} account. Current balance: ${accountContext.currentBalance} NUMBERS. Disrupt costs ${DISRUPT_COST} NUMBERS.`);
         }
 
         // Execute Authoritative Deduction via Lumia API

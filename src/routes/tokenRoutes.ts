@@ -41,15 +41,30 @@ router.post('/verify', async (req: Request, res: Response) => {
     } catch (error) {
         logger.error('Token Verification Failed:', error);
         
-        // Check for common JWT errors to return a specific 401 response
-        if (error instanceof Error && (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError')) {
-             return res.status(401).json({ 
-                 message: 'Authentication failed. Token is invalid or expired. Please get a new token.',
-                 action: 'jwt_auth_failure',
-                 error: error.message
-             });
+        if (error instanceof Error) {
+            let message = 'Authentication failed. Please get a new token.';
+            let isAuthError = false;
+
+            if (error.name === 'TokenExpiredError') {
+                // Token Expired Error
+                message = 'Authentication failed. Your secure link has expired. Please run the chat command again to generate a new link.';
+                isAuthError = true;
+            } else if (error.name === 'JsonWebTokenError') {
+                // Invalid Signature or Malformed Token Error
+                message = 'Authentication failed. Your secure link is invalid or malformed. Please run the chat command again to generate a new link.';
+                isAuthError = true;
+            }
+
+            if (isAuthError) {
+                 return res.status(401).json({ 
+                     message: message, // Use the specific message
+                     action: 'jwt_auth_failure',
+                     error: error.message
+                 });
+            }
         }
         
+        // Handle all other errors (e.g., server issues)
         return res.status(500).json({
             message: 'Failed to verify secure submission token due to a server error.',
             action: 'token_verification_failure',
