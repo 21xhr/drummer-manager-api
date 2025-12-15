@@ -120,7 +120,7 @@ model StreamStat {
 /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 model Challenge {
   challengeId               Int         @id @default(autoincrement()) @map("challenge_id")
-  challengeText             String      @map("challenge_text")
+  challengeText             Json      @map("challenge_text")
   category                  String      @map("category")
   durationType          DurationType    @map("duration_type")
   proposerUserId            Int         @map("proposer_user_id")

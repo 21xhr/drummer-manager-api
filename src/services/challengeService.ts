@@ -176,7 +176,7 @@ export async function processAutomaticSessionTick(): Promise<SessionTickResult |
         return null;
     }
 
-    // TypeScript narrowing fix
+    // TypeScript narrowing
     // As we've checked for null on timestampLastSessionTick and returned early if null
     // TypeScript from now knows executingChallenge and timestampLastSessionTick are non-null.
     const sessionLastTickMs = executingChallenge.timestampLastSessionTick.getTime();
@@ -643,7 +643,7 @@ export async function processDigout(
             where: { challengeId: challengeId },
         });
 
-        // ⭐ FIX 1: Fetch the specific Account instead of the User
+        // Fetch the specific Account instead of the User
         const accountContext = await tx.account.findUnique({
             where: {
                  platformId_platformName: {
@@ -670,7 +670,7 @@ export async function processDigout(
 
         // 2. Calculate Cost (21% of total_numbers_spent, rounded up)
         
-        // --- BigInt-safe calculation for 21% cost (Fixes TS2365) ---
+        // --- BigInt-safe calculation for 21% cost ---
         const totalSpentBigInt: bigint = challenge.totalNumbersSpent; // Total spent is now BigInt
         
         // 2a. Calculate numerator: totalSpent * 21
@@ -784,7 +784,7 @@ export async function processChallengeSubmission(
     userId: number,
     platformId: string, 
     platformName: PlatformName, 
-    challengeText: string,
+    challengeText: any,
     totalSessions: number,
     durationType: DurationType,
     sessionCadenceText?: string,
@@ -881,11 +881,10 @@ export async function processChallengeSubmission(
         });
 
         // 6. Update User Stats: Update the central User metrics (Submission count, spending)
-        const userUpdateResult = await tx.user.update({ // Store the update result
+        const userUpdateResult = await tx.user.update({
             where: { id: userId },
             data: {
-                // Remove lastKnownBalance update from User
-                totalNumbersSpent: { increment: submissionCost }, 
+                totalNumbersSpent: { increment: BigInt(submissionCost) },
                 totalChallengesSubmitted: { increment: 1 },
                 lastActivityTimestamp: new Date().toISOString(),
                 dailySubmissionCount: { increment: 1 },
@@ -893,19 +892,6 @@ export async function processChallengeSubmission(
                     lastLiveActivityTimestamp: transactionTimestamp,
                 }),
             },
-            // Update Selection - Ensure we select fields required by the router (now `updatedUser` metrics)
-            select: {
-                id: true, 
-                dailySubmissionCount: true, 
-                totalChallengesSubmitted: true,
-                totalNumbersSpent: true,
-                // Remove lastKnownBalance, platformId, platformName from select list
-                // Add any other User fields required by your `User` type here
-                totalPushesExecuted: true,
-                totalDigoutsExecuted: true,
-                totalRemovalsExecuted: true,
-                totalReceivedFromRemovals: true,
-            }
         });
 
         // Update Account Balance: Update the specific Account with the authoritative balance
@@ -921,8 +907,15 @@ export async function processChallengeSubmission(
             }
         });
 
-        // 7., 8. Update Global Ledger and Stream Session Metrics (Unchanged)
-        await tx.user.updateMany({ where: { id: 1 }, data: { totalNumbersSpentGameWide: { increment: submissionCost } } });
+        // 7., 8. Update Global Ledger and Stream Session Metrics 
+        await tx.user.updateMany({ 
+            where: { id: 1 }, 
+            data: { 
+                totalNumbersSpentGameWide: { increment: BigInt(submissionCost) } 
+            } 
+        });
+        
+        // Stream session metrics use standard number (no BigInt)
         if (currentStreamSessionId) {
             await tx.stream.update({
                 where: { streamSessionId: currentStreamSessionId },
@@ -997,7 +990,7 @@ export async function finalizeInProgressChallenge(): Promise<Challenge | null> {
     
     const transactionTimestamp = new Date().toISOString();
 
-    // ⭐ LOGIC: Session OUT - Increment count, THEN check for completion
+    // LOGIC: Session OUT - Increment count, THEN check for completion
     const nextSessionCount = executingChallenge.currentSessionCount + 1;
     const isCompleted = nextSessionCount >= executingChallenge.totalSessions;
     
@@ -1298,7 +1291,7 @@ export async function processRemove(
             },
         });
 
-        // --- Prepare the Consolidated External Refund List (TS/Logic FIX) ---
+        // --- Prepare the Consolidated External Refund List ---
         // Start with the list of non-author pushers
         const allExternalRefundsToProcess = [...pushersRefundsToProcess];
 
@@ -1362,14 +1355,14 @@ export async function processRemove(
             }
 
             try {
-                // ⭐ CRITICAL: Call the authoritative credit API
+                // CRITICAL: Call the authoritative credit API
                 await addNumbersViaLumia(platformId, refund.refundAmount);
 
                 // Track success (no need to update local balance here as Lumia is authoritative)
                 successfulRefunds.push({ userId: refund.userId, amount: refund.refundAmount });
 
             } catch (error) {
-                // 🛠️ FIX: Safely check if 'error' is an Error object before accessing '.message'
+                // Safely check if 'error' is an Error object before accessing '.message'
                 const errorMessage = error instanceof Error ? error.message : 'Unknown payment error during refund.';
 
                 logger.error(`Lumia Refund Failed for User ${refund.userId} (Amount: ${refund.refundAmount}): ${errorMessage}`, { userId: refund.userId, platformId });
@@ -1458,7 +1451,6 @@ export async function processDisrupt(
         await tx.user.update({
             where: { id: userId },
             data: {
-                // REMOVE lastKnownBalance update from User
                 totalNumbersSpent: { increment: DISRUPT_COST },
                 totalDisruptsExecuted: { increment: 1 },
                 lastActivityTimestamp: transactionTimestamp,
@@ -1554,7 +1546,7 @@ export async function setChallengeStatusByAdmin(
         
         console.log(`[ChallengeService] GM set Challenge #${challengeId} status to ${newStatus}.`);
 
-        // ⭐ NEW: Event Dispatching based on the new status
+        // Event Dispatching based on the new status
         if (newStatus === ChallengeStatus.COMPLETED) {
             // GM force-completed the challenge
             publishChallengeEvent(ChallengeEvents.CHALLENGE_COMPLETED, updatedChallenge);

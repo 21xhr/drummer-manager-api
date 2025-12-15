@@ -18,7 +18,7 @@ const router = Router();
 router.post('/submit', authenticateUser, async (req: Request, res: Response) => {
     // NOTE: This legacy route remains for chat-only submission requests but should be deprecated 
     // in favor of the /submit/web flow (which uses a separate token generation endpoint).
-    // ⭐ UPDATE: Extract new cadence fields
+    // Extract new cadence fields
     const { challengeText, totalSessions, durationType, sessionCadenceText, cadenceUnit } = req.body;
     const userId = req.userId;
 
@@ -28,7 +28,7 @@ router.post('/submit', authenticateUser, async (req: Request, res: Response) => 
         });
     }
 
-    // ⭐ UPDATE: Cadence validation for recurring challenges
+    // Cadence validation for recurring challenges
     if (durationType === 'RECURRING' && (!sessionCadenceText || !cadenceUnit)) {
         return res.status(400).json({ 
             error: "Both Session Cadence Text and Cadence Unit are required for Recurring challenges." 
@@ -120,7 +120,7 @@ router.post('/submit/web', async (req: Request, res: Response) => {
         const payload = verifyToken(token); // Throws if invalid/expired
         userId = payload.userId;
         platformId = payload.platformId;
-        // ⭐ CRITICAL: Cast the verified string from the JWT payload
+        // CRITICAL: Cast the verified string from the JWT payload
         // to the new Prisma Enum type before passing it to the service.
         // We ensure it is a valid PlatformName string from the enum.
         platformName = payload.platformName as PlatformName;        
