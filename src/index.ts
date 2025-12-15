@@ -6,6 +6,17 @@
 import 'express-async-errors'; 
 import express, { Request, Response } from 'express';
 
+// ----------------------------------------------------------------------
+// GLOBAL BIGINT SERIALIZATION
+// ----------------------------------------------------------------------
+// Fixes the "Do not know how to serialize a BigInt" error thrown by Express/JSON.stringify
+// when data from Prisma/database is sent to the client.
+(BigInt.prototype as any).toJSON = function() {
+    // Converts BigInts to Strings for safe transport via JSON.
+    return this.toString(); 
+};
+// ----------------------------------------------------------------------
+
 import cors from 'cors';
 
 import prisma from './prisma'; 
