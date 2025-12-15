@@ -1,4 +1,9 @@
 // drummer-manager-api/src/utils/commandDispatcher.ts
+/**
+ * Handles chat/bot commands (e.g., !submit challenge). 
+ * Responsible for parsing a command string into a standard JSON payload 
+ * before sending it to the service.
+*/
 
 import logger from '../logger';
 import * as userService from '../services/userService';

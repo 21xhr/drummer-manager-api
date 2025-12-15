@@ -34,6 +34,7 @@ async function getOrCreateGlobalStreamStat(tx: any): Promise<{ statId: number, c
     if (streamStatsArray.length === 0) {
         streamStatRecord = await tx.streamStat.create({
             data: {
+                id: 1,
                 streamDaysSinceInception: 0,
             },
         });
