@@ -108,24 +108,15 @@ export async function processSubmissionLinkGeneration(
     // 1. Fetch the user's current daily submission context to get N and cost
     const { dailySubmissionCount, baseCostPerSession } = await getCurrentDailySubmissionContext(userId);
 
-    // --- Check Capping ---
+    // --- Check Capping & Set Warning Message ---
     let warningMessage = '';
-    const MAX_TOKEN_DURATION_MINUTES = 210; // Must be defined or imported here for comparison
     
-    // We call validateDuration() once to get the final duration string
-    const tokenDuration = validateDuration(duration);
+    // Get the final, capped duration string (e.g., '21m' or '210m')
+    const tokenDuration = validateDuration(duration); 
     
-    // If the user requested a duration and the validated duration is capped, warn them.
-    // We check if the validated duration is the MAX and if the original request was *not* the max.
-    // NOTE: This comparison is a bit tricky if the original duration was '3h 30m' (210m).
-    // The easiest way is to re-run validation on the original duration to see the minutes.
-    
-    // To cleanly check the cap, we must use the original duration and know its minutes.
-    // Since we cannot change jwtService.validateDuration, we'll extract the minute value 
-    // using similar logic *if* the user supplied a duration.
-    
+    // If a duration was provided, check if the requested time exceeded the configured max.
     if (duration) {
-        // We need a helper to safely convert duration string to minutes for comparison
+        // We use the helper to get the raw minutes requested by the user for comparison.
         const requestedMinutes = convertDurationToMinutes(duration);
 
         if (requestedMinutes > MAX_TOKEN_DURATION_MINUTES) {
