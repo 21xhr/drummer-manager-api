@@ -1,17 +1,19 @@
 // src/services/challengeService.ts
 
-import prisma from '../prisma';
 import { Account, Challenge, ChallengeStatus, CadenceUnit, DurationType, PlatformName, User } from '@prisma/client';
-import { isStreamLive, getCurrentStreamSessionId} from './streamService';
+import prisma from '../prisma';
+import logger from '../logger';
+import { convertDurationToMinutes } from '../utils/jwtUtils'; 
+import { publishChallengeEvent, ChallengeEvents } from './eventService';
 import { generateToken, validateDuration } from './jwtService';
 import { addNumbersViaLumia, deductNumbersViaLumia } from './lumiaService';
-import { publishChallengeEvent, ChallengeEvents } from './eventService';
-import logger from '../logger';
+import { isStreamLive, getCurrentStreamSessionId} from './streamService';
 
 // --- GLOBAL CONFIGURATION (SCREAMING_SNAKE_CASE) ---
 const DIGOUT_COST_PERCENTAGE = 0.21; // 21%
 const LIVE_DISCOUNT_MULTIPLIER = 0.79; // 1 - 0.21
 const SUBMISSION_BASE_COST = 210;
+const MAX_TOKEN_DURATION_MINUTES = 210;
 const PUSH_BASE_COST = 21;
 const DISRUPT_COST = 2100; 
 const SESSION_DURATION_MS = 21 * 60 * 1000; // 21 minutes in milliseconds
@@ -77,7 +79,7 @@ export function getNextDailyResetTime(): string {
         nextReset.setUTCDate(nextReset.getUTCDate() + 1);
     }
     
-    return nextReset.toISOString(); // ⭐ CRITICAL: Convert to an unambiguous ISO string for storage/consistency.
+    return nextReset.toISOString(); // CRITICAL: Convert to an unambiguous ISO string for storage/consistency.
 }
 
 
@@ -103,8 +105,32 @@ export async function processSubmissionLinkGeneration(
     // 1. Fetch the user's current daily submission context to get N and cost
     const { dailySubmissionCount, baseCostPerSession } = await getCurrentDailySubmissionContext(userId);
 
+    // --- Check Capping ---
+    let warningMessage = '';
+    const MAX_TOKEN_DURATION_MINUTES = 210; // Must be defined or imported here for comparison
+    
+    // We call validateDuration() once to get the final duration string
+    const tokenDuration = validateDuration(duration);
+    
+    // If the user requested a duration and the validated duration is capped, warn them.
+    // We check if the validated duration is the MAX and if the original request was *not* the max.
+    // NOTE: This comparison is a bit tricky if the original duration was '3h 30m' (210m).
+    // The easiest way is to re-run validation on the original duration to see the minutes.
+    
+    // To cleanly check the cap, we must use the original duration and know its minutes.
+    // Since we cannot change jwtService.validateDuration, we'll extract the minute value 
+    // using similar logic *if* the user supplied a duration.
+    
+    if (duration) {
+        // We need a helper to safely convert duration string to minutes for comparison
+        const requestedMinutes = convertDurationToMinutes(duration);
+
+        if (requestedMinutes > MAX_TOKEN_DURATION_MINUTES) {
+            warningMessage = `⚠️ Note: Your requested duration was capped to the maximum of ${MAX_TOKEN_DURATION_MINUTES}m.`;
+        }
+    }
+
     // 2. Generate the JWT token
-    const tokenDuration = validateDuration(duration); // Use validateDuration from jwtService
     // NOTE: The TokenPayload interface in jwtService requires userId, platformId, platformName, username
     const token = generateToken({ userId, platformId, platformName, username }, tokenDuration);
     
@@ -122,8 +148,9 @@ export async function processSubmissionLinkGeneration(
     const formattedCost = baseCostPerSession.toLocaleString();
     
     const chatResponse = 
+        `${warningMessage ? warningMessage + '\n' : ''}` + // Add warning message if present
         `Please use the following secure link to submit your challenge (valid for ${tokenDuration}).\n` + 
-        `Your daily submission count is **${dailySubmissionCount}** (Base Cost: **${formattedCost}** NUMBERS).\n` + // Added line break here too for better flow
+        `Your daily submission count is **${dailySubmissionCount}** (Base Cost: **${formattedCost}** NUMBERS).\n` + 
         `Link: ${secureUrl}`;
 
     return {
