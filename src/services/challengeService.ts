@@ -11,7 +11,6 @@ import { isStreamLive, getCurrentStreamSessionId} from './streamService';
 
 // --- CONFIGURATION IMPORTS ---
 import {
-    DIGOUT_COST_PERCENTAGE,
     LIVE_DISCOUNT_MULTIPLIER,
     SUBMISSION_BASE_COST,
     MAX_TOKEN_DURATION_MINUTES,
