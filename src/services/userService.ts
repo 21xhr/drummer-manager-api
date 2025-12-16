@@ -1,9 +1,15 @@
 // src/services/userService.ts
 // centralize all database interactions related to the User model into a dedicated service file.
-// You can add other user-related database functions here (e.g., getUserStats, updateUserBalance)
+// add other user-related database functions here (e.g., getUserStats, updateUserBalance)
 import prisma from '../prisma';
 import { User, PlatformName } from '@prisma/client';
 import { getNextDailyResetTime } from './challengeService';
+// --- CONFIGURATION IMPORTS ---
+import {
+    ADMIN_USER_ID,
+    INITIAL_BALANCE
+} from '../config/gameConfig';
+// --- END CONFIGURATION IMPORTS ---
 
 // Type definition for the user data coming from the external platform
 interface PlatformUser {
@@ -13,8 +19,11 @@ interface PlatformUser {
   // You can add more initial fields here if the platform provides them
 }
 
-const ADMIN_USER_ID = 21; // Define this once in your config/constants
-const INITIAL_BALANCE = 500; // Define a starting balance here for testing/incentive
+
+// Helper function for formatting numbers (place it here)
+const formatNumber = (n: number | BigInt) => 
+    (typeof n === 'bigint' ? n.toString() : n).toLocaleString();
+
 
 /**
  * Checks if the external identity (platformName + platformId) belongs to the
@@ -184,25 +193,22 @@ export async function processUserStats(userId: number): Promise<string> {
 
     // --- 2. Format and Construct Message ---
     
-    // Helper function for formatting numbers
-    const format = (n: number | BigInt) => (typeof n === 'bigint' ? n.toString() : n).toLocaleString();
-
     // Core Financial Stats
-    const totalSpent = format(user.totalNumbersSpent);
-    const receivedFromRemovals = format(user.totalReceivedFromRemovals);
-    const causedByRemovals = format(user.totalCausedByRemovals); 
+    const totalSpent = formatNumber(user.totalNumbersSpent);
+    const receivedFromRemovals = formatNumber(user.totalReceivedFromRemovals);
+    const causedByRemovals = formatNumber(user.totalCausedByRemovals); 
     
     // Command Execution Counts
-    const submissions = format(user.totalChallengesSubmitted);
-    const pushes = format(user.totalPushesExecuted);
-    const removals = format(user.totalRemovalsExecuted);
-    const disrupts = format(user.totalDisruptsExecuted);
-    const digouts = format(user.totalDigoutsExecuted); 
+    const submissions = formatNumber(user.totalChallengesSubmitted);
+    const pushes = formatNumber(user.totalPushesExecuted);
+    const removals = formatNumber(user.totalRemovalsExecuted);
+    const disrupts = formatNumber(user.totalDisruptsExecuted);
+    const digouts = formatNumber(user.totalDigoutsExecuted); 
     const dailyCount = user.dailySubmissionCount;
     // User Day Counts
-    const activeOffline = format(user.activeOfflineDaysCount);
-    const activeStream = format(user.activeStreamDaysCount);
-    const totalActiveDays = format(user.activeOfflineDaysCount + user.activeStreamDaysCount);
+    const activeOffline = formatNumber(user.activeOfflineDaysCount);
+    const activeStream = formatNumber(user.activeStreamDaysCount);
+    const totalActiveDays = formatNumber(user.activeOfflineDaysCount + user.activeStreamDaysCount);
 
     // Construct the final message
     const statsMessage = 
@@ -211,7 +217,7 @@ export async function processUserStats(userId: number): Promise<string> {
         `💰 **[ECONOMIC BREAKDOWN]**\n` +
         accountDetails.join('\n') + // List individual accounts
         `\n` +
-        `  **TOTAL WEALTH:** **${format(unifiedBalance)}** NUMBERS\n` +
+        `  **TOTAL WEALTH:** **${formatNumber(unifiedBalance)}** NUMBERS\n` +
         `\n` +
         `  SPENT (Total): ${totalSpent} | RECEIVED from !remove: ${receivedFromRemovals}\n` +
         `  WAIVED (Refunds from your !remove): ${causedByRemovals}\n` +

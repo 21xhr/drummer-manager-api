@@ -9,19 +9,22 @@ import { generateToken, validateDuration } from './jwtService';
 import { addNumbersViaLumia, deductNumbersViaLumia } from './lumiaService';
 import { isStreamLive, getCurrentStreamSessionId} from './streamService';
 
-// --- GLOBAL CONFIGURATION (SCREAMING_SNAKE_CASE) ---
-const DIGOUT_COST_PERCENTAGE = 0.21; // 21%
-const LIVE_DISCOUNT_MULTIPLIER = 0.79; // 1 - 0.21
-const SUBMISSION_BASE_COST = 210;
-const MAX_TOKEN_DURATION_MINUTES = 210;
-const PUSH_BASE_COST = 21;
-const DISRUPT_COST = 2100; 
-const SESSION_DURATION_MS = 21 * 60 * 1000; // 21 minutes in milliseconds
+// --- CONFIGURATION IMPORTS ---
+import {
+    DIGOUT_COST_PERCENTAGE,
+    LIVE_DISCOUNT_MULTIPLIER,
+    SUBMISSION_BASE_COST,
+    MAX_TOKEN_DURATION_MINUTES,
+    PUSH_BASE_COST,
+    DISRUPT_COST,
+    SESSION_DURATION_MS,
+    LIVE_DISCOUNT_MULTIPLIER_NUMERATOR,
+    DISCOUNT_DIVISOR,
+    DIGOUT_PERCENTAGE_NUMERATOR
+} from '../config/gameConfig'; 
+// --- END CONFIGURATION IMPORTS ---
+
 export type RefundOption = 'community_forfeit' | 'author_and_chest' | 'author_and_pushers';
-// --- NEW CONFIGURATION FOR BIGINT MATH ---
-const LIVE_DISCOUNT_MULTIPLIER_NUMERATOR = 79n; // Represents 0.79
-const DISCOUNT_DIVISOR = 100n; // Represents 1.00
-const DIGOUT_PERCENTAGE_NUMERATOR = 21n; // Represents 0.21
 
 // Define the return type interface (or type alias)
 interface SessionTickResult {
