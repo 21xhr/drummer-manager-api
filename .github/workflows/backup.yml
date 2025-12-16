@@ -1,0 +1,47 @@
+name: Daily Supabase Database Backup
+
+on:
+  # Allows manual run from the Actions tab
+  workflow_dispatch:
+  # Runs every day at midnight UTC
+  schedule:
+    - cron: '0 21 * * *'
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed to commit the backup files to the repo
+
+    steps:
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Required for git-auto-commit-action to work correctly
+          fetch-depth: 0 
+          
+      - name: ⚙️ Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # --- 1. Backup Roles (for user permissions) ---
+      - name: 💾 Backup Roles
+        run: supabase db dump --db-url ${{ secrets.SUPABASE_DB_URL }} -f supabase/backups/roles.sql --role-only
+        
+      # --- 2. Backup Schema (for table structure, RLS, functions) ---
+      - name: 💾 Backup Schema
+        run: supabase db dump --db-url ${{ secrets.SUPABASE_DB_URL }} -f supabase/backups/schema.sql
+        
+      # --- 3. Backup Data (for all table contents) ---
+      - name: 💾 Backup Data
+        run: supabase db dump --db-url ${{ secrets.SUPABASE_DB_URL }} -f supabase/backups/data.sql --data-only --use-copy
+
+      - name: 📅 Commit Backup Files
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(backup): Daily Supabase DB Backup"
+          # Only commit the files we just created
+          file_pattern: supabase/backups/*.sql
+          # Ensures a new folder is created for the first run
+          create_folder: true
