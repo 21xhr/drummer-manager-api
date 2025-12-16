@@ -10,7 +10,9 @@ import * as challengeService from '../services/challengeService';
 import logger from '../logger'; // Winston Logger
 import { getServiceErrorStatus } from '../utils/routeUtils';
 import { authenticateUser, authenticateGameMaster } from '../middleware/authMiddleware';
+import { rateLimitUserCommands } from '../middleware/rateLimitMiddleware';
 import { dispatchCommand } from '../utils/commandDispatcher';
+
 
 // Force TypeScript to load your custom Request types.
 // We import a non-existent value, but the import statement forces the module's types to be recognized.
@@ -29,15 +31,19 @@ const router = Router();
  * The request body is expected to contain all necessary context: user, platform, command.
  * NOTE: authenticateUser middleware handles user validation and persistence.
  */
-router.post('/command', authenticateUser, async (req: Request, res: Response) => {
-    // Auth is handled by authenticateUser middleware.
-    
-    const { 
-        command, 
-        user, // Fields guaranteed to exist by authenticateUser
-        platform, // Fields guaranteed to exist by authenticateUser
-        args
-    } = req.body;
+router.post(
+    '/command', 
+    authenticateUser,       // 1. Validates the user and sets req.userId
+    rateLimitUserCommands,  // 2. Checks rate limit based on req.userId
+    async (req: Request, res: Response) => {
+        // Auth is handled by authenticateUser middleware.
+        
+        const { 
+            command, 
+            user, 
+            platform, 
+            args
+        } = req.body;
 
     if (!command) {
         logger.error(`Invalid command request: missing command.`, req.body);
