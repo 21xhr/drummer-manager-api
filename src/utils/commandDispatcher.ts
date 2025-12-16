@@ -121,7 +121,7 @@ export async function dispatchCommand(
             case '!challengesubmit':
                 // COMMAND: !challengesubmit [duration]
                 // Note: The duration argument is args[0]
-                const durationArg = args && args.length > 0 ? args[0] : undefined;
+                const durationArg = parsedArgs[0];
                 
                 const linkResult = await challengeService.processSubmissionLinkGeneration(
                     dbUserId, 
