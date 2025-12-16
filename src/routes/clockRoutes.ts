@@ -11,13 +11,16 @@ const router = Router();
 // -----------------------------------------------------------
 
 router.post('/run-daily-maintenance', async (req: Request, res: Response) => {
-    // 1. Check for the CRON Secret Key
-    const cronSecret = req.headers['x-vercel-cron-secret'];
+    // 1. Get the expected secret from the environment (CRON_SECRET confirmed by user)
+    const EXPECTED_SECRET = process.env.CRON_SECRET;
     
-    // We expect the Vercel Cron job to send a secret that matches our environment variable.
-    if (!cronSecret || cronSecret !== process.env.CRON_SECRET) {
+    // 2. Get the incoming secret from the header (Vercel standard for cron)
+    const incomingSecret = req.header('x-vercel-cron-secret'); 
+    
+    // Check 1: If the secret isn't configured in the environment, block the request (fail-safe).
+    // Check 2: If the incoming secret is missing OR it doesn't match the expected secret, block.
+    if (!EXPECTED_SECRET || !incomingSecret || incomingSecret !== EXPECTED_SECRET) {
         console.warn('Unauthorized access attempt to maintenance endpoint.');
-        // Return 401 Unauthorized without processing the request.
         return res.status(401).end('Unauthorized access to maintenance endpoint.');
     }
     
