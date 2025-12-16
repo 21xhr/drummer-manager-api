@@ -120,9 +120,6 @@ router.post('/submit/web', async (req: Request, res: Response) => {
         const payload = verifyToken(token); // Throws if invalid/expired
         userId = payload.userId;
         platformId = payload.platformId;
-        // CRITICAL: Cast the verified string from the JWT payload
-        // to the new Prisma Enum type before passing it to the service.
-        // We ensure it is a valid PlatformName string from the enum.
         platformName = payload.platformName as PlatformName;        
         
         // Note: Here, user record is guaranteed to exist
@@ -183,8 +180,6 @@ router.post('/submit/web', async (req: Request, res: Response) => {
 
     // 3. Process Submission Transaction
     try {
-        // CRITICAL: The service must now return the updated Account used for deduction.
-        // We expect the return object to include 'updatedAccount'
         const { newChallenge, cost, updatedUser, updatedAccount } = await challengeService.processChallengeSubmission(
             userId, // Authenticated via JWT
             platformId,
@@ -367,12 +362,10 @@ router.post('/digout', authenticateUser, async (req: Request, res: Response) => 
     }
 
     try {
-        // ⭐ CRITICAL: The service must now return the updated Account used for deduction.
-        // We expect the return object to include 'updatedAccount'
         const { updatedChallenge, updatedUser, updatedAccount, cost } = await challengeService.processDigout(
             userId,
-            req.platformId, // Pass platform ID
-            req.platformName, // Pass platform Name
+            req.platformId, 
+            req.platformName,
             parseInt(challengeId)
         );
         
@@ -380,7 +373,7 @@ router.post('/digout', authenticateUser, async (req: Request, res: Response) => 
         logger.info(`DIGOUT Success: #${updatedChallenge.challengeId} cost ${cost} by User ${userId}`, {
             challengeId: updatedChallenge.challengeId,
             cost: cost,
-            newBalance: updatedAccount.currentBalance, // <-- CRITICAL FIX: Read from updatedAccount
+            newBalance: updatedAccount.currentBalance,
             platformId: req.platformId,
             action: 'digout_success'
         });
@@ -393,7 +386,7 @@ router.post('/digout', authenticateUser, async (req: Request, res: Response) => 
                 challengeId: updatedChallenge.challengeId,
                 cost: cost,
                 status: updatedChallenge.status,
-                newBalance: updatedAccount.currentBalance // <-- CRITICAL FIX: Read from updatedAccount
+                newBalance: updatedAccount.currentBalance
             }
         });
 
