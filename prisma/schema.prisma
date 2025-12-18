@@ -112,6 +112,7 @@ model StreamStat {
   id                       Int @id
   streamDaysSinceInception Int @default(0) @map("stream_days_since_inception")
   daysSinceInception       Int @default(0) @map("days_since_inception")
+  lastMaintenanceAt        DateTime?       @map("last_maintenance_at") 
 
   @@map("stream_stats")
 }
