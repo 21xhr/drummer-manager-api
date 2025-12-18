@@ -5,7 +5,7 @@ import { DurationType, ChallengeStatus, CadenceUnit } from '@prisma/client';
 import { archiveExpiredChallenges } from './challengeService'; 
 
 // ------------------------------------------------------------------
-// 1. USER TICK LOGIC (Provided and Verified)
+// USER TICK LOGIC (Provided and Verified)
 // ------------------------------------------------------------------
 
 /**
@@ -81,7 +81,7 @@ export async function processDailyUserTick(currentStreamDay: number): Promise<vo
 
 
 // ------------------------------------------------------------------
-// 2. CHALLENGE MAINTENANCE LOGIC
+// CHALLENGE MAINTENANCE LOGIC
 // ------------------------------------------------------------------
 
 /**
@@ -110,7 +110,7 @@ export async function checkOneOffContiguity(): Promise<number> {
 
 
 // ------------------------------------------------------------------
-// ⭐ RECURRING CADENCE ENFORCEMENT LOGIC (Final Version)
+// RECURRING CADENCE ENFORCEMENT LOGIC
 // ------------------------------------------------------------------
 
 /**
@@ -134,7 +134,7 @@ export async function enforceRecurringChallengeCadence(): Promise<number> {
 
     for (const challenge of recurringChallenges) {
         
-        // ⭐ CRITICAL: Ensure cadencePeriodStart is set. If not, skip (data error).
+        // CRITICAL: Ensure cadencePeriodStart is set. If not, skip (data error).
         if (!challenge.cadencePeriodStart) {
             console.error(`[CRITICAL DATA ERROR] Recurring Challenge #${challenge.challengeId} is IN_PROGRESS but cadencePeriodStart is null. Skipping cadence check.`);
             continue; 
@@ -195,51 +195,67 @@ export async function enforceRecurringChallengeCadence(): Promise<number> {
 // ------------------------------------------------------------------
 // 3. DAILY MAINTENANCE ORCHESTRATOR
 // ------------------------------------------------------------------
-
 /**
  * Main function to run all scheduled maintenance tasks once per day (e.g., via cron job).
  * This function handles the Real-World Day advance, Archival, and ONE_OFF failure.
  */
-export async function runDailyMaintenance() {
-    
-    // 1. Advance the Real-World Day Counter and get the current stream day
-    // CRITICAL: Use upsert to ensure the singleton record (id: 1) exists on first run.
-    const updatedStat = await prisma.streamStat.upsert({
-        where: { id: 1 }, // Look for the singleton record
-        update: {
-            // If the record exists, increment the counters
+export async function runDailyMaintenance(): Promise<"EXECUTED" | "SKIPPED"> {
+    const stats = await prisma.streamStat.findUnique({ where: { id: 1 } });
+    const now = new Date();
+
+    // 1. Idempotency Check
+    if (stats?.lastMaintenanceAt && 
+        new Date(stats.lastMaintenanceAt).toDateString() === now.toDateString()) {
+        console.log(`[ClockService] Maintenance already performed today. Skipping.`);
+        return "SKIPPED";
+    }
+
+    // 2. Check for Stream Activity
+    const streamOccurred = await prisma.stream.findFirst({
+        where: { startTimestamp: { gte: stats?.lastMaintenanceAt || new Date(0) } }
+    });
+
+    // 3. Check if a stream is currently LIVE (Safety Layer)
+    // Assuming a live stream has a start but no endTimestamp
+    const liveStream = await prisma.stream.findFirst({
+        where: { endTimestamp: null }
+    });
+
+    // 4. Update Global Stats
+    const updatedStat = await prisma.streamStat.update({
+        where: { id: 1 },
+        data: {
             daysSinceInception: { increment: 1 },
-            // Assuming streamDaysSinceInception is also incremented here.
-            streamDaysSinceInception: { increment: 1 } 
-        },
-        create: {
-            // If the record does NOT exist, create it, starting at day 1
-            id: 1, 
-            daysSinceInception: 1, 
-            streamDaysSinceInception: 1,
-            // Add any other required default fields for StreamStat here if they exist
+            streamDaysSinceInception: streamOccurred ? { increment: 1 } : undefined,
+            lastMaintenanceAt: now
         }
     });
     
-    // The stream day to tick users for is the currently available stream day number
     const currentStreamDay = updatedStat.streamDaysSinceInception;
-    
-    console.log(`[ClockService] Starting daily maintenance for Real Day ${updatedStat.daysSinceInception}...`);
+    console.log(`[ClockService] Starting Maintenance. Real Day: ${updatedStat.daysSinceInception}, Stream Day: ${currentStreamDay}`);
 
-    // 2. User Activity Tick
-    await processDailyUserTick(currentStreamDay); // This is run using the latest available stream day counter
-    
-    // 3. Archive Expired Active Challenges (21-Day Clock)
-    const archivedCount = await archiveExpiredChallenges();
-    console.log(`[Maintenance] Archived ${archivedCount} challenges that passed the 21-day limit.`);
+    // --- TASK EXECUTION ---
 
-    // 4. ONE_OFF Contiguity Check
-    const failedCount = await checkOneOffContiguity();
-    console.log(`[Maintenance] Failed and Archived ${failedCount} ONE_OFF challenges due to discontinuity.`);
+    // A. Always process User Ticks (Daily engagement)
+    await processDailyUserTick(currentStreamDay);
 
-    // 5. RECURRING Cadence Enforcement
+    // B. Always check RECURRING Cadence (Real-world time-based)
     const failedCadenceCount = await enforceRecurringChallengeCadence();
-    console.log(`[Maintenance] Failed ${failedCadenceCount} RECURRING challenges due to missed cadence pace.`);
-    
+    console.log(`[Maintenance] Failed ${failedCadenceCount} RECURRING challenges (Cadence).`);
+
+    // C. Conditional Game-Logic Tasks (Only if a stream occurred and we aren't currently live)
+    if (streamOccurred && !liveStream) {
+        // 21-Day Expiry
+        const archivedCount = await archiveExpiredChallenges();
+        console.log(`[Maintenance] Archived ${archivedCount} challenges (21-day limit).`);
+
+        // ONE_OFF Failure
+        const failedCount = await checkOneOffContiguity();
+        console.log(`[Maintenance] Failed ${failedCount} ONE_OFF challenges (Contiguity).`);
+    } else {
+        console.log(`[ClockService] Skipping Expiry/Contiguity checks: ${!streamOccurred ? 'No stream occurred.' : 'Stream is currently LIVE.'}`);
+    }
+
     console.log(`[ClockService] Daily maintenance complete.`);
+    return "EXECUTED";
 }

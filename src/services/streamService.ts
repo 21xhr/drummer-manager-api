@@ -105,7 +105,6 @@ export async function processStreamLiveEvent(streamStartTime: Date): Promise<voi
         const streamEventDateUTC = streamStartTime.toISOString().substring(0, 10);
 
         for (const challenge of activeChallenges) {
-            // ⭐ FIX: Use the new dedicated field for the daily check.
             const lastTickDateUTC = challenge.timestampLastStreamDayTicked.toISOString().substring(0, 10);
 
             // CRITICAL Archival Clock Logic: Check if this Challenge's counter has already been incremented
@@ -164,7 +163,7 @@ export async function processStreamOfflineEvent(streamEndTime: Date): Promise<vo
         
         // 1. Finalize the Stream Session record
         await tx.stream.update({
-            // FIX: Use non-null assertion '!' to satisfy TypeScript compiler (number | null -> number)
+            // Use non-null assertion '!' to satisfy TypeScript compiler (number | null -> number)
             where: { streamSessionId: currentStreamSessionId! }, 
             data: {
                 endTimestamp: streamEndTime,
@@ -207,35 +206,35 @@ export function getCurrentStreamSessionId(): number | null {
 // SERVER STARTUP / STATE RECOVERY
 ////////////////////////////////////////////////////////////////////////////////////////
 export async function initializeStreamState(): Promise<void> {
-  // 1. Fetch the global stat record first. (Assuming it's a singleton with ID 1 or findFirst)
-  // This is needed for the logging of the current global days.
-  const streamStat = await prisma.streamStat.findFirst({
-      where: { id: 1 } // Assuming ID 1 for singleton
-  });
-  
-  // Provide defaults if the stat record doesn't exist yet (though it shouldn't happen in production)
-  const currentGlobalDay = streamStat?.daysSinceInception ?? 0;
-  const currentStreamDay = streamStat?.streamDaysSinceInception ?? 0;
+    // 1. Fetch the global stat record first. (Assuming it's a singleton with ID 1 or findFirst)
+    // This is needed for the logging of the current global days.
+    const streamStat = await prisma.streamStat.findFirst({
+        where: { id: 1 } // Assuming ID 1 for singleton
+    });
+    
+    // Provide defaults if the stat record doesn't exist yet (though it shouldn't happen in production)
+    const currentGlobalDay = streamStat?.daysSinceInception ?? 0;
+    const currentStreamDay = streamStat?.streamDaysSinceInception ?? 0;
 
-  // 2. Look for the most recent stream session that has not yet been processed (i.e., still LIVE)
-  const lastActiveStream = await prisma.stream.findFirst({
-    where: { hasBeenProcessed: false },
-    orderBy: { streamSessionId: 'desc' },
-  });
+    // 2. Look for the most recent stream session that has not yet been processed (i.e., still LIVE)
+    const lastActiveStream = await prisma.stream.findFirst({
+        where: { hasBeenProcessed: false },
+        orderBy: { streamSessionId: 'desc' },
+    });
 
-  if (lastActiveStream) {
-    // Synchronize the in-memory state with the database record
-    currentStreamStatus = 'LIVE';
-    currentStreamStartTime = lastActiveStream.startTimestamp;
-    currentStreamSessionId = lastActiveStream.streamSessionId;
+    if (lastActiveStream) {
+        // Synchronize the in-memory state with the database record
+        currentStreamStatus = 'LIVE';
+        currentStreamStartTime = lastActiveStream.startTimestamp;
+        currentStreamSessionId = lastActiveStream.streamSessionId;
 
-    // Corrected Log: Use fetched variables and literal strings
-    console.log(`[StreamService] State recovered: Session #${currentStreamSessionId} loaded as ${currentStreamStatus}. Global Day: ${currentGlobalDay}. Stream Day: ${currentStreamDay}.`);
-  } else {
-    // Corrected Log: Include the global days even when offline
-    console.log(`[StreamService] State initialized: No active session found. Status is OFFLINE. Global Day: ${currentGlobalDay}. Stream Day: ${currentStreamDay}.`);
-  }
-}
+        // Corrected Log: Use fetched variables and literal strings
+        console.log(`[StreamService] State recovered: Session #${currentStreamSessionId} loaded as ${currentStreamStatus}. Global Day: ${currentGlobalDay}. Stream Day: ${currentStreamDay}.`);
+    } else {
+        // Corrected Log: Include the global days even when offline
+        console.log(`[StreamService] State initialized: No active session found. Status is OFFLINE. Global Day: ${currentGlobalDay}. Stream Day: ${currentStreamDay}.`);
+    }
+    }
 
 
 ////////////////////////////////////////////////////////////////////////////////////////

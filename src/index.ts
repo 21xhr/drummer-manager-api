@@ -20,16 +20,17 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 
 import prisma from './prisma'; 
+import adminRoutes from './routes/adminRoutes';
 import clockRoutes from './routes/clockRoutes';
 import gamemasterRoutes from './routes/gamemasterRoutes';
 import streamRoutes from './routes/streamRoutes';
 import tokenRoutes from './routes/tokenRoutes';
 import userRoutes from './routes/userRoutes'; 
 
-import { initializeStreamState } from './services/streamService'; 
-import { startChallengeScheduler } from './scheduler'; 
 import { initializeConsoleSubscribers } from './eventSubscribers/consoleLogger';
 import { initializeNotificationService } from './eventSubscribers/notificationService'; 
+import { initializeStreamState } from './services/streamService'; 
+import { startChallengeScheduler } from './scheduler'; 
 
 // --- Server Setup ---
 const app = express();
@@ -49,7 +50,7 @@ const DEV_ORIGINS = [
 
 // CORS Configuration (Must come before app.use(express.json()))
 const corsOptions = {
-    // CRITICAL FIX: Use a custom function to allow ALL requests in development 
+    // CRITICAL: Use a custom function to allow ALL requests in development 
     // that are NOT production, bypassing all local network header issues.
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
         const isProduction = process.env.NODE_ENV === 'production';
@@ -68,6 +69,7 @@ const corsOptions = {
         }
     },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: ['Content-Type', 'X-Admin-Secret'], 
     credentials: true,
     optionsSuccessStatus: 204
 };
@@ -75,6 +77,7 @@ app.use(cors(corsOptions)); // Apply CORS Middleware
 app.use(express.json());
 
 // --- Application Routers (API Endpoints) ---
+app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/clock', clockRoutes);
 app.use('/api/gamemaster', gamemasterRoutes);
 app.use('/api/v1/stream', streamRoutes);
@@ -111,26 +114,20 @@ async function startServer() {
   try {
     // 🚨 State Initialization: Must run and await before the server starts & listens for requests.
     await initializeStreamState(); 
-    // Start the continuous session scheduler
     startChallengeScheduler();
-    // Initialize Event Subscribers
     initializeConsoleSubscribers();
     initializeNotificationService();
     
   } catch (error) {
-    // CRITICAL: Log the specific initialization failure
     console.error("CRITICAL ERROR: Failed during application state initialization (initializeStreamState). Server cannot start.", error);
-    // You may want to exit the process here, but logging is the priority for Vercel
+    process.exit(1);
   }
 
   // --- Start the server ---
-  // CRITICAL: Add the host 0.0.0.0 to bind to all interfaces
-  const HOST = '0.0.0.0';
+  const HOST = '0.0.0.0'; // To bind to all interfaces
 
   // --- Start the server ---
-  // This call is now valid because PORT is guaranteed to be a number.
   app.listen(PORT, HOST, () => {
-    // The console message can now use the HOST to show network accessibility
     console.log(`\n🚀 Drummer Manager API is live and network accessible at http://${HOST}:${PORT}`);
     console.log(`Mode: ${process.env.NODE_ENV || 'development'}`);
   });
