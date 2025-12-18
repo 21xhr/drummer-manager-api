@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict XEK1Lj8wJ07sSXFobQCjbJv2iSn5gCTxeHmsvsm06tJp6OLliXCOzES0zq5FcyT
+-- \restrict 4UWN7F5WYzCOtZk2U2A6LH6KtccBj08Il3PVQ2JrOenLuVkqhMi2aElA1JLOahU
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -211,6 +211,7 @@ b67c0c97-9c27-4287-91ad-f226c7802b74	6d57cd7032d4bac799c79192deec9dea2c59577f74b
 b157ed96-fea8-4ec4-9a6b-e580ebac4b2b	f7d8269b6e5937d739897603482393e95467e0c9e0b558400cb8092557861dab	2025-12-08 22:16:28.515969+00	20251208221628_add_challenge_submission_cost	\N	\N	2025-12-08 22:16:28.282136+00	1
 168b1da0-ad26-40dd-b727-a9da865066b6	9de33ca1ccecf0c2974097fd20ad7424e27b23b658b7508bbed5fa34c9b730ba	2025-12-11 22:20:46.684909+00	20251211222044_feature_bigint_ledger_totals	\N	\N	2025-12-11 22:20:45.635169+00	1
 fd6ec8e8-4ce1-415d-9dd3-a0ce0325eea6	f383664ac2466d0ba3601ae905dfb9ba039dc998e8b2294f0299cac73e3ea220	2025-12-13 22:19:20.709713+00	20251213221920_challenge_text_to_json	\N	\N	2025-12-13 22:19:20.464417+00	1
+9ce3a770-0831-465c-8a37-df2107ef0043	5d9c31723ecefc935181596a4bd3ccc988b3854279565c2b668ab9c6ce8548b8	2025-12-17 21:54:06.52012+00	20251217215406_add_last_maintenance_at	\N	\N	2025-12-17 21:54:06.283966+00	1
 \.
 
 
@@ -219,7 +220,7 @@ fd6ec8e8-4ce1-415d-9dd3-a0ce0325eea6	f383664ac2466d0ba3601ae905dfb9ba039dc998e8b
 --
 
 COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity_timestamp", "last_seen_stream_day", "active_offline_days_count", "active_stream_days_count", "daily_challenge_reset_at", "total_numbers_spent_game_wide", "total_challenges_submitted", "total_numbers_returned_from_removals_game_wide", "total_numbers_spent", "total_received_from_removals", "total_removals_executed", "total_digouts_executed", "totalPushesExecuted", "totalDisruptsExecuted", "daily_submission_count", "total_caused_by_removals", "total_to_community_chest", "total_to_pushers") FROM stdin;
-21	2025-12-17 16:05:46.851	\N	0	0	0	2025-12-17 21:00:00	0	11	0	21546	0	0	0	6	1	1	0	0	0
+21	2025-12-17 16:05:46.851	\N	3	1	0	2025-12-17 21:00:00	0	11	0	21546	0	0	0	6	1	1	0	0	0
 \.
 
 
@@ -263,8 +264,8 @@ COPY "public"."pushes" ("push_id", "challenge_id", "user_id", "cost", "timestamp
 -- Data for Name: stream_stats; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY "public"."stream_stats" ("id", "stream_days_since_inception", "days_since_inception") FROM stdin;
-1	1	0
+COPY "public"."stream_stats" ("id", "stream_days_since_inception", "days_since_inception", "last_maintenance_at") FROM stdin;
+1	3	2	2025-12-18 17:44:00.837
 \.
 
 
@@ -395,6 +396,6 @@ SELECT pg_catalog.setval('"public"."users_user_id_seq"', 4, true);
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict XEK1Lj8wJ07sSXFobQCjbJv2iSn5gCTxeHmsvsm06tJp6OLliXCOzES0zq5FcyT
+-- \unrestrict 4UWN7F5WYzCOtZk2U2A6LH6KtccBj08Il3PVQ2JrOenLuVkqhMi2aElA1JLOahU
 
 RESET ALL;
