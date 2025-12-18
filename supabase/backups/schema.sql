@@ -236,7 +236,8 @@ ALTER SEQUENCE "public"."pushes_push_id_seq" OWNED BY "public"."pushes"."push_id
 CREATE TABLE IF NOT EXISTS "public"."stream_stats" (
     "id" integer NOT NULL,
     "stream_days_since_inception" integer DEFAULT 0 NOT NULL,
-    "days_since_inception" integer DEFAULT 0 NOT NULL
+    "days_since_inception" integer DEFAULT 0 NOT NULL,
+    "last_maintenance_at" timestamp(3) without time zone
 );
 
 
