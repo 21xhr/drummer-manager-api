@@ -231,13 +231,18 @@ export async function runDailyMaintenance(): Promise<"EXECUTED" | "SKIPPED"> {
         }
     });
     
-    const currentStreamDay = updatedStat.streamDaysSinceInception;
-    console.log(`[ClockService] Starting Maintenance. Real Day: ${updatedStat.daysSinceInception}, Stream Day: ${currentStreamDay}`);
+    // Inside runDailyMaintenance
+    const realDay = updatedStat.daysSinceInception;
+    const streamDay = updatedStat.streamDaysSinceInception;
+
+    console.log(`[ClockService] Starting Maintenance.`);
+    console.log(` >> Real-World Day: ${realDay} (Calendar advancement)`);
+    console.log(` >> Global Stream Day: ${streamDay} (Activity-based advancement)`);
 
     // --- TASK EXECUTION ---
 
     // A. Always process User Ticks (Daily engagement)
-    await processDailyUserTick(currentStreamDay);
+    await processDailyUserTick(streamDay);
 
     // B. Always check RECURRING Cadence (Real-world time-based)
     const failedCadenceCount = await enforceRecurringChallengeCadence();
