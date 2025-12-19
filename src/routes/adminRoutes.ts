@@ -1,4 +1,16 @@
 // src/routes/adminRoutes.ts
+
+// Define the Contract
+export interface PulseResponse {
+    status: "OK" | "ERROR";
+    systems: { supabase: string; upstash: string; };
+    financials: {
+        grossSpent: string; refunded: string; netEconomy: string;
+        totalCausedByRemovals: string; communityChest: string; totalToPushers: string;
+    };
+    maintenance: { realDay: number; streamDay: number; lastRun?: Date | null; };
+}
+
 import { Router } from 'express';
 import prisma from '../prisma';
 import { redis } from '../services/upstashService'; 
@@ -9,8 +21,9 @@ const router = Router();
  * Returns System Health (DB/Redis), Economy Stats (BigInt totals), and Maintenance history.
  */
 router.get('/pulse', async (req: any, res: any) => {
-    // Security check
-    if (req.header('X-Admin-Secret') !== process.env.CRON_SECRET) {
+    const authHeader = req.header('X-Admin-Secret');
+    if (!authHeader || authHeader !== process.env.ADMIN_SECRET) {
+        console.warn(`Unauthorized Pulse access attempt from: ${req.ip}`);
         return res.status(401).json({ error: "Unauthorized" });
     }
 
@@ -43,7 +56,8 @@ router.get('/pulse', async (req: any, res: any) => {
         const refunded = globalCounter.totalNumbersReturnedFromRemovalsGameWide;
         const netEconomy = gross - refunded;
 
-        res.json({
+        // Use the interface in your response
+        const responseData: PulseResponse ={
             status: "OK",
             systems: {
                 supabase: dbHealth,
@@ -62,7 +76,9 @@ router.get('/pulse', async (req: any, res: any) => {
                 streamDay: streamStat?.streamDaysSinceInception || 0,
                 lastRun: streamStat?.lastMaintenanceAt
             }
-        });
+        };
+        res.json(responseData);
+        
     } catch (error: any) {
         res.status(500).json({ status: "ERROR", message: error.message });
     }
