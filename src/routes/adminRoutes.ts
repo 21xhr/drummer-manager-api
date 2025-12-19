@@ -5,6 +5,9 @@ import { redis } from '../services/upstashService';
 
 const router = Router();
 
+/**
+ * Returns System Health (DB/Redis), Economy Stats (BigInt totals), and Maintenance history.
+ */
 router.get('/pulse', async (req: any, res: any) => {
     // Security check
     if (req.header('X-Admin-Secret') !== process.env.CRON_SECRET) {

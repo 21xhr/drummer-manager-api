@@ -34,7 +34,7 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
         
         // 2. Attach identity to the request object.
         req.userId = user.id; 
-        // 3. CRITICAL FIX: Use the original platform identity from the request body,
+        // 3. CRITICAL: Use the original platform identity from the request body,
         // as the 'user' object no longer contains these fields.
         req.platformId = platformId; 
         req.platformName = platformName as PlatformName; 
