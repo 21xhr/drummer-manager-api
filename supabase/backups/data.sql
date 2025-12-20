@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict IP0OEpuun9kgPQzYxYDZzH85mhVvivkvJziP3cEe7TPAhF0YAqBUIwoD2ae2pyd
+-- \restrict hSmT1mR8qiNhSWlQX1gPTd32AgtDUWAvK3WcZb8qtxNNe6vhvWLU8fb1ue37nf8
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -221,6 +221,7 @@ fd6ec8e8-4ce1-415d-9dd3-a0ce0325eea6	f383664ac2466d0ba3601ae905dfb9ba039dc998e8b
 
 COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity_timestamp", "last_seen_stream_day", "active_offline_days_count", "active_stream_days_count", "daily_challenge_reset_at", "total_numbers_spent_game_wide", "total_challenges_submitted", "total_numbers_returned_from_removals_game_wide", "total_numbers_spent", "total_received_from_removals", "total_removals_executed", "total_digouts_executed", "totalPushesExecuted", "totalDisruptsExecuted", "daily_submission_count", "total_caused_by_removals", "total_to_community_chest", "total_to_pushers") FROM stdin;
 21	2025-12-19 15:29:51.558	\N	3	1	0	2025-12-17 21:00:00	0	11	0	21546	0	0	1	6	1	1	0	0	0
+1	\N	\N	0	0	0	2025-12-20 18:29:22	0	0	0	0	0	0	0	0	0	0	0	0	0
 \.
 
 
@@ -396,6 +397,6 @@ SELECT pg_catalog.setval('"public"."users_user_id_seq"', 4, true);
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict IP0OEpuun9kgPQzYxYDZzH85mhVvivkvJziP3cEe7TPAhF0YAqBUIwoD2ae2pyd
+-- \unrestrict hSmT1mR8qiNhSWlQX1gPTd32AgtDUWAvK3WcZb8qtxNNe6vhvWLU8fb1ue37nf8
 
 RESET ALL;
