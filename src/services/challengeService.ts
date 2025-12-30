@@ -8,6 +8,7 @@ import { publishChallengeEvent, ChallengeEvents } from './eventService';
 import { generateToken, validateDuration } from './jwtService';
 import { addNumbersViaLumia, deductNumbersViaLumia } from './lumiaService';
 import { isStreamLive, getCurrentStreamSessionId} from './streamService';
+import { recordUserActivity } from './userService';
 
 // --- CONFIGURATION IMPORTS ---
 import {
@@ -585,18 +586,15 @@ export async function processPushConfirm(
         }
     });
 
-    // C. Update User: Update the individual user's spending metrics (No balance update here)
+    // C. Update User: Metrics and Activity
     await tx.user.update({
-        where: { id: userId },
-        data: {
-            totalNumbersSpent: { increment: BigInt(pushTransactionCost) }, // Wrap in BigInt()
-            totalPushesExecuted: { increment: quote.quantity },
-            lastActivityTimestamp: transactionTimestamp,
-            ...(currentStreamSessionId && {
-                lastLiveActivityTimestamp: transactionTimestamp,
-            }),
-        },
-    });
+            where: { id: userId },
+            data: {
+                totalNumbersSpent: { increment: BigInt(pushTransactionCost) },
+                totalPushesExecuted: { increment: quote.quantity },
+            },
+        });
+        await recordUserActivity(tx, userId, transactionTimestamp);
     // Update Account Balance: Update the specific Account with the authoritative balance
     const updatedAccount = await tx.account.update({
         where: {
@@ -723,18 +721,15 @@ export async function processDigout(
 
         // 3. Execute Transaction: Deduct cost, update user, and update challenge
         
-        // Update User: Deduct cost from user spending and update individual spending metrics
-        const updatedUser = await tx.user.update({
+        // Update User: Metrics and Activity
+        await tx.user.update({
             where: { id: userId },
             data: {
-                totalNumbersSpent: { increment: BigInt(digoutTransactionCost) }, // Wrap in BigInt()
+                totalNumbersSpent: { increment: BigInt(digoutTransactionCost) },
                 totalDigoutsExecuted: { increment: 1 },
-                lastActivityTimestamp: transactionTimestamp,
-                ...(currentStreamSessionId && {
-                    lastLiveActivityTimestamp: transactionTimestamp,
-                }),
             },
         });
+        const updatedUser = await recordUserActivity(tx, userId, transactionTimestamp);
 
         // Update Account Balance: Update the specific Account with the authoritative balance
         const updatedAccount = await tx.account.update({
@@ -900,19 +895,16 @@ export async function processChallengeSubmission(
             }
         });
 
-        // 6. Update User Stats: Update the central User metrics (Submission count, spending)
-        const userUpdateResult = await tx.user.update({
+        // 6. Update User Stats & Activity
+        await tx.user.update({
             where: { id: userId },
             data: {
                 totalNumbersSpent: { increment: BigInt(submissionCost) },
                 totalChallengesSubmitted: { increment: 1 },
-                lastActivityTimestamp: new Date().toISOString(),
                 dailySubmissionCount: { increment: 1 },
-                ...(currentStreamSessionId && {
-                    lastLiveActivityTimestamp: transactionTimestamp,
-                }),
             },
         });
+        const updatedUser = await recordUserActivity(tx, userId, transactionTimestamp);
 
         // Update Account Balance: Update the specific Account with the authoritative balance
         const updatedAccount = await tx.account.update({
@@ -950,7 +942,7 @@ export async function processChallengeSubmission(
         return { 
             newChallenge, 
             cost: submissionCost, 
-            updatedUser: userUpdateResult as User,
+            updatedUser: updatedUser as User,
             updatedAccount: updatedAccount as Account
         };
     });
@@ -1210,8 +1202,15 @@ export async function processRemove(
         });
 
         for (const contribution of pusherContributions) {
-            const spent = contribution._sum?.cost || 0;
-            const refund = Math.floor(spent * 0.21);
+            // 1. Ensure 'spent' is treated as BigInt
+            const spent = BigInt(contribution._sum?.cost || 0);
+
+            // 2. Calculate 21% using BigInt arithmetic (Equivalent to 21/100)
+            // BigInt division automatically truncates (like Math.floor)
+            const refundBigInt = (spent * 21n) / 100n; 
+
+            // 3. Convert to Number for Lumia API and local balance fields
+            const refund = Number(refundBigInt);
 
             if (refund > 0) {
                 if (contribution.userId === authorUserId) {
@@ -1264,17 +1263,18 @@ export async function processRemove(
             });
         }
 
-        // C. Update Author's Per-User Stats (Tracking metrics)
+        // C. Update Author's Stats & Activity
         await tx.user.update({
             where: { id: authorUserId },
             data: {
                 totalRemovalsExecuted: { increment: 1 },
-                lastActivityTimestamp: transactionTimestamp,
                 totalCausedByRemovals: { increment: totalRefundsAmount },
                 totalToCommunityChest: { increment: toCommunityChest },
                 totalToPushers: { increment: toExternalPushers },
             }
         });
+        // We now correctly record Live activity for removals!
+        await recordUserActivity(tx, authorUserId, transactionTimestamp);
 
         // D. Update Community Chest Ledger (User ID 1) and Balance
         if (toCommunityChest > 0) {
@@ -1467,18 +1467,15 @@ export async function processDisrupt(
 
         // 2. Execute Transaction: Deduct cost and update metrics
         
-        // A. Update User Stats: REMOVE BALANCE UPDATE
+        // A. Update User Stats & Activity
         await tx.user.update({
             where: { id: userId },
             data: {
                 totalNumbersSpent: { increment: DISRUPT_COST },
                 totalDisruptsExecuted: { increment: 1 },
-                lastActivityTimestamp: transactionTimestamp,
-                ...(currentStreamSessionId && {
-                    lastLiveActivityTimestamp: transactionTimestamp,
-                }),
             },
         });
+        await recordUserActivity(tx, userId, transactionTimestamp);
 
         // Update Account Balance: Update the specific Account with the authoritative balance
         await tx.account.update({
