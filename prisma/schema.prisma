@@ -71,11 +71,18 @@ model Account {
 /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 model User {
   id                                      Int       @id @default(autoincrement()) @map("user_id")  
+
+  // TIMESTAMPS
   // NOTE: the activity timestamps are moved to the account level for accuracy!
-  lastActivityTimestamp                 DateTime? @map("last_activity_timestamp") // Keeping for *overall* user activity
-  lastLiveActivityTimestamp             DateTime? @map("last_live_activity_timestamp") // Keeping for *overall* user activity
+  lastActivityTimestamp                 DateTime?   @map("last_activity_timestamp") // Keeping for *overall* user activity
+  lastLiveActivityTimestamp             DateTime?   @map("last_live_activity_timestamp") // Keeping for *overall* user activity
   
+  // WATERMARKS
   lastSeenStreamDay                     Int       @default(0) @map("last_seen_stream_day")
+  lastProcessedDay                      Int       @default(0) // Internal: Tracks daysSinceInception checked by Cron
+  lastSeenDay                           Int       @default(0) // Stat: Tracks the last Real-World Day user was active
+
+  // COUNTERS
   activeOfflineDaysCount                Int       @default(0) @map("active_offline_days_count")
   activeStreamDaysCount                 Int       @default(0) @map("active_stream_days_count")
   
@@ -121,20 +128,20 @@ model StreamStat {
 /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 model Challenge {
   challengeId               Int         @id @default(autoincrement()) @map("challenge_id")
-  challengeText             Json      @map("challenge_text")
+  challengeText             Json        @map("challenge_text")
   category                  String      @map("category")
   durationType          DurationType    @map("duration_type")
   proposerUserId            Int         @map("proposer_user_id")
   status                ChallengeStatus @map("status")
   failureReason             String?     @map("failure_reason")
   isExecuting               Boolean     @default(false) @map("is_executing")
-  timestampLastSessionTick DateTime? @map("timestamp_last_session_tick") // Tracks the last time a session tick occurred for this challenge
+  timestampLastSessionTick DateTime?    @map("timestamp_last_session_tick") // Tracks the last time a session tick occurred for this challenge
   hasBeenAuctioned          Boolean     @default(false) @map("has_been_auctioned")
   hasBeenDiggedOut          Boolean     @default(false) @map("has_been_digged_out")
   auctionCost               Int         @default(0) @map("auction_cost")
   disruptCount              Int         @default(0) @map("disrupt_count")
   numbersRaised             Int         @default(0) @map("numbers_raised")
-  totalNumbersSpent         BigInt         @default(0) @map("total_numbers_spent")
+  totalNumbersSpent         BigInt      @default(0) @map("total_numbers_spent")
   totalPush                 Int         @default(0) @map("total_push")
   timestampSubmitted        DateTime    @map("timestamp_submitted")
   timestampLastActivation   DateTime    @map("timestamp_last_activation")
@@ -153,12 +160,12 @@ model Challenge {
   cadenceRequiredCount    Int?            @default(1) @map("cadence_required_count") 
 
   // Lifecycle fields
-  streamDaysSinceActivation Int         @default(0) @map("stream_days_since_activation")
+  streamDaysSinceActivation Int           @default(0) @map("stream_days_since_activation")
   
   // Session Fields
-  totalSessions             Int        @map("total_sessions") 
-  currentSessionCount       Int        @default(0) @map("current_session_count")
-  sessionStartTimestamp     DateTime?  @map("session_start_timestamp") // Tracks when the current 21-min session began
+  totalSessions             Int             @map("total_sessions") 
+  currentSessionCount       Int @default(0) @map("current_session_count")
+  sessionStartTimestamp     DateTime?    @map("session_start_timestamp") // Tracks when the current 21-min session began
 
   pushes                    Push[]
   tempQuotes                TempQuote[]
