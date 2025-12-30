@@ -4,6 +4,9 @@
 import prisma from '../prisma';
 import { User, PlatformName } from '@prisma/client';
 import { getNextDailyResetTime } from './challengeService';
+import { getCurrentStreamSessionId} from './streamService';
+
+
 // --- CONFIGURATION IMPORTS ---
 import {
     ADMIN_USER_ID,
@@ -23,6 +26,32 @@ interface PlatformUser {
 // Helper function for formatting numbers (place it here)
 const formatNumber = (n: number | BigInt) => 
     (typeof n === 'bigint' ? n.toString() : n).toLocaleString();
+
+
+
+/**
+ * Centralized helper to "bubble up" activity from an Account/Platform action
+ * to the central User Identity.
+ */
+export async function recordUserActivity(
+    tx: any, 
+    userId: number, 
+    timestamp: string | Date
+) {
+    const currentStreamSessionId = getCurrentStreamSessionId();
+    const ts = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
+
+    return await tx.user.update({
+        where: { id: userId },
+        data: {
+            lastActivityTimestamp: ts,
+            // If a stream is live, this action counts as "Live Activity"
+            ...(currentStreamSessionId && {
+                lastLiveActivityTimestamp: ts,
+            }),
+        },
+    });
+}
 
 
 /**
