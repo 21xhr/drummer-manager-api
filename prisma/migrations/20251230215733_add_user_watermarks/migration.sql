@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "users" ADD COLUMN     "lastProcessedDay" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "lastSeenDay" INTEGER NOT NULL DEFAULT 0;
