@@ -5,63 +5,61 @@ import { DurationType, ChallengeStatus, CadenceUnit } from '@prisma/client';
 import { archiveExpiredChallenges } from './challengeService'; 
 
 // ------------------------------------------------------------------
-// USER TICK LOGIC (Provided and Verified)
+// USER TICK LOGIC
 // ------------------------------------------------------------------
-
 /**
- * Processes the daily tick for all users, updating their active day counters.
- * Should be called once daily at the 21:00 UTC boundary.
- * @param currentStreamDay - The global stream day number to mark users as 'seen'.
+ * Processes the daily tick for all users using the Two-Watermark system.
+ * @param realDay - daysSinceInception (The audit watermark)
+ * @param streamDay - streamDaysSinceInception (The stat watermark)
+ * @param maintenanceAnchor - The timestamp of the last successful maintenance run
  */
-export async function processDailyUserTick(currentStreamDay: number): Promise<void> {
+export async function processDailyUserTick(
+    realDay: number, 
+    streamDay: number, 
+    maintenanceAnchor: Date
+): Promise<void> {
     
-    // 1. Fetch all users who haven't been processed for the current Stream Day
+    // 1. Fetch users not audited for this Real-World Day
     const usersToUpdate = await prisma.user.findMany({
-        where: {
-            lastSeenStreamDay: { lt: currentStreamDay }
-        },
+        where: { lastProcessedDay: { lt: realDay } },
         select: {
             id: true,
             lastActivityTimestamp: true,
             lastLiveActivityTimestamp: true,
-            activeOfflineDaysCount: true,
-            activeStreamDaysCount: true,
         }
     });
 
+    const cutoffTimeMs = maintenanceAnchor.getTime();
+
     await Promise.all(usersToUpdate.map(async (user) => {
-        const nowMs = Date.now();
-        const oneDayMs = 24 * 60 * 60 * 1000;
-        const cutoffTimeMs = nowMs - oneDayMs; 
+        const isActiveThisWindow = (user.lastActivityTimestamp?.getTime() ?? 0) > cutoffTimeMs;
+        const isActiveLiveThisWindow = (user.lastLiveActivityTimestamp?.getTime() ?? 0) > cutoffTimeMs; 
         
         let updateData: any = {
-            lastSeenStreamDay: currentStreamDay // Mark user as processed for today
+            lastProcessedDay: realDay 
         };
-        
-        // Use null coalescing to safely access timestamps
-        const isActiveToday = (user.lastActivityTimestamp?.getTime() ?? 0) > cutoffTimeMs;
-        const isActiveLiveToday = (user.lastLiveActivityTimestamp?.getTime() ?? 0) > cutoffTimeMs; 
 
-        if (isActiveToday) {
-            if (isActiveLiveToday) {
-                // Active Stream Day
+        if (isActiveThisWindow) {
+            updateData.lastSeenDay = realDay;
+
+            if (isActiveLiveThisWindow) {
                 updateData.activeStreamDaysCount = { increment: 1 };
+                updateData.lastSeenStreamDay = streamDay; 
             } else {
-                // Active Offline Day
                 updateData.activeOfflineDaysCount = { increment: 1 };
             }
         } 
         
-        // Perform the atomic update
         await prisma.user.update({
             where: { id: user.id },
             data: updateData
         });
     }));
 
-    console.log(`[ClockService] Processed daily tick for ${usersToUpdate.length} users.`);
+    console.log(`[ClockService] Processed Two-Watermark tick for ${usersToUpdate.length} users.`);
 
-    // SANITY CHECK: Ensure only one Challenge is marked as executing (or zero)
+    // --- FULL SANITY CHECK ---
+    // Ensure only one Challenge is marked as executing (or zero)
     try {
         const executingCount = await prisma.challenge.count({
             where: { isExecuting: true }
@@ -234,6 +232,7 @@ export async function runDailyMaintenance(): Promise<"EXECUTED" | "SKIPPED"> {
     // Inside runDailyMaintenance
     const realDay = updatedStat.daysSinceInception;
     const streamDay = updatedStat.streamDaysSinceInception;
+    const maintenanceAnchor = stats?.lastMaintenanceAt || new Date(0);
 
     console.log(`[ClockService] Starting Maintenance.`);
     console.log(` >> Real-World Day: ${realDay} (Calendar advancement)`);
@@ -242,7 +241,7 @@ export async function runDailyMaintenance(): Promise<"EXECUTED" | "SKIPPED"> {
     // --- TASK EXECUTION ---
 
     // A. Always process User Ticks (Daily engagement)
-    await processDailyUserTick(streamDay);
+    await processDailyUserTick(realDay, streamDay, maintenanceAnchor);
 
     // B. Always check RECURRING Cadence (Real-world time-based)
     const failedCadenceCount = await enforceRecurringChallengeCadence();
