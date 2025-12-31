@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict qdIZqfOD6xGCYtCkdCZixhUy8WVNqKAo7f8Jm1WR0LdHHdCpSjMxM8eqh2Z0wv7
+-- \restrict v6bBSxwInacYk09LtDtPZNSN37ljFlQVHREcfoasEWOcVJmGwVcwnpGXb9rHkmL
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -212,6 +212,7 @@ b157ed96-fea8-4ec4-9a6b-e580ebac4b2b	f7d8269b6e5937d739897603482393e95467e0c9e0b
 168b1da0-ad26-40dd-b727-a9da865066b6	9de33ca1ccecf0c2974097fd20ad7424e27b23b658b7508bbed5fa34c9b730ba	2025-12-11 22:20:46.684909+00	20251211222044_feature_bigint_ledger_totals	\N	\N	2025-12-11 22:20:45.635169+00	1
 fd6ec8e8-4ce1-415d-9dd3-a0ce0325eea6	f383664ac2466d0ba3601ae905dfb9ba039dc998e8b2294f0299cac73e3ea220	2025-12-13 22:19:20.709713+00	20251213221920_challenge_text_to_json	\N	\N	2025-12-13 22:19:20.464417+00	1
 9ce3a770-0831-465c-8a37-df2107ef0043	5d9c31723ecefc935181596a4bd3ccc988b3854279565c2b668ab9c6ce8548b8	2025-12-17 21:54:06.52012+00	20251217215406_add_last_maintenance_at	\N	\N	2025-12-17 21:54:06.283966+00	1
+708aa1e2-6920-413b-b0d1-50bd3ad6ee0f	822d1e230d706234da1e00d6407b560e26ef17f717d04e5e65ca09e84a7514ba	2025-12-30 21:57:34.501589+00	20251230215733_add_user_watermarks	\N	\N	2025-12-30 21:57:34.135564+00	1
 \.
 
 
@@ -219,9 +220,9 @@ fd6ec8e8-4ce1-415d-9dd3-a0ce0325eea6	f383664ac2466d0ba3601ae905dfb9ba039dc998e8b
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity_timestamp", "last_seen_stream_day", "active_offline_days_count", "active_stream_days_count", "daily_challenge_reset_at", "total_numbers_spent_game_wide", "total_challenges_submitted", "total_numbers_returned_from_removals_game_wide", "total_numbers_spent", "total_received_from_removals", "total_removals_executed", "total_digouts_executed", "totalPushesExecuted", "totalDisruptsExecuted", "daily_submission_count", "total_caused_by_removals", "total_to_community_chest", "total_to_pushers") FROM stdin;
-21	2025-12-27 17:26:42.95	\N	3	1	0	2025-12-27 21:00:00	0	12	0	21756	0	0	1	6	1	1	0	0	0
-1	\N	\N	3	0	0	2025-12-20 18:29:22	210	0	0	0	0	0	0	0	0	0	0	0	0
+COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity_timestamp", "last_seen_stream_day", "active_offline_days_count", "active_stream_days_count", "daily_challenge_reset_at", "total_numbers_spent_game_wide", "total_challenges_submitted", "total_numbers_returned_from_removals_game_wide", "total_numbers_spent", "total_received_from_removals", "total_removals_executed", "total_digouts_executed", "totalPushesExecuted", "totalDisruptsExecuted", "daily_submission_count", "total_caused_by_removals", "total_to_community_chest", "total_to_pushers", "lastProcessedDay", "lastSeenDay") FROM stdin;
+21	2025-12-27 17:26:42.95	\N	3	1	0	2025-12-27 21:00:00	0	12	0	21756	0	0	1	6	1	1	0	0	0	0	0
+1	\N	\N	3	0	0	2025-12-20 18:29:22	210	0	0	0	0	0	0	0	0	0	0	0	0	0	0
 \.
 
 
@@ -398,6 +399,6 @@ SELECT pg_catalog.setval('"public"."users_user_id_seq"', 4, true);
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict qdIZqfOD6xGCYtCkdCZixhUy8WVNqKAo7f8Jm1WR0LdHHdCpSjMxM8eqh2Z0wv7
+-- \unrestrict v6bBSxwInacYk09LtDtPZNSN37ljFlQVHREcfoasEWOcVJmGwVcwnpGXb9rHkmL
 
 RESET ALL;
