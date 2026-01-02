@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict m10oqIpMhbetO3Ub7OVjOcB3sNla0nPNoIsJFeDWr61sovKYjA3VEJwd1sDsCkC
+-- \restrict BNKxQ1kIXLzbnvoYNkkNlPeaIQxjDWw5qQQJLzgmMhxjEggvTxdLNf9byJs3qmG
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -221,8 +221,8 @@ fd6ec8e8-4ce1-415d-9dd3-a0ce0325eea6	f383664ac2466d0ba3601ae905dfb9ba039dc998e8b
 --
 
 COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity_timestamp", "last_seen_stream_day", "active_offline_days_count", "active_stream_days_count", "daily_challenge_reset_at", "total_numbers_spent_game_wide", "total_challenges_submitted", "total_numbers_returned_from_removals_game_wide", "total_numbers_spent", "total_received_from_removals", "total_removals_executed", "total_digouts_executed", "totalPushesExecuted", "totalDisruptsExecuted", "daily_submission_count", "total_caused_by_removals", "total_to_community_chest", "total_to_pushers", "lastProcessedDay", "lastSeenDay") FROM stdin;
-21	2025-12-27 17:26:42.95	\N	3	1	0	2025-12-27 21:00:00	0	12	0	21756	0	0	1	6	1	1	0	0	0	0	0
-1	\N	\N	3	0	0	2025-12-20 18:29:22	210	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+21	2026-01-02 15:43:09.746	\N	5	4	1	2026-01-02 21:00:00	0	14	0	22586	0	0	1	6	1	2	0	0	0	8	8
+1	\N	\N	3	0	0	2025-12-20 18:29:22	1040	0	0	0	0	0	0	0	0	0	0	0	0	8	0
 \.
 
 
@@ -232,7 +232,7 @@ COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity
 
 COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name", "current_balance", "last_balance_update", "last_activity_timestamp", "last_live_activity_timestamp", "username") FROM stdin;
 20	21	686071308	KICK	21000000	\N	\N	\N	21xhr
-21	21	686071308	TWITCH	99999789	\N	2025-12-27 17:25:55.013	2025-12-09 21:40:20.228	21xhr
+21	21	686071308	TWITCH	1	\N	2026-01-02 15:37:57.418	2025-12-09 21:40:20.228	21xhr
 \.
 
 
@@ -241,17 +241,19 @@ COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name
 --
 
 COPY "public"."challenges" ("challenge_id", "category", "proposer_user_id", "status", "is_executing", "has_been_auctioned", "has_been_digged_out", "auction_cost", "disrupt_count", "numbers_raised", "total_numbers_spent", "total_push", "stream_days_since_activation", "timestamp_submitted", "timestamp_last_activation", "timestamp_completed", "unique_pusher", "push_base_cost", "timestampLastStreamDayTicked", "current_session_count", "session_start_timestamp", "total_sessions", "duration_type", "failure_reason", "cadence_period_start", "cadence_progress_counter", "cadence_unit", "session_cadence_text", "cadence_required_count", "timestamp_last_session_tick", "submission_cost", "challenge_text") FROM stdin;
-17	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2025-12-15 19:16:33.044	2025-12-15 19:16:33.044	\N	0	21	2025-12-15 19:16:33.817	0	\N	98	RECURRING	\N	\N	0	WEEKLY	49 sessions per week for 2 weeks	49	\N	210	"qd&lt;sdfwsdfqwsfefzqef"
-18	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2025-12-15 19:16:36.106	2025-12-15 19:16:36.106	\N	0	21	2025-12-15 19:16:36.335	0	\N	98	RECURRING	\N	\N	0	WEEKLY	49 sessions per week for 2 weeks	49	\N	840	"qd&lt;sdfwsdfqwsfefzqef"
-19	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2025-12-15 19:16:38.275	2025-12-15 19:16:38.275	\N	0	21	2025-12-15 19:16:38.502	0	\N	98	RECURRING	\N	\N	0	WEEKLY	49 sessions per week for 2 weeks	49	\N	1890	"qd&lt;sdfwsdfqwsfefzqef"
-20	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2025-12-15 19:16:41.754	2025-12-15 19:16:41.754	\N	0	21	2025-12-15 19:16:42.007	0	\N	98	RECURRING	\N	\N	0	WEEKLY	49 sessions per week for 2 weeks	49	\N	3360	"qd&lt;sdfwsdfqwsfefzqef"
-23	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2025-12-15 22:21:32.849	2025-12-15 22:21:32.849	\N	0	21	2025-12-15 22:21:33.86	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	840	"qzsdfqsdfqdfq"
-24	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2025-12-15 23:05:27.512	2025-12-15 23:05:27.512	\N	0	21	2025-12-15 23:05:28.198	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1890	"qzdfqdfsqsdfqf"
-25	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2025-12-15 23:08:47.592	2025-12-15 23:08:47.592	\N	0	21	2025-12-15 23:08:48.231	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	3360	"qzdfqdfsqsdfqf"
-26	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2025-12-17 16:05:45.999	2025-12-17 16:05:45.999	\N	0	21	2025-12-17 16:05:46.743	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	"<h4 class=\\"dm-sans font-bold text-sm mb-0\\" style=\\"--tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ; font-size: medium; color: rgb(242, 242, 242);\\"><i>One-Off Challenge</i></h4><p class=\\"roboto text-gray-400 flex-grow mt-1 mb-0 desc-text-custom\\" id=\\"oneOffDescription\\" style=\\"--tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ; font-size: medium; --tw-text-opacity: 1; color: rgb(156, 163, 175);\\"><span style=\\"font-size: 11.25px; text-align: center; background-color: rgb(21, 21, 21);\\">Submitting as:&nbsp;</span><span id=\\"reminderUsername\\" class=\\"platform-twitch\\" style=\\"--tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ; font-weight: bolder; color: rgb(145, 70, 255); font-size: 11.25px; text-align: center; background-color: rgb(21, 21, 21);\\">21xhr</span><span style=\\"font-size: 11.25px; text-align: center; background-color: rgb(21, 21, 21);\\">&nbsp;on&nbsp;</span><span id=\\"reminderPlatform\\" class=\\"platform-twitch\\" style=\\"--tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ; font-weight: bolder; color: rgb(145, 70, 255); font-size: 11.25px; text-align: center; background-color: rgb(21, 21, 21);\\">TWITCH</span></p>"
-22	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2025-12-15 22:13:37.685	2025-12-15 22:13:37.685	\N	0	21	2025-12-15 22:13:38.427	0	\N	2	RECURRING	\N	\N	0	DAILY	1 session per day for 2 days	1	\N	210	"s&lt;d&lt;sd&lt;sdc&lt;sdc"
-21	General	21	ACTIVE	f	f	t	0	0	0	0	0	0	2025-12-15 19:16:46.174	2025-12-19 15:29:51.558	\N	0	21	2025-12-15 19:16:46.449	0	\N	82	RECURRING	\N	\N	0	WEEKLY	41 sessions per week for 2 weeks	41	\N	5250	"qd&lt;sdfwsdfqwsfefzqef"
-27	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2025-12-27 17:26:41.825	2025-12-27 17:26:41.825	\N	0	21	2025-12-27 17:26:42.797	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	"AAAAAAAAAA"
+27	General	21	ACTIVE	f	f	f	0	0	0	0	0	1	2025-12-27 17:26:41.825	2025-12-27 17:26:41.825	\N	0	21	2026-01-02 15:30:38.618	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	"AAAAAAAAAA"
+28	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-02 15:38:25.87	2026-01-02 15:38:25.87	\N	0	21	2026-01-02 15:38:26.93	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	166	"recordUserActivity test"
+29	General	21	FAILED	f	f	f	0	0	0	0	0	0	2026-01-02 15:43:09.746	2026-01-02 15:43:09.746	2026-01-02 16:23:20.188	0	21	2026-01-02 15:43:10.402	20	\N	21	RECURRING	Cadence rule broken: Failed to complete 1 sessions within the WEEKLY period.	2025-01-31 17:13:18	0	WEEKLY	\N	\N	\N	664	"<div style=\\"color: rgb(212, 212, 212); background-color: rgb(31, 31, 31); font-family: Menlo, Monaco, &quot;Courier New&quot;, monospace; font-size: 13px; line-height: 20px; white-space: pre;\\"><span style=\\"color: #9cdcfe;\\"><b><i>recordUserActivity test BIS</i></b></span></div>"
+23	General	21	ACTIVE	f	f	f	0	0	0	0	0	1	2025-12-15 22:21:32.849	2025-12-15 22:21:32.849	\N	0	21	2026-01-02 15:30:38.618	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	840	"qzsdfqsdfqdfq"
+24	General	21	ACTIVE	f	f	f	0	0	0	0	0	1	2025-12-15 23:05:27.512	2025-12-15 23:05:27.512	\N	0	21	2026-01-02 15:30:38.618	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1890	"qzdfqdfsqsdfqf"
+25	General	21	ACTIVE	f	f	f	0	0	0	0	0	1	2025-12-15 23:08:47.592	2025-12-15 23:08:47.592	\N	0	21	2026-01-02 15:30:38.618	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	3360	"qzdfqdfsqsdfqf"
+26	General	21	ACTIVE	f	f	f	0	0	0	0	0	1	2025-12-17 16:05:45.999	2025-12-17 16:05:45.999	\N	0	21	2026-01-02 15:30:38.618	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	"<h4 class=\\"dm-sans font-bold text-sm mb-0\\" style=\\"--tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ; font-size: medium; color: rgb(242, 242, 242);\\"><i>One-Off Challenge</i></h4><p class=\\"roboto text-gray-400 flex-grow mt-1 mb-0 desc-text-custom\\" id=\\"oneOffDescription\\" style=\\"--tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ; font-size: medium; --tw-text-opacity: 1; color: rgb(156, 163, 175);\\"><span style=\\"font-size: 11.25px; text-align: center; background-color: rgb(21, 21, 21);\\">Submitting as:&nbsp;</span><span id=\\"reminderUsername\\" class=\\"platform-twitch\\" style=\\"--tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ; font-weight: bolder; color: rgb(145, 70, 255); font-size: 11.25px; text-align: center; background-color: rgb(21, 21, 21);\\">21xhr</span><span style=\\"font-size: 11.25px; text-align: center; background-color: rgb(21, 21, 21);\\">&nbsp;on&nbsp;</span><span id=\\"reminderPlatform\\" class=\\"platform-twitch\\" style=\\"--tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ; font-weight: bolder; color: rgb(145, 70, 255); font-size: 11.25px; text-align: center; background-color: rgb(21, 21, 21);\\">TWITCH</span></p>"
+22	General	21	ACTIVE	f	f	f	0	0	0	0	0	1	2025-12-15 22:13:37.685	2025-12-15 22:13:37.685	\N	0	21	2026-01-02 15:30:38.618	0	\N	2	RECURRING	\N	\N	0	DAILY	1 session per day for 2 days	1	\N	210	"s&lt;d&lt;sd&lt;sdc&lt;sdc"
+21	General	21	ACTIVE	f	f	t	0	0	0	0	0	1	2025-12-15 19:16:46.174	2025-12-19 15:29:51.558	\N	0	21	2026-01-02 15:30:38.618	0	\N	82	RECURRING	\N	\N	0	WEEKLY	41 sessions per week for 2 weeks	41	\N	5250	"qd&lt;sdfwsdfqwsfefzqef"
+18	General	21	IN_PROGRESS	f	f	f	0	0	0	0	0	1	2025-12-15 19:16:36.106	2025-12-15 19:16:36.106	\N	0	21	2026-01-02 15:30:38.618	0	\N	98	RECURRING	\N	2026-01-02 16:23:20.188	2	WEEKLY	49 sessions per week for 2 weeks	2	\N	840	"2. Weekly Reset"
+17	General	21	FAILED	f	f	f	0	0	0	0	0	1	2025-12-15 19:16:33.044	2025-12-15 19:16:33.044	2026-01-02 16:32:46.055	0	21	2026-01-02 15:30:38.618	0	\N	98	RECURRING	Cadence rule broken: Failed to complete 1 sessions within the DAILY period.	2026-01-01 16:18:59	0	DAILY	49 sessions per week for 2 weeks	1	\N	210	"1. Daily Fail"
+20	General	21	FAILED	f	f	f	0	0	0	0	0	1	2025-12-15 19:16:41.754	2025-12-15 19:16:41.754	2026-01-02 16:32:46.055	0	21	2026-01-02 15:30:38.618	0	\N	98	RECURRING	Cadence rule broken: Failed to complete 2 sessions within the DAILY period.	2025-12-29 17:21:20	0	DAILY	every 2 days	2	\N	3360	"4. Custom Fail"
+19	General	21	FAILED	f	f	f	0	0	0	0	0	1	2025-12-15 19:16:38.275	2025-12-15 19:16:38.275	2026-01-02 16:32:46.055	0	21	2026-01-02 15:30:38.618	0	\N	98	RECURRING	Cadence rule broken: Failed to complete 3 sessions within the MONTHLY period.	2025-12-02 17:20:10	1	MONTHLY	49 sessions per week for 2 weeks	3	\N	1890	"3. Monthly Fail"
 \.
 
 
@@ -268,7 +270,7 @@ COPY "public"."pushes" ("push_id", "challenge_id", "user_id", "cost", "timestamp
 --
 
 COPY "public"."stream_stats" ("id", "stream_days_since_inception", "days_since_inception", "last_maintenance_at") FROM stdin;
-1	3	4	2025-12-27 17:27:14.407
+1	8	8	2026-01-02 16:32:44.62
 \.
 
 
@@ -277,7 +279,8 @@ COPY "public"."stream_stats" ("id", "stream_days_since_inception", "days_since_i
 --
 
 COPY "public"."streams" ("stream_session_id", "current_stream_number", "start_timestamp", "end_timestamp", "duration_minutes", "total_pushes_in_session", "total_numbers_spent_on_push", "total_digouts_in_session", "total_numbers_spent_on_digout", "total_disrupts_in_session", "total_numbers_spent_on_disrupt", "total_numbers_spent_in_session", "has_been_processed", "total_challenges_submitted_in_session", "total_numbers_returned_from_removals_in_session", "total_removals_in_session") FROM stdin;
-1	1	2025-12-15 18:56:44.704	2025-12-15 18:59:01.201	2	0	0	0	0	0	0	0	t	0	0	0
+1	1	2025-12-15 18:56:44.704	2025-12-15 20:56:44.704	2	0	0	0	0	0	0	0	t	0	0	0
+2	4	2026-01-02 15:30:38.618	2026-01-02 16:02:08.905	31	0	0	0	0	0	0	830	t	2	0	0
 \.
 
 
@@ -371,7 +374,7 @@ SELECT pg_catalog.setval('"public"."accounts_account_id_seq"', 4, true);
 -- Name: challenges_challenge_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 27, true);
+SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 29, true);
 
 
 --
@@ -385,7 +388,7 @@ SELECT pg_catalog.setval('"public"."pushes_push_id_seq"', 2, true);
 -- Name: streams_stream_session_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."streams_stream_session_id_seq"', 1, true);
+SELECT pg_catalog.setval('"public"."streams_stream_session_id_seq"', 2, true);
 
 
 --
@@ -399,6 +402,6 @@ SELECT pg_catalog.setval('"public"."users_user_id_seq"', 4, true);
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict m10oqIpMhbetO3Ub7OVjOcB3sNla0nPNoIsJFeDWr61sovKYjA3VEJwd1sDsCkC
+-- \unrestrict BNKxQ1kIXLzbnvoYNkkNlPeaIQxjDWw5qQQJLzgmMhxjEggvTxdLNf9byJs3qmG
 
 RESET ALL;
