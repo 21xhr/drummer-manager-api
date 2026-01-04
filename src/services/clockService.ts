@@ -157,6 +157,14 @@ export async function enforceRecurringChallengeCadence(): Promise<number> {
         const deadline = new Date(lastActiveDate.getTime() + periodDays * 24 * 60 * 60 * 1000);
         const periodPassed = now > deadline;
         
+        // --- LOG ---
+        console.log(
+            `[Cadence Audit] Challenge #${challenge.challengeId} (${challenge.cadenceUnit}): ` +
+            `Progress ${challenge.cadenceProgressCounter}/${requiredCount}. ` +
+            `Deadline: ${deadline.toISOString().replace('T', ' ').substring(0, 19)}. ` +
+            `Status: ${periodPassed ? 'PERIOD EXPIRED' : 'ACTIVE'}`
+        );
+
         if (periodPassed) {
             challengesChecked++;
             
