@@ -166,91 +166,76 @@ export async function processSubmissionLinkGeneration(
  * @returns The updated challenge or null if no action was taken.
  */
 export async function processAutomaticSessionTick(): Promise<SessionTickResult | null> {
-    const now = new Date(); 
+    const now = new Date();
     const currentTimeMs = now.getTime();
-    
-    // TEMPORARY DEBUG LOG
-    logger.info('Auto Tick: Checking for executing challenge...'); 
 
     // 1. Find the currently executing challenge
     const executingChallenge = await prisma.challenge.findFirst({
         where: { isExecuting: true },
-        // Ensure ALL required fields for the logic below are selected
         select: {
             challengeId: true,
-            totalSessions: true,
             currentSessionCount: true,
-            timestampLastSessionTick: true,
+            totalSessions: true,
+            durationType: true,
             isExecuting: true,
+            timestampLastSessionTick: true,
         }
     });
 
     if (!executingChallenge) {
-        return null; 
-    }
-
-    // Check for null on timestampLastSessionTick and return early if null
-    // This handles the case where a challenge might be set to isExecuting=true but the clock wasn't initialized
-    if (!executingChallenge.timestampLastSessionTick) {
-        // This is safe because we checked if (!executingChallenge) above
-        logger.warn(`Auto Tick: Skipping Challenge #${executingChallenge.challengeId}. Clock not initialized/is NULL.`);
+        // logger.info('Auto Tick: No executing challenge found.'); 
         return null;
     }
 
-    // TypeScript narrowing
-    // As we've checked for null on timestampLastSessionTick and returned early if null
-    // TypeScript from now knows executingChallenge and timestampLastSessionTick are non-null.
+    if (!executingChallenge.timestampLastSessionTick) {
+        logger.warn(`Auto Tick: Skipping Challenge #${executingChallenge.challengeId}. Clock not initialized.`);
+        return null;
+    }
+
     const sessionLastTickMs = executingChallenge.timestampLastSessionTick.getTime();
-    
-    // Calculate elapsed time
     const timeElapsedMs = currentTimeMs - sessionLastTickMs;
 
-    // The core check: Has the 21-minute duration elapsed?
+    // DIAGNOSTIC LOG: Helps identify timezone or logic drift
+    logger.info(`[Auto-Tick Audit] #${executingChallenge.challengeId} | Elapsed: ${Math.floor(timeElapsedMs / 1000 / 60)}m | Required: ${SESSION_DURATION_MS / 1000 / 60}m`);
+
+    // The core check: Has the duration elapsed?
     if (timeElapsedMs < SESSION_DURATION_MS) {
-        // Session duration has not yet elapsed
-        return null; 
+        return null;
     }
-    
-    // 2. The session has expired (21 minutes passed) - Process the tick!
-    logger.info(`Auto Tick: Session expired for Challenge #${executingChallenge.challengeId}. Processing session increment.`);
+
+    logger.info(`Auto Tick: Session expired for Challenge #${executingChallenge.challengeId}. Processing increment.`);
 
     return prisma.$transaction(async (tx) => {
         const nextSessionCount = executingChallenge.currentSessionCount + 1;
         const isCompleted = nextSessionCount >= executingChallenge.totalSessions;
-        
-        const txNow = new Date(); 
+        const txNow = new Date();
 
+        // Build the update payload
         const updateData: any = {
             currentSessionCount: nextSessionCount,
-            isExecuting: false, //CRITICAL The challenge STOPS execution after ONE automatic tick.
-            timestampLastSessionTick: null, // CRITICAL: Clear the tick timestamp to prevent re-ticking (re-incrementing) on next check.
+            isExecuting: false, // Stop execution after one session
+            timestampLastSessionTick: null, // Reset clock
         };
+
+        // INTEGRATION: Sync with Recurring Cadence
+        if (executingChallenge.durationType === DurationType.RECURRING) {
+            updateData.cadenceProgressCounter = { increment: 1 };
+        }
 
         if (isCompleted) {
             updateData.status = ChallengeStatus.COMPLETED;
-            updateData.timestampCompleted = txNow.toISOString();
-            logger.info(`Auto Tick: Challenge #${executingChallenge.challengeId} is COMPLETED.`);
-        } 
-        // If NOT completed, the status remains IN_PROGRESS, but isExecuting is false.
-
-        // Near-completion check
-        const SESSIONS_REMAINING_ALERT = 3;
-        const sessionsRemaining = executingChallenge.totalSessions - nextSessionCount;
-
-        if (sessionsRemaining > 0 && sessionsRemaining <= SESSIONS_REMAINING_ALERT) {
-            console.log(`[ChallengeService] ALERT: Challenge #${executingChallenge.challengeId} is entering its final ${sessionsRemaining} sessions! (Auto Tick)`);
+            updateData.timestampCompleted = txNow;
         }
-        
-        // 3. Update the database
+
+        // Update the DB
         const updatedChallenge = await tx.challenge.update({
             where: { challengeId: executingChallenge.challengeId },
             data: updateData
         });
 
-        // Return data needed for external event triggering
         return {
             challenge: updatedChallenge,
-            eventType: isCompleted ? 'SESSION_COMPLETED' : 'SESSION_TICKED', 
+            eventType: isCompleted ? 'SESSION_COMPLETED' : 'SESSION_TICKED',
         };
     });
 }
