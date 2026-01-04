@@ -56,7 +56,7 @@ export async function processDailyUserTick(
         });
     }));
 
-    console.log(`[ClockService] Processed Two-Watermark tick for ${usersToUpdate.length} users.`);
+    console.log(`[ClockService] Updated engagement counters for ${usersToUpdate.length} users (Real-Day vs Stream-Day).`);
 
     // --- FULL SANITY CHECK ---
     // Ensure only one Challenge is marked as executing (or zero)
@@ -156,19 +156,30 @@ export async function enforceRecurringChallengeCadence(): Promise<number> {
         // --- Core Check: Has the period passed? ---
         const deadline = new Date(lastActiveDate.getTime() + periodDays * 24 * 60 * 60 * 1000);
         const periodPassed = now > deadline;
+        const hasMetRequirement = challenge.cadenceProgressCounter >= requiredCount;
         
-        // --- LOG ---
+        // --- IMPROVED DYNAMIC LOGGING ---
+        let auditStatus = periodPassed ? 'PERIOD EXPIRED' : 'ACTIVE';
+        let verdict = '';
+
+        if (periodPassed) {
+            verdict = hasMetRequirement 
+                ? `✅ SUCCESS: Met ${challenge.cadenceProgressCounter}/${requiredCount} sessions. Period Resetting.` 
+                : `❌ FAILURE: Only ${challenge.cadenceProgressCounter}/${requiredCount} sessions. Challenge Terminating.`;
+        } else {
+            verdict = `Progress: ${challenge.cadenceProgressCounter}/${requiredCount}`;
+        }
+
         console.log(
             `[Cadence Audit] Challenge #${challenge.challengeId} (${challenge.cadenceUnit}): ` +
-            `Progress ${challenge.cadenceProgressCounter}/${requiredCount}. ` +
-            `Deadline: ${deadline.toISOString().replace('T', ' ').substring(0, 19)}. ` +
-            `Status: ${periodPassed ? 'PERIOD EXPIRED' : 'ACTIVE'}`
+            `Deadline: ${deadline.toISOString().replace('T', ' ').substring(0, 16)} | ` +
+            `Status: ${auditStatus} | ${verdict}`
         );
 
         if (periodPassed) {
             challengesChecked++;
             
-            if (challenge.cadenceProgressCounter < requiredCount) {
+            if (!hasMetRequirement) {
                 // FAILURE: Did not meet the required pace
                 failedChallengeIds.push(challenge.challengeId);
                 
@@ -177,16 +188,16 @@ export async function enforceRecurringChallengeCadence(): Promise<number> {
                     data: {
                         status: ChallengeStatus.FAILED, 
                         failureReason: `Cadence rule broken: Failed to complete ${requiredCount} sessions within the ${challenge.cadenceUnit} period.`,
-                        timestampCompleted: now.toISOString(), 
+                        timestampCompleted: now, 
                     }
                 });
             } else {
-                // SUCCESS: Met the required pace. Reset the counter and advance the period start date.
+                // SUCCESS: Met the required pace.
                 await prisma.challenge.update({
                     where: { challengeId: challenge.challengeId },
                     data: {
-                        cadenceProgressCounter: 0,         // Reset for the next period
-                        cadencePeriodStart: now.toISOString(), // Set the new period's anchor to NOW
+                        cadenceProgressCounter: 0,
+                        cadencePeriodStart: now, // New period begins from maintenance time
                     }
                 });
             }
@@ -253,7 +264,7 @@ export async function runDailyMaintenance(): Promise<"EXECUTED" | "SKIPPED"> {
 
     // B. Always check RECURRING Cadence (Real-world time-based)
     const failedCadenceCount = await enforceRecurringChallengeCadence();
-    console.log(`[Maintenance] Failed ${failedCadenceCount} RECURRING challenges (Cadence).`);
+    console.log(`[Maintenance] Failed ${failedCadenceCount} RECURRING challenges (Pace/Cadence requirement not met).`);
 
     // C. Conditional Game-Logic Tasks (Only if a stream occurred and we aren't currently live)
     if (streamOccurred && !liveStream) {
