@@ -16,8 +16,8 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
     // These values are guaranteed to be the external identity the user used.
     // Destructure the required fields directly from the expected structure.
     const platformId = req.body.user?.userId;
-    const platformName = req.body.platform?.name; 
     const username = req.body.user?.username || platformId; // Use username for display, fall back to ID
+    const platformName = req.body.platform?.name; 
 
     if (!platformId || !platformName) {
         return res.status(400).json({ error: "Missing platformId or platformName in request body." });

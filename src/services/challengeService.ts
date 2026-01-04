@@ -375,23 +375,23 @@ export async function processPushQuote(
     });
 
     const currentUserPushCount = userPushRecord._sum.quantity ?? 0; 
-  let quotedCostBigInt: bigint = BigInt(0); // Initialize as BigInt
-  const baseCost = BigInt(challenge.pushBaseCost); // Convert base cost to BigInt
+    let quotedCostBigInt: bigint = BigInt(0); // Initialize as BigInt
+    const baseCost = BigInt(challenge.pushBaseCost); // Convert base cost to BigInt
 
-  // 3. Calculate the new quadratic cost for the requested quantity.
-  for (let i = 1; i <= quantity; i++) {
-    const incrementalCount = BigInt(currentUserPushCount + i); // Convert index to BigInt
-    // Cost formula: Base Cost * (User's Push Index)^2 (All BigInt arithmetic is safe)
-    quotedCostBigInt += baseCost * (incrementalCount * incrementalCount); 
-  }
+    // 3. Calculate the new quadratic cost for the requested quantity.
+    for (let i = 1; i <= quantity; i++) {
+        const incrementalCount = BigInt(currentUserPushCount + i); // Convert index to BigInt
+        // Cost formula: Base Cost * (User's Push Index)^2 (All BigInt arithmetic is safe)
+        quotedCostBigInt += baseCost * (incrementalCount * incrementalCount); 
+    }
 
-  // 4. Apply 21% discount if the stream is currently live.
-  // Note: This now calls the BigInt-safe version of the function
-  quotedCostBigInt = applyLiveDiscount(quotedCostBigInt); 
+    // 4. Apply 21% discount if the stream is currently live.
+    // Note: This now calls the BigInt-safe version of the function
+    quotedCostBigInt = applyLiveDiscount(quotedCostBigInt); 
 
-  // Coerce the precise BigInt result back to a number for saving to the 'Int' field
-  // This is safe because the quantity cap ensures the result is < 2.1 Billion.
-  let quotedCost = Number(quotedCostBigInt);
+    // Coerce the precise BigInt result back to a number for saving to the 'Int' field
+    // This is safe because the quantity cap ensures the result is < 2.1 Billion.
+    let quotedCost = Number(quotedCostBigInt);
 
     // --- 4.5. CRITICAL: BALANCE PRE-CHECK ---
     // Fetch the specific Account instead of the User
