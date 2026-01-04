@@ -1,14 +1,26 @@
 // src/routes/adminRoutes.ts
 
 // Define the Contract
+// Interface: Explicitly define lastRun as string for the JSON contract
 export interface PulseResponse {
     status: "OK" | "ERROR";
-    systems: { supabase: string; upstash: string; };
-    financials: {
-        grossSpent: string; refunded: string; netEconomy: string;
-        totalCausedByRemovals: string; communityChest: string; totalToPushers: string;
+    systems: { 
+        supabase: "UP" | "DOWN"; 
+        upstash: "UP" | "DOWN" | "DISABLED"; 
     };
-    maintenance: { realDay: number; streamDay: number; lastRun?: Date | null; };
+    financials: {
+        grossSpent: string; 
+        refunded: string; 
+        netEconomy: string;
+        totalCausedByRemovals: string; 
+        communityChest: string; 
+        totalToPushers: string;
+    };
+    maintenance: { 
+        realDay: number; 
+        streamDay: number; 
+        lastRun: string | null; // string for ISO consistency
+    };
 }
 
 import { Router } from 'express';
@@ -57,11 +69,11 @@ router.get('/pulse', async (req: any, res: any) => {
         const netEconomy = gross - refunded;
 
         // Use the interface in your response
-        const responseData: PulseResponse ={
+        const responseData: PulseResponse = {
             status: "OK",
             systems: {
-                supabase: dbHealth,
-                upstash: redisHealth
+                supabase: dbHealth as "UP" | "DOWN",
+                upstash: redisHealth as "UP" | "DOWN" | "DISABLED"
             },
             financials: {
                 grossSpent: gross.toString(),
@@ -74,7 +86,8 @@ router.get('/pulse', async (req: any, res: any) => {
             maintenance: {
                 realDay: streamStat?.daysSinceInception || 0,
                 streamDay: streamStat?.streamDaysSinceInception || 0,
-                lastRun: streamStat?.lastMaintenanceAt
+                // Ensure we send a clean ISO string for the frontend to parse
+                lastRun: streamStat?.lastMaintenanceAt ? streamStat.lastMaintenanceAt.toISOString() : null
             }
         };
         res.json(responseData);
