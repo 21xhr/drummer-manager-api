@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict QbyWbDb8geAsQlW4gD2sf8EF1QLuwjW49jDzqu9IQO5chmmOPaTab82hnt85nYn
+-- \restrict gZYjmk16mR2bnH5Hiphzd3BO28ZDu8jd22Yis8ZxRRDw5CZmnn7Py0vMnOzX7aU
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -222,7 +222,7 @@ fd6ec8e8-4ce1-415d-9dd3-a0ce0325eea6	f383664ac2466d0ba3601ae905dfb9ba039dc998e8b
 
 COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity_timestamp", "last_seen_stream_day", "active_offline_days_count", "active_stream_days_count", "daily_challenge_reset_at", "total_numbers_spent_game_wide", "total_challenges_submitted", "total_numbers_returned_from_removals_game_wide", "total_numbers_spent", "total_received_from_removals", "total_removals_executed", "total_digouts_executed", "totalPushesExecuted", "totalDisruptsExecuted", "daily_submission_count", "total_caused_by_removals", "total_to_community_chest", "total_to_pushers", "lastProcessedDay", "lastSeenDay") FROM stdin;
 1	\N	\N	3	0	0	2025-12-20 18:29:22	1040	0	0	0	0	0	0	0	0	0	0	0	0	18	0
-21	2026-01-02 15:43:09.746	\N	5	13	1	2026-01-02 21:00:00	0	14	0	22586	0	0	1	6	1	2	0	0	0	18	18
+21	2026-01-02 15:43:09.746	\N	5	13	1	2026-01-05 21:00:00	0	14	0	22586	0	0	1	6	1	0	0	0	0	18	18
 \.
 
 
@@ -232,7 +232,7 @@ COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity
 
 COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name", "current_balance", "last_balance_update", "last_activity_timestamp", "last_live_activity_timestamp", "username") FROM stdin;
 20	21	686071308	KICK	21000000	\N	\N	\N	21xhr
-21	21	686071308	TWITCH	1	\N	2026-01-04 15:23:04.728	2025-12-09 21:40:20.228	21xhr
+21	21	686071308	TWITCH	1	\N	2026-01-05 17:45:39.249	2025-12-09 21:40:20.228	21xhr
 \.
 
 
@@ -261,7 +261,7 @@ COPY "public"."pushes" ("push_id", "challenge_id", "user_id", "cost", "timestamp
 --
 
 COPY "public"."stream_stats" ("id", "stream_days_since_inception", "days_since_inception", "last_maintenance_at") FROM stdin;
-1	17	18	2026-01-04 16:07:27.825
+1	18	18	2026-01-04 16:07:27.825
 \.
 
 
@@ -272,6 +272,7 @@ COPY "public"."stream_stats" ("id", "stream_days_since_inception", "days_since_i
 COPY "public"."streams" ("stream_session_id", "current_stream_number", "start_timestamp", "end_timestamp", "duration_minutes", "total_pushes_in_session", "total_numbers_spent_on_push", "total_digouts_in_session", "total_numbers_spent_on_digout", "total_disrupts_in_session", "total_numbers_spent_on_disrupt", "total_numbers_spent_in_session", "has_been_processed", "total_challenges_submitted_in_session", "total_numbers_returned_from_removals_in_session", "total_removals_in_session") FROM stdin;
 1	1	2025-12-15 18:56:44.704	2025-12-15 20:56:44.704	2	0	0	0	0	0	0	0	t	0	0	0
 2	4	2026-01-02 15:30:38.618	2026-01-02 16:02:08.905	31	0	0	0	0	0	0	830	t	2	0	0
+3	18	2026-01-05 18:17:21.221	2026-01-05 18:17:25.184	0	0	0	0	0	0	0	0	t	0	0	0
 \.
 
 
@@ -379,7 +380,7 @@ SELECT pg_catalog.setval('"public"."pushes_push_id_seq"', 2, true);
 -- Name: streams_stream_session_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."streams_stream_session_id_seq"', 2, true);
+SELECT pg_catalog.setval('"public"."streams_stream_session_id_seq"', 3, true);
 
 
 --
@@ -393,6 +394,6 @@ SELECT pg_catalog.setval('"public"."users_user_id_seq"', 4, true);
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict QbyWbDb8geAsQlW4gD2sf8EF1QLuwjW49jDzqu9IQO5chmmOPaTab82hnt85nYn
+-- \unrestrict gZYjmk16mR2bnH5Hiphzd3BO28ZDu8jd22Yis8ZxRRDw5CZmnn7Py0vMnOzX7aU
 
 RESET ALL;
