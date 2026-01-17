@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict 9UY8rRpM2tU1EAxch888q75PPbdSrZT4SXV5JJVk9JedCDCUlRaZbtNN0rrpcmg
+-- \restrict klAmxxIo4JBXGPhKQwQzyQFcPV2eG4A9ajHFpO9yY2QJvUR3GdCMelcMTbDokKl
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -221,8 +221,8 @@ fd6ec8e8-4ce1-415d-9dd3-a0ce0325eea6	f383664ac2466d0ba3601ae905dfb9ba039dc998e8b
 --
 
 COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity_timestamp", "last_seen_stream_day", "active_offline_days_count", "active_stream_days_count", "daily_challenge_reset_at", "total_numbers_spent_game_wide", "total_challenges_submitted", "total_numbers_returned_from_removals_game_wide", "total_numbers_spent", "total_received_from_removals", "total_removals_executed", "total_digouts_executed", "totalPushesExecuted", "totalDisruptsExecuted", "daily_submission_count", "total_caused_by_removals", "total_to_community_chest", "total_to_pushers", "lastProcessedDay", "lastSeenDay") FROM stdin;
-21	2026-01-16 19:51:57.408	\N	5	13	1	2026-01-16 21:00:00	0	155	0	12208466	0	0	1	6	1	11	0	0	0	18	18
-1	\N	\N	3	0	0	2025-12-20 18:29:22	12186920	0	0	0	0	0	0	0	0	0	0	0	0	18	0
+21	2026-01-17 19:50:14.667	\N	5	13	1	2026-01-17 21:00:00	0	178	0	13116506	0	0	1	6	1	23	0	0	0	18	18
+1	\N	\N	3	0	0	2025-12-20 18:29:22	13094960	0	0	0	0	0	0	0	0	0	0	0	0	18	0
 \.
 
 
@@ -231,8 +231,8 @@ COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity
 --
 
 COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name", "current_balance", "last_balance_update", "last_activity_timestamp", "last_live_activity_timestamp", "username") FROM stdin;
-21	21	686071308	TWITCH	99974589	\N	2026-01-16 19:33:11.845	2025-12-09 21:40:20.228	21xhr
 20	21	686071308	KICK	21000000	\N	\N	\N	21xhr
+21	21	686071308	TWITCH	99888909	\N	2026-01-17 19:08:58.152	2025-12-09 21:40:20.228	21xhr
 \.
 
 
@@ -386,6 +386,29 @@ COPY "public"."challenges" ("challenge_id", "category", "proposer_user_id", "sta
 168	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-16 18:51:33.154	2026-01-16 18:51:33.154	\N	0	21	2026-01-16 18:51:33.897	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	17010	"Btbjrhrhrhrbehrb"
 169	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-16 18:52:54.253	2026-01-16 18:52:54.253	\N	0	21	2026-01-16 18:52:54.523	0	\N	2	RECURRING	\N	\N	0	DAILY	1 session per day for 2 days	1	\N	21000	"Iegiczisgksckscj"
 170	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-16 19:51:57.408	2026-01-16 19:51:57.408	\N	0	21	2026-01-16 19:51:58.001	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	25410	"Jrjdjfkdjdjdj"
+171	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-16 22:16:45.127	2026-01-16 22:16:45.127	\N	0	21	2026-01-16 22:16:46.14	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	"Egsgdgjjjk"
+172	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 15:36:41.663	2026-01-17 15:36:41.663	\N	0	21	2026-01-17 15:36:42.332	0	\N	2	RECURRING	\N	\N	0	DAILY	1 session per day for 2 days	1	\N	840	"Uteutdutsk"
+173	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 15:43:18.056	2026-01-17 15:43:18.056	\N	0	21	2026-01-17 15:43:18.818	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1890	"Hhdjfkdne'e'z"
+174	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 15:46:43.277	2026-01-17 15:46:43.277	\N	0	21	2026-01-17 15:46:43.602	0	\N	2	RECURRING	\N	\N	0	DAILY	1 session per day for 2 days	1	\N	3360	"⁷777777777"
+175	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 15:51:33.175	2026-01-17 15:51:33.175	\N	0	21	2026-01-17 15:51:33.703	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	5250	"Itdigdigsitdit"
+176	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 16:17:23.322	2026-01-17 16:17:23.322	\N	0	21	2026-01-17 16:17:24.027	0	\N	2	RECURRING	\N	\N	0	DAILY	1 session per day for 2 days	1	\N	7560	"Idejejfjrjdj"
+177	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 16:23:00.959	2026-01-17 16:23:00.959	\N	0	21	2026-01-17 16:23:01.75	0	\N	2	RECURRING	\N	\N	0	DAILY	1 session per day for 2 days	1	\N	10290	"wsvwsvwsvwsv"
+178	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 16:23:17.44	2026-01-17 16:23:17.44	\N	0	21	2026-01-17 16:23:17.754	0	\N	2	RECURRING	\N	\N	0	DAILY	1 session per day for 2 days	1	\N	13440	"wsvsdvsdvswv"
+179	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 19:29:25.122	2026-01-17 19:29:25.122	\N	0	21	2026-01-17 19:29:26.048	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	17010	"Kfnfkfjddnn"
+180	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 19:29:38.126	2026-01-17 19:29:38.126	\N	0	21	2026-01-17 19:29:38.722	0	\N	2	RECURRING	\N	\N	0	DAILY	1 session per day for 2 days	1	\N	21000	"Jrkrjrnrjrjrjj"
+181	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 19:30:25.414	2026-01-17 19:30:25.414	\N	0	21	2026-01-17 19:30:25.68	0	\N	2	RECURRING	\N	\N	0	DAILY	1 session per day for 2 days	1	\N	25410	"Kkrkrnfjrrnrn"
+182	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 19:31:24.084	2026-01-17 19:31:24.084	\N	0	21	2026-01-17 19:31:24.352	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	30240	"Kfkfkfkfnddnn"
+183	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 19:33:13.171	2026-01-17 19:33:13.171	\N	0	21	2026-01-17 19:33:13.495	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	35490	"Kfkfkfkfndn"
+184	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 19:33:51.375	2026-01-17 19:33:51.375	\N	0	21	2026-01-17 19:33:51.649	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	41160	"Kfnnfkfndn"
+185	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 19:36:24.669	2026-01-17 19:36:24.669	\N	0	21	2026-01-17 19:36:25.341	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	47250	"Zgjsgztegk"
+186	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 19:43:47.156	2026-01-17 19:43:47.156	\N	0	21	2026-01-17 19:43:47.895	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	53760	"wsdvwsdvwsdv"
+187	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 19:46:52.307	2026-01-17 19:46:52.307	\N	0	21	2026-01-17 19:46:52.619	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	60690	"wsfdswdfswdf"
+188	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 19:47:09.976	2026-01-17 19:47:09.976	\N	0	21	2026-01-17 19:47:10.583	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	68040	"&lt;df&lt;qdf&lt;qdf"
+189	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 19:47:31.593	2026-01-17 19:47:31.593	\N	0	21	2026-01-17 19:47:31.871	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	75810	"&lt;qds&lt;qds&lt;qds"
+190	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 19:47:50.9	2026-01-17 19:47:50.9	\N	0	21	2026-01-17 19:47:51.173	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	84000	"Kekdkdkdjdj"
+191	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 19:48:11.585	2026-01-17 19:48:11.585	\N	0	21	2026-01-17 19:48:11.857	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	92610	"Kgkgkfkffnn"
+192	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 19:49:27.973	2026-01-17 19:49:27.973	\N	0	21	2026-01-17 19:49:28.246	0	\N	2	RECURRING	\N	\N	0	DAILY	1 session per day for 2 days	1	\N	101640	"Jrkrkrkfnfn"
+193	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-17 19:50:14.667	2026-01-17 19:50:14.667	\N	0	21	2026-01-17 19:50:14.949	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	111090	"qd&lt;qdf&lt;sdf"
 \.
 
 
@@ -507,7 +530,7 @@ SELECT pg_catalog.setval('"public"."accounts_account_id_seq"', 4, true);
 -- Name: challenges_challenge_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 170, true);
+SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 193, true);
 
 
 --
@@ -535,6 +558,6 @@ SELECT pg_catalog.setval('"public"."users_user_id_seq"', 4, true);
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict 9UY8rRpM2tU1EAxch888q75PPbdSrZT4SXV5JJVk9JedCDCUlRaZbtNN0rrpcmg
+-- \unrestrict klAmxxIo4JBXGPhKQwQzyQFcPV2eG4A9ajHFpO9yY2QJvUR3GdCMelcMTbDokKl
 
 RESET ALL;
