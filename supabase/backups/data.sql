@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict SXiu4RAlB1utwkNNHyaoyyrfhs34ohEIjCCX0nmsPXHUbM2DHJb5SaqeItZEafS
+-- \restrict rvfQji4VgaIGix6nunZPJ8HYGGM4MhkF1uhDta3ATsbZ2c6ivRjacNYohoYY8nO
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -221,8 +221,8 @@ fd6ec8e8-4ce1-415d-9dd3-a0ce0325eea6	f383664ac2466d0ba3601ae905dfb9ba039dc998e8b
 --
 
 COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity_timestamp", "last_seen_stream_day", "active_offline_days_count", "active_stream_days_count", "daily_challenge_reset_at", "total_numbers_spent_game_wide", "total_challenges_submitted", "total_numbers_returned_from_removals_game_wide", "total_numbers_spent", "total_received_from_removals", "total_removals_executed", "total_digouts_executed", "totalPushesExecuted", "totalDisruptsExecuted", "daily_submission_count", "total_caused_by_removals", "total_to_community_chest", "total_to_pushers", "lastProcessedDay", "lastSeenDay") FROM stdin;
-21	2026-01-18 22:16:38.185	\N	5	13	1	2026-01-19 21:00:00	0	299	0	43670876	0	0	1	6	1	6	0	0	0	18	18
-1	\N	\N	3	0	0	2025-12-20 18:29:22	43649330	0	0	0	0	0	0	0	0	0	0	0	0	18	0
+21	2026-01-20 16:22:15.141	\N	5	13	1	2026-01-20 21:00:00	0	312	0	43842866	0	0	1	6	1	13	0	0	0	18	18
+1	\N	\N	3	0	0	2025-12-20 18:29:22	43821320	0	0	0	0	0	0	0	0	0	0	0	0	18	0
 \.
 
 
@@ -231,8 +231,8 @@ COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity
 --
 
 COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name", "current_balance", "last_balance_update", "last_activity_timestamp", "last_live_activity_timestamp", "username") FROM stdin;
-21	21	686071308	TWITCH	99992439	\N	2026-01-19 18:44:36.644	2025-12-09 21:40:20.228	21xhr
 20	21	686071308	KICK	21000000	\N	\N	\N	21xhr
+21	21	686071308	TWITCH	99964509	\N	2026-01-20 16:17:03.065	2025-12-09 21:40:20.228	21xhr
 \.
 
 
@@ -530,6 +530,19 @@ COPY "public"."challenges" ("challenge_id", "category", "proposer_user_id", "sta
 312	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-18 22:00:45.854	2026-01-18 22:00:45.854	\N	0	21	2026-01-18 22:00:46.206	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	3360	"hallengesubmitform/index.html?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIxLC"
 313	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-18 22:12:38.892	2026-01-18 22:12:38.892	\N	0	21	2026-01-18 22:12:39.698	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	5250	"<div style=\\"color: rgb(204, 204, 204); background-color: rgb(31, 31, 31); font-family: Menlo, Monaco, &quot;Courier New&quot;, monospace; font-size: 12px; line-height: 18px; white-space: pre;\\"><span style=\\"color: #ce9178;\\">tyle=\\"color: var(--subtext-color)</span></div><div style=\\"color: rgb(204, 204, 204); background-color: rgb(31, 31, 31); font-family: Menlo, Monaco, &quot;Courier New&quot;, monospace; font-size: 12px; line-height: 18px; white-space: pre;\\"><span style=\\"color: #ce9178;\\"><br></span></div><div style=\\"color: rgb(204, 204, 204); background-color: rgb(31, 31, 31); font-family: Menlo, Monaco, &quot;Courier New&quot;, monospace; font-size: 12px; line-height: 18px; white-space: pre;\\"><div style=\\"line-height: 18px;\\"><span style=\\"color: #ce9178;\\">tyle=\\"color: var(--subtext-color)</span><span style=\\"color: rgb(206, 145, 120);\\">tyle=\\"color: var(--subtext-color)</span><span style=\\"color: rgb(206, 145, 120);\\">tyle=\\"color: var(--subtext-color)</span><span style=\\"color: rgb(206, 145, 120);\\">tyle=\\"color: var(--subtext-color)</span></div><div style=\\"line-height: 18px;\\"><span style=\\"color: rgb(206, 145, 120);\\"><br></span></div><div style=\\"line-height: 18px;\\"><div style=\\"line-height: 18px;\\"><span style=\\"color: #ce9178;\\">tyle=\\"color: var(--subtext-color)</span></div><div style=\\"line-height: 18px;\\"><div style=\\"line-height: 18px;\\"><span style=\\"color: #ce9178;\\">tyle=\\"color: var(--subtext-color)</span></div></div></div></div>"
 314	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-18 22:16:38.185	2026-01-18 22:16:38.185	\N	0	21	2026-01-18 22:16:38.538	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	7560	"ngesubmitform/index.html?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIxLCJwbGF0Zm9ybUlkIjoiNjg2MDcxMzA4IiwicGxhdGZvcm1OYW1lIjoiVFdJVENIIiwidXNlcm5hbWUiOiIyMXhociIsImlhdCI6MTc2ODc3MjkyNSwiZXhwIjoxNzY4Nzg1NTI1fQ.QgTGHcRa2kS1xfW2STwpmVJOUNZc_pzY4yn7DWJ_ki0<div><br></div><div><br></div><div>ngesubmitform/index.html?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIxLCJwbGF0Zm9ybUlkIjoiNjg2MDcxMzA4IiwicGxhdGZvcm1OYW1lIjoiVFdJVENIIiwidXNlcm5hbWUiOiIyMXhociIsImlhdCI6MTc2ODc3MjkyNSwiZXhwIjoxNzY4Nzg1NTI1fQ.QgTGHcRa2kS1xfW2STwpmVJOUNZc_pzY4yn7DWJ_ki0</div><div>ngesubmitform/index.html?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIxLCJwbGF0Zm9ybUlkIjoiNjg2MDcxMzA4IiwicGxhdGZvcm1OYW1lIjoiVFdJVENIIiwidXNlcm5hbWUiOiIyMXhociIsImlhdCI6MTc2ODc3MjkyNSwiZXhwIjoxNzY4Nzg1NTI1fQ.QgTGHcRa2kS1xfW2STwpmVJOUNZc_pzY4yn7DWJ_ki0ngesubmitform/index.html?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIxLCJwbGF0Zm9ybUlkIjoiNjg2MDcxMzA4IiwicGxhdGZvcm1OYW1lIjoiVFdJVENIIiwidXNlcm5hbWUiOiIyMXhociIsImlhdCI6MTc2ODc3MjkyNSwiZXhwIjoxNzY4Nzg1NTI1fQ.QgTGHcRa2kS1xfW2STwpmVJOUNZc_pzY4yn7DWJ_ki0</div><div><br></div><div>ngesubmitform/index.html?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIxLCJwbGF0Zm9ybUlkIjoiNjg2MDcxMzA4IiwicGxhdGZvcm1OYW1lIjoiVFdJVENIIiwidXNlcm5hbWUiOiIyMXhociIsImlhdCI6MTc2ODc3MjkyNSwiZXhwIjoxNzY4Nzg1NTI1fQ.QgTGHcRa2kS1xfW2STwpmVJOUNZc_pzY4yn7DWJ_ki0</div>"
+315	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-19 21:30:37.859	2026-01-19 21:30:37.859	\N	0	21	2026-01-19 21:30:38.745	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	"sdfswdfwsdf"
+316	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-19 21:30:54.488	2026-01-19 21:30:54.488	\N	0	21	2026-01-19 21:30:54.797	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	840	"wsdfwsdfwsdf"
+317	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-19 21:31:16.005	2026-01-19 21:31:16.005	\N	0	21	2026-01-19 21:31:16.273	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1890	"wsdfwsdfwsdf"
+318	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-19 21:31:28.972	2026-01-19 21:31:28.972	\N	0	21	2026-01-19 21:31:29.239	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	3360	"wsdfwsdffw"
+319	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-19 21:32:04.259	2026-01-19 21:32:04.259	\N	0	21	2026-01-19 21:32:04.532	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	5250	"wdvwsdvwsv"
+320	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-19 21:32:17.191	2026-01-19 21:32:17.191	\N	0	21	2026-01-19 21:32:17.413	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	7560	"wsdvwsdvwsdv"
+321	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-19 21:32:30.291	2026-01-19 21:32:30.291	\N	0	21	2026-01-19 21:32:30.965	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	10290	"wsvwsdfvwsfv"
+322	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-19 21:33:20.029	2026-01-19 21:33:20.029	\N	0	21	2026-01-19 21:33:20.337	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	13440	"wsdfwsdfwsdf"
+323	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-19 21:34:38.921	2026-01-19 21:34:38.921	\N	0	21	2026-01-19 21:34:39.295	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	17010	"wsdwsdwsdv"
+324	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-19 21:46:50.914	2026-01-19 21:46:50.914	\N	0	21	2026-01-19 21:46:51.598	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	21000	"wdfgqsdfgqdf"
+325	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-20 16:17:19.835	2026-01-20 16:17:19.835	\N	0	21	2026-01-20 16:17:20.507	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	25410	"qfgqsdfgqsfg"
+326	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-20 16:18:22.721	2026-01-20 16:18:22.721	\N	0	21	2026-01-20 16:18:23	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	30240	"wxvcwxcvwxcvwxcv"
+327	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-20 16:22:15.141	2026-01-20 16:22:15.141	\N	0	21	2026-01-20 16:22:15.452	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	35490	"wxvwsdvwsdv"
 \.
 
 
@@ -651,7 +664,7 @@ SELECT pg_catalog.setval('"public"."accounts_account_id_seq"', 4, true);
 -- Name: challenges_challenge_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 314, true);
+SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 327, true);
 
 
 --
@@ -679,6 +692,6 @@ SELECT pg_catalog.setval('"public"."users_user_id_seq"', 4, true);
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict SXiu4RAlB1utwkNNHyaoyyrfhs34ohEIjCCX0nmsPXHUbM2DHJb5SaqeItZEafS
+-- \unrestrict rvfQji4VgaIGix6nunZPJ8HYGGM4MhkF1uhDta3ATsbZ2c6ivRjacNYohoYY8nO
 
 RESET ALL;
