@@ -1381,7 +1381,6 @@ export async function processRemove(
     // --- STEP 3: FINAL RESPONSE ---
 
     // PUBLISH EVENT: CHALLENGE_REMOVED_BY_AUTHOR
-    // The event payload includes the updated challenge status (REMOVED)
     publishChallengeEvent(ChallengeEvents.CHALLENGE_REMOVED_BY_AUTHOR, result.updatedChallenge);
 
     return {

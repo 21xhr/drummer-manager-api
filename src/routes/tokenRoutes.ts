@@ -3,6 +3,9 @@
 import { Router, Request, Response } from 'express';
 import { validateDuration, verifyToken } from '../services/jwtService'; 
 import logger from '../logger';
+import { getCurrentDailySubmissionContext } from '../services/challengeService';
+import { findOrCreateUser } from '../services/userService';
+import { PlatformName } from '@prisma/client';
 
 const router = Router();
 
@@ -28,12 +31,25 @@ router.post('/verify', async (req: Request, res: Response) => {
             action: 'token_verification_success'
         });
 
+        //  Resolve the external platformId to the internal User identity
+        const user = await findOrCreateUser({
+            platformId: payload.platformId,
+            platformName: payload.platformName as PlatformName,
+            username: payload.username
+        });
+
+        // Get the daily context (this handles the daily reset logic automatically)
+        // AND pass the INTERNAL user.id (e.g., 21) to the context function
+        const context = await getCurrentDailySubmissionContext(user.id);
+
         // Return the verified, secure identity information
         return res.status(200).json({
             message: 'Token verified successfully.',
             platformId: payload.platformId,
             platformName: payload.platformName,
             username: payload.username,
+            dailySubmissionCount: context.dailySubmissionCount,
+            serverCalculatedBaseCost: context.baseCostPerSession,
             expiresIn: payload.exp ? validateDuration(`${(payload.exp * 1000 - Date.now()) / 60000}m`) : 'N/A'
         });
 
