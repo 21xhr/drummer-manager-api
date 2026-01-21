@@ -80,8 +80,6 @@ export async function processStreamLiveEvent(streamStartTime: Date): Promise<voi
         let newGlobalDay = currentDay;
 
         // Check if the current stream start date is different from the last stream's end date.
-        // Prevents the global streamDaysSinceInception counter from advancing if the current stream 
-        // started on the same calendar day as the last processed stream session's end time.
         if (!lastStream || lastStream.endTimestamp!.toDateString() !== streamStartTime.toDateString()) {
             newGlobalDay = currentDay + 1;
             // Update the single global stat record
@@ -94,30 +92,25 @@ export async function processStreamLiveEvent(streamStartTime: Date): Promise<voi
             console.log(`[StreamService] Global Stream Day Counter advanced to Day ${newGlobalDay}.`);
         }
 
-        // 2. Update Challenge Clocks (21-Day Counter) 
-        const activeChallenges = await tx.challenge.findMany({
+        const streamEventDateUTC = streamStartTime.toISOString().substring(0, 10);
+        const startOfTodayUTC = new Date(streamEventDateUTC);
+
+        // 2. Update Challenge Clocks (21-Day Counter) if needed
+        const updateResult = await tx.challenge.updateMany({
             where: {
                 status: ChallengeStatus.ACTIVE,
-                streamDaysSinceActivation: { lt: 21 } 
+                streamDaysSinceActivation: { lt: 21 },
+                // ONLY update if the last tick happened BEFORE today's date
+                timestampLastStreamDayTicked: { lt: startOfTodayUTC }
+            },
+            data: {
+                streamDaysSinceActivation: { increment: 1 }, 
+                timestampLastStreamDayTicked: streamStartTime,
             },
         });
 
-        const streamEventDateUTC = streamStartTime.toISOString().substring(0, 10);
-
-        for (const challenge of activeChallenges) {
-            const lastTickDateUTC = challenge.timestampLastStreamDayTicked.toISOString().substring(0, 10);
-
-            // CRITICAL Archival Clock Logic: Check if this Challenge's counter has already been incremented
-            // on the current UTC CALENDAR DAY (YYYY-MM-DD UTC). 
-            if (streamEventDateUTC !== lastTickDateUTC) {
-                await tx.challenge.update({
-                    where: { challengeId: challenge.challengeId },
-                    data: {
-                        streamDaysSinceActivation: { increment: 1 }, 
-                        timestampLastStreamDayTicked: streamStartTime,
-                    },
-                });
-            }
+        if (updateResult.count > 0) {
+            console.log(`[StreamService] Advanced clocks for ${updateResult.count} active challenges.`);
         }
 
         // 3. Record the Stream Session
@@ -128,12 +121,33 @@ export async function processStreamLiveEvent(streamStartTime: Date): Promise<voi
                 hasBeenProcessed: false, // Must be false until /offline event runs
             }
         });
+
+        // Fetch stats for logging
+        const stats = await tx.streamStat.findFirst({ where: { id: 1 } });
         
         // 4. Update In-Memory Status (outside the transaction, after DB success)
         currentStreamStatus = 'LIVE';
         currentStreamStartTime = streamStartTime;
         currentStreamSessionId = newStream.streamSessionId;
         console.log(`[StreamService] Stream set to LIVE. Session ID: ${currentStreamSessionId}`);
+
+        // Formatted log block for clarity
+        console.log(`
+╔════════════════ SESSION STARTED ════════════════╗
+  ID: ${newStream.streamSessionId} | Number: #${newStream.currentStreamNumber}
+  Start: ${streamStartTime.toISOString().replace('T', ' ').substring(0, 19)} UTC
+  
+  CLOCKS:
+  Stream Days: ${stats?.streamDaysSinceInception}
+  Real Days:   ${stats?.daysSinceInception}
+  
+  ACTIVITY:
+  Advanced Clocks: ${updateResult.count} Challenges
+╚══════════════════════════════════════════════════╝
+        `);
+        
+    }, {
+        timeout: 15000 // Added a safety timeout (15s) for bulk processing
     });
 }
 
@@ -146,50 +160,56 @@ export async function processStreamLiveEvent(streamStartTime: Date): Promise<voi
  * @param streamEndTime - The timestamp of the 'Go Offline' event.
  */
 export async function processStreamOfflineEvent(streamEndTime: Date): Promise<void> {
-    
-    // Safety check for an unexpected offline event
     if (!currentStreamSessionId) {
-        console.warn(`[StreamService] Offline event received but no active session ID found. Status reset forced.`);
+        console.warn(`[StreamService] Offline event received but no active session ID found.`);
         currentStreamStatus = 'OFFLINE';
         return;
     }
 
-    // Use transaction for atomic DB updates
-    await prisma.$transaction(async (tx) => {
-        
-        // Calculate duration and finalize stats
-        const durationMs = streamEndTime.getTime() - currentStreamStartTime!.getTime();
-        const durationMinutes = Math.floor(durationMs / (1000 * 60));
-        
-        // 1. Finalize the Stream Session record
-        await tx.stream.update({
-            // Use non-null assertion '!' to satisfy TypeScript compiler (number | null -> number)
-            where: { streamSessionId: currentStreamSessionId! }, 
+    // 1. Calculate duration
+    const durationMs = streamEndTime.getTime() - currentStreamStartTime!.getTime();
+    const durationMinutes = Math.floor(durationMs / (1000 * 60));
+
+    // 2. Perform DB updates in a tight, fast transaction
+    const result = await prisma.$transaction(async (tx) => {
+        const finalized = await tx.stream.update({
+            where: { streamSessionId: currentStreamSessionId! },
             data: {
                 endTimestamp: streamEndTime,
                 durationMinutes: durationMinutes,
-                hasBeenProcessed: true, 
+                hasBeenProcessed: true,
             }
         });
 
-        // 2. ARCHIVE EXPIRED CHALLENGES
-        // Note: Because this is an external function, we call the imported service function, 
-        // which uses its own prisma client, but runs *after* the stream record is updated.
-        const archivedCount = await archiveExpiredChallenges();
-        console.log(`[StreamService] Challenge archival complete. ${archivedCount} challenges archived.`);
-
-        // 3. FINALIZE CURRENTLY EXECUTING CHALLENGE
-        const completedChallenge = await finalizeInProgressChallenge();
-        if (completedChallenge) {
-            console.log(`[StreamService] Challenge #${completedChallenge.challengeId} completed upon stream end.`);
-        }
-
-        // 4. Reset In-Memory Status
-        currentStreamStatus = 'OFFLINE';
-        currentStreamStartTime = null;
-        currentStreamSessionId = null;
-        console.log(`[StreamService] Stream set to OFFLINE. Session finalized.`);
+        const stats = await tx.streamStat.findFirst({ where: { id: 1 } });
+        
+        return { finalized, stats };
     });
+
+    // 3. Move archival/finalization OUTSIDE the transaction
+    // This prevents the "Transaction not found" error because the transaction is already closed.
+    const archivedCount = await archiveExpiredChallenges();
+    const completedChallenge = await finalizeInProgressChallenge();
+
+    // 4. Update memory and log
+    currentStreamStatus = 'OFFLINE';
+    
+    console.log(`
+╔════════════════ SESSION FINALIZED ════════════════╗
+  ID: ${result.finalized.streamSessionId} | Number: #${result.finalized.currentStreamNumber}
+  Duration: ${result.finalized.durationMinutes} minutes
+  
+  CLOCKS:
+  Stream Days: ${result.stats?.streamDaysSinceInception}
+  Real Days:   ${result.stats?.daysSinceInception}
+  
+  ACTIVITY:
+  Archived:  ${archivedCount} | Completed: ${completedChallenge ? `#${completedChallenge.challengeId}` : 'None'}
+╚═══════════════════════════════════════════════════╝
+    `);
+
+    currentStreamStartTime = null;
+    currentStreamSessionId = null;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -205,6 +225,12 @@ export function getCurrentStreamSessionId(): number | null {
 ////////////////////////////////////////////////////////////////////////////////////////
 // SERVER STARTUP / STATE RECOVERY
 ////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * Its Single Purpose: Its only job is "Memory Recovery." 
+ * If the Node.js process restarts (due to a Vercel deployment or a crash), 
+ * it looks at the DB and asks: "Was I in the middle of a stream when I died?" 
+ * If it finds a record where hasBeenProcessed: false, it re-hydrates the memory variables.
+ */
 export async function initializeStreamState(): Promise<void> {
     // 1. Fetch the global stat record first. (Assuming it's a singleton with ID 1 or findFirst)
     // This is needed for the logging of the current global days.
