@@ -898,7 +898,7 @@ export async function processChallengeSubmission(
         });
         const updatedUser = await recordUserActivity(tx, userId, transactionTimestamp);
 
-        // Update Account Balance: Update the specific Account with the authoritative balance
+        // Update Account Balance
         const updatedAccount = await tx.account.update({
             where: {
                 platformId_platformName: {
@@ -907,23 +907,26 @@ export async function processChallengeSubmission(
                 }
             },
             data: {
-                currentBalance: newAuthoritativeBalance,
+                currentBalance: newAuthoritativeBalance, // Int column
             }
         });
 
-        // 7., 8. Update Global Ledger and Stream Session Metrics 
-        await tx.user.updateMany({ 
+        // 7. Targeted Update for Global Ledger ---
+        await tx.user.update({ 
             where: { id: 1 }, 
             data: { 
                 totalNumbersSpentGameWide: { increment: BigInt(submissionCost) } 
             } 
         });
         
-        // Stream session metrics use standard number (no BigInt)
+        // 8. Defensive casting for Stream Metrics ---
         if (currentStreamSessionId) {
             await tx.stream.update({
                 where: { streamSessionId: currentStreamSessionId },
-                data: { totalNumbersSpentInSession: { increment: submissionCost }, totalChallengesSubmittedInSession: { increment: 1 } }
+                data: { 
+                    totalNumbersSpentInSession: { increment: Number(submissionCost) }, 
+                    totalChallengesSubmittedInSession: { increment: 1 } 
+                }
             });
         }
 
