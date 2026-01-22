@@ -35,7 +35,7 @@ export async function deductNumbersViaLumia(
     // 1. (MOCK) Global Token/Key Check is assumed to pass here.
     
     // MOCK FAILURE CONDITION: Simulate an authoritative failure (e.g., Insufficient Funds)
-    if (amount > 1_000_000) { // Arbitrary large number to force a mock failure
+    if (amount > 21_000_000) { // Arbitrary large number to force a mock failure
         logger.warn(`Lumia Mock Failure: User ${platformId} attempted deduction of ${amount}.`);
         throw new Error("Lumia API: Insufficient funds for transaction.");
     }

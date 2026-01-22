@@ -937,6 +937,25 @@ export async function processChallengeSubmission(
             updatedUser: updatedUser as User,
             updatedAccount: updatedAccount as Account
         };
+    }).catch((error) => {
+        // GLOBAL CATCH: Log the error details before re-throwing
+        console.log("-----------------------------------------");
+        console.error("❌ CRITICAL SUBMISSION FAILURE DETECTED");
+        
+        // 1. Terminal Visibility
+        console.dir(error, { depth: null }); 
+        
+        // 2. Persistent Structured Logging (Winston)
+        logger.error(`Challenge Submission Failed: ${error instanceof Error ? error.message : 'Unknown Error'}`, {
+            userId,
+            cost: "Look at console.dir",
+            action: 'submission_transaction_rollback',
+            errorDetails: error // Winston will try to serialize this as JSON
+        });
+        console.log("-----------------------------------------");
+        
+        // Re-throw so the userRoutes.ts catch block can handle the HTTP response
+        throw error;
     });
 }
 
