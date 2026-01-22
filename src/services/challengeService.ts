@@ -308,15 +308,22 @@ export async function getCurrentDailySubmissionContext(userId: number | string):
  * daily submission count. Applies live stream discount if applicable.
  */
 function calculateSubmissionCost(challengeCountToday: number): number {
-    const N = challengeCountToday;
-    let cost = SUBMISSION_BASE_COST * ((N + 1) * (N + 1));
+    const N = BigInt(challengeCountToday);
+    const base = BigInt(SUBMISSION_BASE_COST);
     
-    // Apply LIVE STREAM Discount (21% off)
+    // 1. Calculate the quadratic core
+    let costBig = base * ((N + 1n) * (N + 1n));
+    
+    // 2. Apply LIVE STREAM Discount (21% off)
     if (isStreamLive()) {
-        cost = Math.ceil(cost * LIVE_DISCOUNT_MULTIPLIER); // Round up after discount
+        // Scale the multiplier to avoid floating point BigInt error
+        // If LIVE_DISCOUNT_MULTIPLIER is 0.79, this becomes (cost * 79n) / 100n
+        const multiplierScaled = BigInt(Math.round(LIVE_DISCOUNT_MULTIPLIER * 100));
+        costBig = (costBig * multiplierScaled) / 100n;
     }
     
-    return cost;
+    // 3. Cast back to number for TypeScript/Prisma compatibility
+    return Number(costBig);
 }
 
 
