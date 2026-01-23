@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict kowt3QZ9ccyF54QFMMxSraMWvV7ILDGwaoQuHLLnemwwC8PndrfonnKrVJfeIb0
+-- \restrict lagsof1lmQcMiO7FsYkFgx6B5mp5I7AuCgAS75sXk9tQOTj6m835K9cWo4NS5Q3
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -221,8 +221,8 @@ fd6ec8e8-4ce1-415d-9dd3-a0ce0325eea6	f383664ac2466d0ba3601ae905dfb9ba039dc998e8b
 --
 
 COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity_timestamp", "last_seen_stream_day", "active_offline_days_count", "active_stream_days_count", "daily_challenge_reset_at", "total_numbers_spent_game_wide", "total_challenges_submitted", "total_numbers_returned_from_removals_game_wide", "total_numbers_spent", "total_received_from_removals", "total_removals_executed", "total_digouts_executed", "totalPushesExecuted", "totalDisruptsExecuted", "daily_submission_count", "total_caused_by_removals", "total_to_community_chest", "total_to_pushers", "lastProcessedDay", "lastSeenDay") FROM stdin;
-21	2026-01-22 21:18:41.232	\N	5	13	1	2026-01-23 21:00:00	0	327	0	51478676	0	0	1	6	1	4	0	0	0	18	18
-1	\N	\N	3	0	0	2025-12-20 18:29:22	51457130	0	0	0	0	0	0	0	0	0	0	0	0	18	0
+21	2026-01-23 17:50:52.389	\N	5	13	1	2026-01-23 21:00:00	0	363	0	56121776	0	0	1	6	1	40	0	0	0	18	18
+1	\N	\N	3	0	0	2025-12-20 18:29:22	56100230	0	0	0	0	0	0	0	0	0	0	0	0	18	0
 \.
 
 
@@ -232,7 +232,7 @@ COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity
 
 COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name", "current_balance", "last_balance_update", "last_activity_timestamp", "last_live_activity_timestamp", "username") FROM stdin;
 20	21	686071308	KICK	21000000	\N	\N	\N	21xhr
-21	21	686071308	TWITCH	99996639	\N	2026-01-22 21:18:38.071	2025-12-09 21:40:20.228	21xhr
+21	21	686071308	TWITCH	99663999	\N	2026-01-23 18:20:26.622	2025-12-09 21:40:20.228	21xhr
 \.
 
 
@@ -254,8 +254,44 @@ COPY "public"."challenges" ("challenge_id", "category", "proposer_user_id", "sta
 339	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:00:52.508	2026-01-22 21:00:52.508	\N	0	21	2026-01-22 21:00:52.806	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	"wsdfwsdfswdf"
 340	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:01:59.866	2026-01-22 21:01:59.866	\N	0	21	2026-01-22 21:02:01.879	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	840	"kjb;kj:n:lkn,;"
 341	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:17:20.697	2026-01-22 21:17:20.697	\N	0	21	2026-01-22 21:17:21.355	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1890	"wsdfwsdfwsdf"
+343	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:19:10.669	2026-01-22 21:19:10.669	\N	0	21	2026-01-22 21:19:10.963	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	5250	"wsdfwsdfff"
+346	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:21:52.697	2026-01-22 21:21:52.697	\N	0	21	2026-01-22 21:21:52.943	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	13440	"swdfswdfff"
 342	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:18:41.232	2026-01-22 21:18:41.232	\N	0	21	2026-01-22 21:18:41.534	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	3360	"wsdfwsdfsf"
+344	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:20:59.62	2026-01-22 21:20:59.62	\N	0	21	2026-01-22 21:20:59.871	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	7560	"wsdfwsdfwf"
+345	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:21:21.558	2026-01-22 21:21:21.558	\N	0	21	2026-01-22 21:21:21.822	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	10290	"wsdfwsdfwsdf"
+347	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:22:09.344	2026-01-22 21:22:09.344	\N	0	21	2026-01-22 21:22:09.591	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	17010	"swdfwsdfwsdf"
+348	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:22:24.309	2026-01-22 21:22:24.309	\N	0	21	2026-01-22 21:22:24.993	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	21000	"wsdfswdfff"
+349	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:22:51.294	2026-01-22 21:22:51.294	\N	0	21	2026-01-22 21:22:51.59	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	25410	"&lt;sd&lt;sdfwsdf"
+350	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:28:21.399	2026-01-22 21:28:21.399	\N	0	21	2026-01-22 21:28:21.635	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	30240	"wsdfswdfswdf"
+352	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:29:03.366	2026-01-22 21:29:03.366	\N	0	21	2026-01-22 21:29:03.684	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	41160	"sdwfwsdfwsdf"
+354	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:29:31.984	2026-01-22 21:29:31.984	\N	0	21	2026-01-22 21:29:32.859	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	53760	"wsfwsfswff"
 328	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-21 17:18:59.659	2026-01-21 17:18:59.659	\N	0	21	2026-01-21 17:18:59.981	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	"wd&lt;sd&lt;sc&lt;sc"
+351	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:28:38.709	2026-01-22 21:28:38.709	\N	0	21	2026-01-22 21:28:38.946	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	35490	"sdfwsdffff"
+353	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:29:18.354	2026-01-22 21:29:18.354	\N	0	21	2026-01-22 21:29:18.685	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	47250	"dfdsfsdfff"
+355	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:29:44.2	2026-01-22 21:29:44.2	\N	0	21	2026-01-22 21:29:44.447	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	60690	"wsdfwsdfwf"
+356	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:30:25.58	2026-01-22 21:30:25.58	\N	0	21	2026-01-22 21:30:25.84	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	68040	"wsdfwsdfwsdf"
+357	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:33:24.073	2026-01-22 21:33:24.073	\N	0	21	2026-01-22 21:33:24.329	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	75810	"wsdfwsdfwsdf"
+358	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:34:22.529	2026-01-22 21:34:22.529	\N	0	21	2026-01-22 21:34:22.822	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	84000	"wsdfswdfwsdf"
+359	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:34:48.145	2026-01-22 21:34:48.145	\N	0	21	2026-01-22 21:34:48.468	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	92610	"sdfwsdfwsdfswdf"
+360	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:38:50.368	2026-01-22 21:38:50.368	\N	0	21	2026-01-22 21:38:50.695	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	101640	"swdfwsdfwsfd"
+362	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:40:22.028	2026-01-22 21:40:22.028	\N	0	21	2026-01-22 21:40:22.261	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	120960	"swdfwsdfswdf"
+361	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:39:53.013	2026-01-22 21:39:53.013	\N	0	21	2026-01-22 21:39:53.237	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	111090	"qsfdswdfwsdf"
+363	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:46:41.529	2026-01-22 21:46:41.529	\N	0	21	2026-01-22 21:46:42.358	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	131250	"wsdfwsdfff"
+365	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:47:18.68	2026-01-22 21:47:18.68	\N	0	21	2026-01-22 21:47:18.919	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	153090	"dswv≈©◊≈©◊"
+367	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:48:00.164	2026-01-22 21:48:00.164	\N	0	21	2026-01-22 21:48:00.42	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	176610	"WFXVWXFVWDV"
+368	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:48:37.997	2026-01-22 21:48:37.997	\N	0	21	2026-01-22 21:48:38.271	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	189000	"wsdfwsdfwsdf"
+364	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:47:01.693	2026-01-22 21:47:01.693	\N	0	21	2026-01-22 21:47:01.95	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	141960	"wsdfwsdfswdf"
+366	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:47:42.677	2026-01-22 21:47:42.677	\N	0	21	2026-01-22 21:47:42.911	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	164640	"wsdwsdfwsdf"
+369	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:49:27.32	2026-01-22 21:49:27.32	\N	0	21	2026-01-22 21:49:27.606	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	201810	"wsdfwsdfwsdf"
+370	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:54:34.72	2026-01-22 21:54:34.72	\N	0	21	2026-01-22 21:54:35.368	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	215040	"sfdwsdfwsdf"
+371	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:56:20.407	2026-01-22 21:56:20.407	\N	0	21	2026-01-22 21:56:20.627	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	228690	"wsdfwsdfwsdf"
+372	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 22:00:50.144	2026-01-22 22:00:50.144	\N	0	21	2026-01-22 22:00:50.364	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	242760	"zefqsdfswdfswdf"
+373	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 22:05:36.442	2026-01-22 22:05:36.442	\N	0	21	2026-01-22 22:05:36.753	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	257250	"wsdfwsdfwsdf"
+374	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 22:18:14.568	2026-01-22 22:18:14.568	\N	0	21	2026-01-22 22:18:14.802	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	272160	"wsdfwsdfwsdf"
+375	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 22:25:57.301	2026-01-22 22:25:57.301	\N	0	21	2026-01-22 22:25:57.535	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	287490	"swdfwsdfwsdf"
+376	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 22:32:14.265	2026-01-22 22:32:14.265	\N	0	21	2026-01-22 22:32:14.548	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	303240	"wsdfwsdfswdf"
+377	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-23 17:50:14.223	2026-01-23 17:50:14.223	\N	0	21	2026-01-23 17:50:15.001	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	319410	"wsdfswdfwsdfwsf"
+378	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-23 17:50:52.389	2026-01-23 17:50:52.389	\N	0	21	2026-01-23 17:50:52.683	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	336000	"wxcw≈©w≈©w≈©"
 326	General	21	ACTIVE	f	f	f	0	0	0	0	0	1	2026-01-20 16:18:22.721	2026-01-20 16:18:22.721	\N	0	21	2026-01-21 17:49:29.597	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	30240	"wxvcwxcvwxcvwxcv"
 327	General	21	ACTIVE	f	f	f	0	0	0	0	0	1	2026-01-20 16:22:15.141	2026-01-20 16:22:15.141	\N	0	21	2026-01-21 17:49:29.597	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	35490	"wxvwsdvwsdv"
 \.
@@ -387,7 +423,7 @@ SELECT pg_catalog.setval('"public"."accounts_account_id_seq"', 4, true);
 -- Name: challenges_challenge_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 342, true);
+SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 378, true);
 
 
 --
@@ -415,6 +451,6 @@ SELECT pg_catalog.setval('"public"."users_user_id_seq"', 4, true);
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict kowt3QZ9ccyF54QFMMxSraMWvV7ILDGwaoQuHLLnemwwC8PndrfonnKrVJfeIb0
+-- \unrestrict lagsof1lmQcMiO7FsYkFgx6B5mp5I7AuCgAS75sXk9tQOTj6m835K9cWo4NS5Q3
 
 RESET ALL;
