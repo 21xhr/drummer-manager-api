@@ -1,6 +1,8 @@
 // src/services/lumiaService.ts
-
+//  Service module to interact with the Lumia API for managing user NUMBERS balances.
 import logger from '../logger';
+
+
 
 /**
  * MOCK: Simulates an authoritative call to the Lumia API for balance ADDITION (refund/credit).
@@ -18,6 +20,7 @@ export async function addNumbersViaLumia(
         newBalance: 99999999 + amount // Mock authoritative new balance
     };
 }
+
 
 
 /**
@@ -51,3 +54,19 @@ export async function deductNumbersViaLumia(
     };
 }
 
+
+
+/**
+ * Specifically handles the business logic for a user entering the Explorer.
+ * Deducts the flat fee and logs the access.
+ */
+export async function processExplorerAccessFee(platformId: string): Promise<number> {
+    const EXPLORER_FEE = 21;
+    
+    // Call the authoritative ledger (currently mocked in this same file)
+    const result = await deductNumbersViaLumia(platformId, EXPLORER_FEE);
+    
+    logger.info(`Explorer Access Fee Processed: Deducted ${EXPLORER_FEE} from ${platformId}.`);
+    
+    return result.newBalance; // Returns the 99999999 - 21 mock value
+}

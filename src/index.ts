@@ -21,6 +21,7 @@ import cors from 'cors';
 
 import prisma from './prisma'; 
 import adminRoutes from './routes/adminRoutes';
+import challengeRoutes from './routes/challengeRoutes';
 import clockRoutes from './routes/clockRoutes';
 import gamemasterRoutes from './routes/gamemasterRoutes';
 import streamRoutes from './routes/streamRoutes';
@@ -31,6 +32,7 @@ import { initializeConsoleSubscribers } from './eventSubscribers/consoleLogger';
 import { initializeNotificationService } from './eventSubscribers/notificationService'; 
 import { initializeStreamState } from './services/streamService'; 
 import { startChallengeScheduler } from './scheduler'; 
+import { ChallengeEvents } from './services/eventService';
 
 // --- Server Setup ---
 const app = express();
@@ -78,6 +80,7 @@ app.use(express.json());
 
 // --- Application Routers (API Endpoints) ---
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/challenge', challengeRoutes)
 app.use('/api/v1/clock', clockRoutes);
 app.use('/api/v1/gamemaster', gamemasterRoutes);
 app.use('/api/v1/stream', streamRoutes);
