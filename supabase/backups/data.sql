@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict 4B8hxX80p64Lyb8AhkdD3Knf74LkhcpSAp76Ac4IzhdmvfLod8Ojl2xs9FhsSvD
+-- \restrict Ockacd4fnzq0qz0A2afdmUTMItPlgq50pA7O4mXdhOCVeAnf3DfJDJa4aqFz3R8
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -213,6 +213,7 @@ b157ed96-fea8-4ec4-9a6b-e580ebac4b2b	f7d8269b6e5937d739897603482393e95467e0c9e0b
 fd6ec8e8-4ce1-415d-9dd3-a0ce0325eea6	f383664ac2466d0ba3601ae905dfb9ba039dc998e8b2294f0299cac73e3ea220	2025-12-13 22:19:20.709713+00	20251213221920_challenge_text_to_json	\N	\N	2025-12-13 22:19:20.464417+00	1
 9ce3a770-0831-465c-8a37-df2107ef0043	5d9c31723ecefc935181596a4bd3ccc988b3854279565c2b668ab9c6ce8548b8	2025-12-17 21:54:06.52012+00	20251217215406_add_last_maintenance_at	\N	\N	2025-12-17 21:54:06.283966+00	1
 708aa1e2-6920-413b-b0d1-50bd3ad6ee0f	822d1e230d706234da1e00d6407b560e26ef17f717d04e5e65ca09e84a7514ba	2025-12-30 21:57:34.501589+00	20251230215733_add_user_watermarks	\N	\N	2025-12-30 21:57:34.135564+00	1
+afccbf26-dc6d-44bf-b97a-0d2e753cd441	6ed63d159c7b3999c98a6c4c5a431297900c7bf665ece8128789b7e4bea5d620	2026-01-26 21:17:17.519627+00	20260126211717_add_last_explorer_deduction	\N	\N	2026-01-26 21:17:17.276953+00	1
 \.
 
 
@@ -220,9 +221,9 @@ fd6ec8e8-4ce1-415d-9dd3-a0ce0325eea6	f383664ac2466d0ba3601ae905dfb9ba039dc998e8b
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity_timestamp", "last_seen_stream_day", "active_offline_days_count", "active_stream_days_count", "daily_challenge_reset_at", "total_numbers_spent_game_wide", "total_challenges_submitted", "total_numbers_returned_from_removals_game_wide", "total_numbers_spent", "total_received_from_removals", "total_removals_executed", "total_digouts_executed", "totalPushesExecuted", "totalDisruptsExecuted", "daily_submission_count", "total_caused_by_removals", "total_to_community_chest", "total_to_pushers", "lastProcessedDay", "lastSeenDay") FROM stdin;
-1	\N	\N	3	0	0	2025-12-20 18:29:22	56100230	0	0	0	0	0	0	0	0	0	0	0	0	18	0
-21	2026-01-23 17:50:52.389	\N	5	13	1	2026-01-25 21:00:00	0	363	0	56121776	0	0	1	6	1	0	0	0	0	18	18
+COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity_timestamp", "last_seen_stream_day", "active_offline_days_count", "active_stream_days_count", "daily_challenge_reset_at", "total_numbers_spent_game_wide", "total_challenges_submitted", "total_numbers_returned_from_removals_game_wide", "total_numbers_spent", "total_received_from_removals", "total_removals_executed", "total_digouts_executed", "totalPushesExecuted", "totalDisruptsExecuted", "daily_submission_count", "total_caused_by_removals", "total_to_community_chest", "total_to_pushers", "lastProcessedDay", "lastSeenDay", "last_explorer_deduction") FROM stdin;
+1	\N	\N	3	0	0	2025-12-20 18:29:22	56100230	0	0	0	0	0	0	0	0	0	0	0	0	18	0	\N
+21	2026-01-23 17:50:52.389	\N	5	13	1	2026-01-26 21:00:00	0	363	0	56121776	0	0	1	6	1	0	0	0	0	18	18	\N
 \.
 
 
@@ -232,7 +233,7 @@ COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity
 
 COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name", "current_balance", "last_balance_update", "last_activity_timestamp", "last_live_activity_timestamp", "username") FROM stdin;
 20	21	686071308	KICK	21000000	\N	\N	\N	21xhr
-21	21	686071308	TWITCH	99663999	\N	2026-01-25 19:34:35.851	2025-12-09 21:40:20.228	21xhr
+21	21	686071308	TWITCH	99663999	\N	2026-01-25 22:02:13.67	2025-12-09 21:40:20.228	21xhr
 \.
 
 
@@ -451,6 +452,6 @@ SELECT pg_catalog.setval('"public"."users_user_id_seq"', 4, true);
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict 4B8hxX80p64Lyb8AhkdD3Knf74LkhcpSAp76Ac4IzhdmvfLod8Ojl2xs9FhsSvD
+-- \unrestrict Ockacd4fnzq0qz0A2afdmUTMItPlgq50pA7O4mXdhOCVeAnf3DfJDJa4aqFz3R8
 
 RESET ALL;

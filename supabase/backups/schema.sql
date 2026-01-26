@@ -319,7 +319,8 @@ CREATE TABLE IF NOT EXISTS "public"."users" (
     "total_to_community_chest" bigint DEFAULT 0 NOT NULL,
     "total_to_pushers" bigint DEFAULT 0 NOT NULL,
     "lastProcessedDay" integer DEFAULT 0 NOT NULL,
-    "lastSeenDay" integer DEFAULT 0 NOT NULL
+    "lastSeenDay" integer DEFAULT 0 NOT NULL,
+    "last_explorer_deduction" timestamp(3) without time zone
 );
 
 
