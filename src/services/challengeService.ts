@@ -160,6 +160,53 @@ export async function processSubmissionLinkGeneration(
 }
 
 
+
+// ------------------------------------------------------------------
+// EXPLORER ACCESS LOGIC
+export async function processExplorerLinkGeneration(
+    userId: number, 
+    platformId: string, 
+    platformName: string, 
+    username: string,
+    tierArg: string | undefined, 
+    reqHostname: string,
+): Promise<{ chatResponse: string, details: any }> {
+    
+    let duration = '21m';
+    let costDescription = '21 NUMBERS';
+
+    // Handle Tier Logic
+    const tier = tierArg?.toLowerCase();
+    if (tier === 'day') {
+        duration = '1d';
+        costDescription = '210 NUMBERS';
+    } else if (tier === 'month') {
+        duration = '30d';
+        costDescription = '2,100 NUMBERS';
+    } else if (tier === 'life') {
+        duration = '99y'; // Functional permanent
+        costDescription = '21,000 NUMBERS';
+    }
+
+    // Generate the token with the specific duration
+    const token = generateToken({ userId, platformId, platformName, username }, duration);
+    
+    const isLocalHost = reqHostname === 'localhost' || reqHostname === '127.0.0.1' || reqHostname === '0.0.0.0';
+    const WEBFORM_BASE_URL = isLocalHost ? `http://192.168.1.37:5500` : "https://drummer-manager-website.vercel.app";
+
+    const secureUrl = `${WEBFORM_BASE_URL}/explorer/index.html?token=${token}`;
+    
+    const chatResponse = 
+        `🔓 Explorer Access [TIER: ${tier || 'Standard'}] Initialized.\n` + 
+        `Validity: ${duration} | Entry Fee: ${costDescription}.\n` + 
+        `Link: ${secureUrl}`;
+
+    return { chatResponse, details: { token, duration, tier: tier || 'standard' } };
+}
+
+
+
+
 /**
  * Checks the currently executing challenge for session completion via timestamp.
  * If the 21-minute duration has elapsed, it increments the session count and updates the status.

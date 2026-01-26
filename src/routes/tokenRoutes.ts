@@ -7,6 +7,8 @@ import { getCurrentDailySubmissionContext } from '../services/challengeService';
 import { findOrCreateUser } from '../services/userService';
 import { PlatformName } from '@prisma/client';
 import { processExplorerAccessFee } from '../services/lumiaService';
+import prisma from '../prisma';
+
 
 const router = Router();
 
@@ -93,35 +95,52 @@ router.post('/verify-challengesubmitform', async (req: Request, res: Response) =
 
 /**
  * POST /api/v1/token/verify-explorer
- * Specific for Explorer access: Verifies identity AND processes the access fee.
+ * Specific for Explorer access: Verifies identity, checks merit status, and processes fees.
  */
 router.post('/verify-explorer', async (req: Request, res: Response) => {
     const { token } = req.body;
-    if (!token) return res.status(400).json({ message: 'Token is missing.', error: 'MISSING_TOKEN' });
+    if (!token) return res.status(400).json({ message: 'Token is missing.' });
 
     try {
         const payload = verifyToken(token);
-        const user = await findOrCreateUser({
-            platformId: payload.platformId,
-            platformName: payload.platformName as PlatformName,
-            username: payload.username
+        
+        // 1. Fetch user to check merit and last deduction
+        const user = await prisma.user.findUnique({
+            where: { id: payload.userId },
+            select: { id: true, totalNumbersSpent: true, lastExplorerDeduction: true }
         });
 
-        const newAuthoritativeBalance = await processExplorerAccessFee(payload.platformId);
-        logger.info(`EXPLORER Access Success: User ${payload.platformId} verified.`);
+        if (!user) throw new Error("User not found.");
+
+        // 2. Determine Fee
+        const hasMerit = user.totalNumbersSpent >= 2100;
+        const fee = hasMerit ? 2.1 : 21;
+
+        // 3. Check if 21 minutes have passed
+        const twentyOneMinutesAgo = new Date(Date.now() - 21 * 60 * 1000);
+        const needsPayment = !user.lastExplorerDeduction || user.lastExplorerDeduction < twentyOneMinutesAgo;
+
+        if (needsPayment) {
+            // This calls your Lumia service to actually take the money
+            await processExplorerAccessFee(payload.platformId, fee); 
+            
+            // Update the timestamp so they aren't charged again for 21 mins
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { lastExplorerDeduction: new Date() }
+            });
+        }
 
         return res.status(200).json({
             message: 'Explorer access granted.',
-            platformId: payload.platformId,
-            platformName: payload.platformName,
             username: payload.username,
-            remainingBalance: newAuthoritativeBalance,
-            expiresIn: payload.exp ? validateDuration(`${(payload.exp * 1000 - Date.now()) / 60000}m`) : 'N/A'
+            platformName: payload.platformName,
+            hasMerit: hasMerit
         });
 
     } catch (error) {
         logger.error('Explorer Verification Failed:', error);
-        // Utilisation de la logique détaillée pour l'expiration
+
         if (error instanceof Error && (error.name === 'TokenExpiredError' || error.name === 'JsonWebTokenError')) {
             const message = error.name === 'TokenExpiredError' 
                 ? 'Authentication failed. Your secure link has expired.' 

@@ -94,6 +94,7 @@ model User {
   totalToPushers                        BigInt    @default(0) @map("total_to_pushers")
 
   // Game Metrics (User)
+  lastExplorerDeduction                 DateTime? @map("last_explorer_deduction")
   dailyChallengeResetAt                 DateTime  @map("daily_challenge_reset_at")
   dailySubmissionCount                  Int       @default(0) @map("daily_submission_count")
   totalChallengesSubmitted              Int       @default(0) @map("total_challenges_submitted")

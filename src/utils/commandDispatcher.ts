@@ -138,6 +138,27 @@ export async function dispatchCommand(
                     message: linkResult.chatResponse,
                     action: 'submission_link_generated'
                 };
+
+            case '!challengeexplorer':
+                // COMMAND: !challengeexplorer [tier]
+                // We extract the first argument (e.g., 'day', 'month') from parsedArgs
+                const tierArg = parsedArgs[0]; 
+                
+                const explorerResult = await challengeService.processExplorerLinkGeneration(
+                    dbUserId, 
+                    platformId,
+                    platformName, 
+                    usernameToStore,
+                    tierArg,
+                    hostname
+                );
+                
+                logger.info('Explorer link generated.', explorerResult.details);
+
+                return {
+                    message: explorerResult.chatResponse,
+                    action: 'explorer_link_generated'
+                };
             
             case '!digout':
                 // COMMAND: !digout [ID]

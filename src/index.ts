@@ -32,7 +32,7 @@ import { initializeConsoleSubscribers } from './eventSubscribers/consoleLogger';
 import { initializeNotificationService } from './eventSubscribers/notificationService'; 
 import { initializeStreamState } from './services/streamService'; 
 import { startChallengeScheduler } from './scheduler'; 
-import { ChallengeEvents } from './services/eventService';
+
 
 // --- Server Setup ---
 const app = express();
@@ -52,26 +52,34 @@ const DEV_ORIGINS = [
 
 // CORS Configuration (Must come before app.use(express.json()))
 const corsOptions = {
-    // CRITICAL: Use a custom function to allow ALL requests in development 
-    // that are NOT production, bypassing all local network header issues.
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
         const isProduction = process.env.NODE_ENV === 'production';
         
+        // 1. Always allow requests with no origin (like ThunderClient or mobile apps)
+        if (!origin) return callback(null, true);
+
         if (isProduction) {
-            // In Production, lock it down to the Vercel URL
-            if (origin === PROD_ORIGIN) {
+            // 2. WHITELIST: Add your local IP here so Vercel accepts your local tests
+            const allowedOrigins = [
+                PROD_ORIGIN, 
+                "http://localhost:5500", 
+                "http://127.0.0.1:5500",
+                "http://192.168.1.37:5500" // Your current local IP
+            ];
+
+            if (allowedOrigins.includes(origin)) {
                 callback(null, true);
             } else {
-                callback(new Error('Not allowed by CORS'), false);
+                // If someone else tries to host your explorer on their site, Vercel blocks them.
+                callback(new Error('CORS Blocked: Origin not in Whitelist'), false);
             }
         } else {
-            // In Development, allow any origin. This is the only reliable way 
-            // to allow external clients (phone) to connect to your private IP.
+            // 3. In local dev mode, just allow everything for ease of use
             callback(null, true);
         }
     },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    allowedHeaders: ['Content-Type', 'X-Admin-Secret'], 
+    allowedHeaders: ['Content-Type', 'X-Admin-Secret', 'Authorization'], 
     credentials: true,
     optionsSuccessStatus: 204
 };

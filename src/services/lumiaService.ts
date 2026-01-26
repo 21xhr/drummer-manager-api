@@ -58,15 +58,13 @@ export async function deductNumbersViaLumia(
 
 /**
  * Specifically handles the business logic for a user entering the Explorer.
- * Deducts the flat fee and logs the access.
+ * Deducts the specific fee (merit or standard) and logs the access.
  */
-export async function processExplorerAccessFee(platformId: string): Promise<number> {
-    const EXPLORER_FEE = 21;
+export async function processExplorerAccessFee(platformId: string, fee: number): Promise<number> {
+    // Call the authoritative ledger with the dynamic fee (21 or 2.1)
+    const result = await deductNumbersViaLumia(platformId, fee);
     
-    // Call the authoritative ledger (currently mocked in this same file)
-    const result = await deductNumbersViaLumia(platformId, EXPLORER_FEE);
+    logger.info(`Explorer Access Fee Processed: Deducted ${fee} from ${platformId}.`);
     
-    logger.info(`Explorer Access Fee Processed: Deducted ${EXPLORER_FEE} from ${platformId}.`);
-    
-    return result.newBalance; // Returns the 99999999 - 21 mock value
+    return result.newBalance; 
 }
