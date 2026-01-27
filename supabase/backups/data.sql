@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict Ockacd4fnzq0qz0A2afdmUTMItPlgq50pA7O4mXdhOCVeAnf3DfJDJa4aqFz3R8
+-- \restrict SWBHnC2HBqQz4hiywRLQjMc2oWEzT6QgiMkDai2zP3PKKN5JpanAwYW0hxXl13n
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -222,8 +222,8 @@ afccbf26-dc6d-44bf-b97a-0d2e753cd441	6ed63d159c7b3999c98a6c4c5a431297900c7bf665e
 --
 
 COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity_timestamp", "last_seen_stream_day", "active_offline_days_count", "active_stream_days_count", "daily_challenge_reset_at", "total_numbers_spent_game_wide", "total_challenges_submitted", "total_numbers_returned_from_removals_game_wide", "total_numbers_spent", "total_received_from_removals", "total_removals_executed", "total_digouts_executed", "totalPushesExecuted", "totalDisruptsExecuted", "daily_submission_count", "total_caused_by_removals", "total_to_community_chest", "total_to_pushers", "lastProcessedDay", "lastSeenDay", "last_explorer_deduction") FROM stdin;
-1	\N	\N	3	0	0	2025-12-20 18:29:22	56100230	0	0	0	0	0	0	0	0	0	0	0	0	18	0	\N
-21	2026-01-23 17:50:52.389	\N	5	13	1	2026-01-26 21:00:00	0	363	0	56121776	0	0	1	6	1	0	0	0	0	18	18	\N
+1	\N	\N	3	0	0	2025-12-20 18:29:22	56100440	0	0	0	0	0	0	0	0	0	0	0	0	18	0	\N
+21	2026-01-26 22:23:44.941	\N	5	13	1	2026-01-28 21:00:00	0	364	0	56121986	0	0	1	6	1	0	0	0	0	18	18	2026-01-27 20:05:55.848
 \.
 
 
@@ -233,7 +233,7 @@ COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity
 
 COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name", "current_balance", "last_balance_update", "last_activity_timestamp", "last_live_activity_timestamp", "username") FROM stdin;
 20	21	686071308	KICK	21000000	\N	\N	\N	21xhr
-21	21	686071308	TWITCH	99663999	\N	2026-01-25 22:02:13.67	2025-12-09 21:40:20.228	21xhr
+21	21	686071308	TWITCH	99999789	\N	2026-01-27 21:11:38.346	2025-12-09 21:40:20.228	21xhr
 \.
 
 
@@ -293,6 +293,7 @@ COPY "public"."challenges" ("challenge_id", "category", "proposer_user_id", "sta
 376	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 22:32:14.265	2026-01-22 22:32:14.265	\N	0	21	2026-01-22 22:32:14.548	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	303240	"wsdfwsdfswdf"
 377	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-23 17:50:14.223	2026-01-23 17:50:14.223	\N	0	21	2026-01-23 17:50:15.001	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	319410	"wsdfswdfwsdfwsf"
 378	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-23 17:50:52.389	2026-01-23 17:50:52.389	\N	0	21	2026-01-23 17:50:52.683	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	336000	"wxcw≈©w≈©w≈©"
+379	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-26 22:23:44.941	2026-01-26 22:23:44.941	\N	0	21	2026-01-26 22:23:45.211	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	"Jfjfkfkdndndn"
 326	General	21	ACTIVE	f	f	f	0	0	0	0	0	1	2026-01-20 16:18:22.721	2026-01-20 16:18:22.721	\N	0	21	2026-01-21 17:49:29.597	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	30240	"wxvcwxcvwxcvwxcv"
 327	General	21	ACTIVE	f	f	f	0	0	0	0	0	1	2026-01-20 16:22:15.141	2026-01-20 16:22:15.141	\N	0	21	2026-01-21 17:49:29.597	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	35490	"wxvwsdvwsdv"
 \.
@@ -424,7 +425,7 @@ SELECT pg_catalog.setval('"public"."accounts_account_id_seq"', 4, true);
 -- Name: challenges_challenge_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 378, true);
+SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 379, true);
 
 
 --
@@ -452,6 +453,6 @@ SELECT pg_catalog.setval('"public"."users_user_id_seq"', 4, true);
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict Ockacd4fnzq0qz0A2afdmUTMItPlgq50pA7O4mXdhOCVeAnf3DfJDJa4aqFz3R8
+-- \unrestrict SWBHnC2HBqQz4hiywRLQjMc2oWEzT6QgiMkDai2zP3PKKN5JpanAwYW0hxXl13n
 
 RESET ALL;
