@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict SWBHnC2HBqQz4hiywRLQjMc2oWEzT6QgiMkDai2zP3PKKN5JpanAwYW0hxXl13n
+-- \restrict Rwbesx2lh14q7VqdL0NE9J85QTw1dY4p47cwFrgkkZObyUTjX7HuOhCD3SOVMx3
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -223,7 +223,7 @@ afccbf26-dc6d-44bf-b97a-0d2e753cd441	6ed63d159c7b3999c98a6c4c5a431297900c7bf665e
 
 COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity_timestamp", "last_seen_stream_day", "active_offline_days_count", "active_stream_days_count", "daily_challenge_reset_at", "total_numbers_spent_game_wide", "total_challenges_submitted", "total_numbers_returned_from_removals_game_wide", "total_numbers_spent", "total_received_from_removals", "total_removals_executed", "total_digouts_executed", "totalPushesExecuted", "totalDisruptsExecuted", "daily_submission_count", "total_caused_by_removals", "total_to_community_chest", "total_to_pushers", "lastProcessedDay", "lastSeenDay", "last_explorer_deduction") FROM stdin;
 1	\N	\N	3	0	0	2025-12-20 18:29:22	56100440	0	0	0	0	0	0	0	0	0	0	0	0	18	0	\N
-21	2026-01-26 22:23:44.941	\N	5	13	1	2026-01-28 21:00:00	0	364	0	56121986	0	0	1	6	1	0	0	0	0	18	18	2026-01-27 20:05:55.848
+21	2026-01-26 22:23:44.941	\N	5	13	1	2026-01-28 21:00:00	0	364	0	56121986	0	0	1	6	1	0	0	0	0	18	18	2026-01-27 21:32:39.478
 \.
 
 
@@ -232,8 +232,8 @@ COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity
 --
 
 COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name", "current_balance", "last_balance_update", "last_activity_timestamp", "last_live_activity_timestamp", "username") FROM stdin;
+21	21	686071308	TWITCH	99999789	\N	2026-01-28 01:14:38.607	2025-12-09 21:40:20.228	21xhr
 20	21	686071308	KICK	21000000	\N	\N	\N	21xhr
-21	21	686071308	TWITCH	99999789	\N	2026-01-27 21:11:38.346	2025-12-09 21:40:20.228	21xhr
 \.
 
 
@@ -453,6 +453,6 @@ SELECT pg_catalog.setval('"public"."users_user_id_seq"', 4, true);
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict SWBHnC2HBqQz4hiywRLQjMc2oWEzT6QgiMkDai2zP3PKKN5JpanAwYW0hxXl13n
+-- \unrestrict Rwbesx2lh14q7VqdL0NE9J85QTw1dY4p47cwFrgkkZObyUTjX7HuOhCD3SOVMx3
 
 RESET ALL;
