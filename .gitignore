@@ -11,3 +11,6 @@ build/
 # Compiled TypeScript output (if generated at the root)
 *.js
 !*.ts
+
+# VSCode workspace settings
+*.code-workspace

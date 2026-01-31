@@ -448,7 +448,7 @@ router.post('/disrupt', authenticateUser, async (req: Request, res: Response) =>
 // -----------------------------------------------------------
 // GET ACTIVE CHALLENGES (No auth required)
 // -----------------------------------------------------------
-router.get('/challenges/active', async (req: Request, res: Response) => {
+router.get('/challenge/active', async (req: Request, res: Response) => {
     try {
         const challenges = await challengeService.getActiveChallenges();
         
@@ -479,7 +479,7 @@ router.get('/challenges/active', async (req: Request, res: Response) => {
 // -----------------------------------------------------------
 // REMOVE CHALLENGE
 // -----------------------------------------------------------
-router.post('/challenges/remove', authenticateUser, async (req: Request, res: Response) => {
+router.post('/challenge/remove', authenticateUser, async (req: Request, res: Response) => {
     const { challengeId, option } = req.body;
     const authorUserId = req.userId; 
 

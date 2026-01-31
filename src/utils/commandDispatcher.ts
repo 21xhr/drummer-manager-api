@@ -7,7 +7,7 @@
 
 import logger from '../logger';
 import * as userService from '../services/userService';
-import * as challengeService from '../services/challengeService'; // Now imports all your logic
+import * as challengeService from '../services/challengeService';
 import { PlatformName } from '@prisma/client'; 
 
 // Define the structure of the data expected from the external system (Lumia Stream)
