@@ -6,7 +6,7 @@ import logger from '../logger';
 
 export const router = Router();
 
-// GET /api/v1/challenges
+// GET /api/v1/challenge
 router.get('/', async (req, res) => {
     const all = await prisma.challenge.findMany({
         include: { 
@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
 });
 
 /**
- * GET /api/v1/challenges/delta
+ * GET /api/v1/challenge/delta
  */
 router.get('/delta', async (req: Request, res: Response) => {
     const { since } = req.query;

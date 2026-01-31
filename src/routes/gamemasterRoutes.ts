@@ -1,7 +1,7 @@
 // src/routes/gamemasterRoutes.ts
 /** 
  * routes the core command through dispatchCommand and handles the admin endpoints 
- * (/challenges/execute, /challenge/:challengeId/status) using your authenticateGameMaster middleware. 
+ * (/challenge/execute, /challenge/:challengeId/status) using your authenticateGameMaster middleware. 
  * This is the correct entry point for all chat commands. 
  */
 import { Router, Request, Response } from 'express';
@@ -98,7 +98,7 @@ router.post('/state-event', async (req: Request, res: Response) => {
 // -----------------------------------------------------------
 // ⭐ EXECUTE CHALLENGE
 // -----------------------------------------------------------
-router.post('/challenges/execute', authenticateGameMaster, async (req: Request, res: Response) => {
+router.post('/challenge/execute', authenticateGameMaster, async (req: Request, res: Response) => {
     // Note: The authorization check is now handled entirely by authenticateGameMaster middleware.
     const { challengeId } = req.body;
     const authorUserId = req.userId; // User ID authenticated by the middleware (guaranteed to be a user defined in ADMIN_USER_ID)
