@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict EGrshjnMyFOg5qg1haUJgTiLaO8jGch2SBjQw3TiS26oCQ2SbIGbRF0OBWtzR05
+-- \restrict g9lb6c4mlbo5kP4dbNUuBvxRdPhD46VhhxYRn4k2LqQT75ke7dNhQDVcQEPND0E
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -223,7 +223,7 @@ afccbf26-dc6d-44bf-b97a-0d2e753cd441	6ed63d159c7b3999c98a6c4c5a431297900c7bf665e
 
 COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity_timestamp", "last_seen_stream_day", "active_offline_days_count", "active_stream_days_count", "daily_challenge_reset_at", "total_numbers_spent_game_wide", "total_challenges_submitted", "total_numbers_returned_from_removals_game_wide", "total_numbers_spent", "total_received_from_removals", "total_removals_executed", "total_digouts_executed", "totalPushesExecuted", "totalDisruptsExecuted", "daily_submission_count", "total_caused_by_removals", "total_to_community_chest", "total_to_pushers", "lastProcessedDay", "lastSeenDay", "last_explorer_deduction") FROM stdin;
 1	\N	\N	3	0	0	2025-12-20 18:29:22	56106950	0	0	0	0	0	0	0	0	0	0	0	0	18	0	\N
-5	2026-02-27 15:30:50.978	\N	0	0	0	2026-02-27 21:00:00	0	5	0	6510	0	0	0	0	0	4	0	0	0	0	0	2026-02-27 18:01:27.007
+5	2026-02-27 15:30:50.978	\N	0	0	0	2026-02-28 21:00:00	0	5	0	6510	0	0	0	0	0	0	0	0	0	0	0	2026-02-28 16:14:37.076
 21	2026-01-26 22:23:44.941	\N	5	13	1	2026-01-28 21:00:00	0	364	0	56121986	0	0	1	6	1	0	0	0	0	18	18	2026-01-27 21:32:39.478
 \.
 
@@ -235,7 +235,7 @@ COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity
 COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name", "current_balance", "last_balance_update", "last_activity_timestamp", "last_live_activity_timestamp", "username") FROM stdin;
 21	21	686071308	TWITCH	99999789	\N	2026-01-28 01:14:38.607	2025-12-09 21:40:20.228	21xhr
 20	21	686071308	KICK	21000000	\N	\N	\N	21xhr
-5	5	999888	TWITCH	99996639	\N	2026-02-27 18:36:43.936	2026-01-31 22:39:20.644	21xhr
+5	5	999888	TWITCH	99996639	\N	2026-02-28 16:14:24.507	2026-01-31 22:39:20.644	21xhr
 \.
 
 
@@ -426,6 +426,6 @@ SELECT pg_catalog.setval('"public"."users_user_id_seq"', 5, true);
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict EGrshjnMyFOg5qg1haUJgTiLaO8jGch2SBjQw3TiS26oCQ2SbIGbRF0OBWtzR05
+-- \unrestrict g9lb6c4mlbo5kP4dbNUuBvxRdPhD46VhhxYRn4k2LqQT75ke7dNhQDVcQEPND0E
 
 RESET ALL;
