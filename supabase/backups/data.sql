@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict 9TpzoZeOqBMq7j77rQ8leNqN5XYpayw6cXCMpdi06IQp7TPDOJLBi9cnePcCg2G
+-- \restrict 04TegAa8Uzd2c4ez5jWJZ7c4xXZ2sf8gD6XfmUNtMw6dEGaZ8gFRxqDNAIOUxfz
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -222,9 +222,9 @@ afccbf26-dc6d-44bf-b97a-0d2e753cd441	6ed63d159c7b3999c98a6c4c5a431297900c7bf665e
 --
 
 COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity_timestamp", "last_seen_stream_day", "active_offline_days_count", "active_stream_days_count", "daily_challenge_reset_at", "total_numbers_spent_game_wide", "total_challenges_submitted", "total_numbers_returned_from_removals_game_wide", "total_numbers_spent", "total_received_from_removals", "total_removals_executed", "total_digouts_executed", "totalPushesExecuted", "totalDisruptsExecuted", "daily_submission_count", "total_caused_by_removals", "total_to_community_chest", "total_to_pushers", "lastProcessedDay", "lastSeenDay", "last_explorer_deduction") FROM stdin;
-1	\N	\N	3	0	0	2025-12-20 18:29:22	56112830	0	0	0	0	0	0	0	0	0	0	0	0	18	0	\N
+5	2026-03-02 23:10:32.929	\N	0	0	0	2026-03-03 21:00:00	0	13	0	13440	0	0	0	0	0	2	0	0	0	0	0	2026-03-01 17:04:26.185
+1	\N	\N	3	0	0	2025-12-20 18:29:22	56113880	0	0	0	0	0	0	0	0	0	0	0	0	18	0	\N
 21	2026-01-26 22:23:44.941	\N	5	13	1	2026-01-28 21:00:00	0	364	0	56121986	0	0	1	6	1	0	0	0	0	18	18	2026-01-27 21:32:39.478
-5	2026-03-02 19:32:53.751	\N	0	0	0	2026-03-02 21:00:00	0	11	0	12390	0	0	0	0	0	3	0	0	0	0	0	2026-03-01 17:04:26.185
 \.
 
 
@@ -235,7 +235,7 @@ COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity
 COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name", "current_balance", "last_balance_update", "last_activity_timestamp", "last_live_activity_timestamp", "username") FROM stdin;
 21	21	686071308	TWITCH	99999789	\N	2026-01-28 01:14:38.607	2025-12-09 21:40:20.228	21xhr
 20	21	686071308	KICK	21000000	\N	\N	\N	21xhr
-5	5	999888	TWITCH	99998109	\N	2026-03-02 19:38:50.173	2026-01-31 22:39:20.644	21xhr
+5	5	999888	TWITCH	99999159	\N	2026-03-02 23:20:29.376	2026-01-31 22:39:20.644	21xhr
 \.
 
 
@@ -263,7 +263,9 @@ COPY "public"."challenges" ("challenge_id", "category", "proposer_user_id", "sta
 3374	General	21	ARCHIVED	f	f	f	0	0	0	0	0	0	2026-01-22 19:11:41.703	2026-01-22 19:11:41.703	\N	0	21	2026-01-22 19:11:41.928	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	840	"wsdfwsdfsf"
 390	General	5	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-02 19:32:53.751	2026-03-02 19:32:53.751	\N	0	21	2026-03-02 19:32:54.567	0	\N	2	RECURRING	\N	\N	0	DAILY	1 session per day for 2 days	1	\N	1890	"<span style=\\"font-size: 13.44px;\\">sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscv</span>"
 1338	General	21	AUCTIONED	f	f	f	0	0	0	0	0	0	2026-01-22 19:12:14.237	2026-01-22 19:12:14.237	\N	0	21	2026-01-22 19:12:14.5	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1890	"wsdfwsdfwsdf"
+391	General	5	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-02 22:57:08.257	2026-03-02 22:57:08.257	\N	0	21	2026-03-02 22:57:08.582	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	"wsvwsvwsvvwvbwdfb"
 3339	General	21	COMPLETED	f	f	f	0	0	0	0	0	0	2026-01-22 21:00:52.508	2026-01-22 21:00:52.508	\N	0	21	2026-01-22 21:00:52.806	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	"wsdfwsdfswdf"
+392	General	5	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-02 23:10:32.929	2026-03-02 23:10:32.929	\N	0	21	2026-03-02 23:10:33.24	0	\N	42	RECURRING	\N	\N	0	CUSTOM_DAYS	21 sessions every 2 days for 2 times	21	\N	840	"wsdvwsvwsfvwsfv"
 346	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:21:52.697	2026-01-22 21:21:52.697	\N	0	21	2026-01-22 21:21:52.943	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	13440	"swdfswdfff"
 341	General	21	COMPLETED	f	f	f	0	0	0	0	0	0	2026-01-22 21:17:20.697	2026-01-22 21:17:20.697	\N	0	21	2026-01-22 21:17:21.355	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1890	"wsdfwsdfwsdf"
 343	General	21	REMOVED	f	f	f	0	0	0	0	0	0	2026-01-22 21:19:10.669	2026-01-22 21:19:10.669	\N	0	21	2026-01-22 21:19:10.963	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	5250	"wsdfwsdfff"
@@ -404,7 +406,7 @@ SELECT pg_catalog.setval('"public"."accounts_account_id_seq"', 5, true);
 -- Name: challenges_challenge_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 390, true);
+SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 392, true);
 
 
 --
@@ -432,6 +434,6 @@ SELECT pg_catalog.setval('"public"."users_user_id_seq"', 5, true);
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict 9TpzoZeOqBMq7j77rQ8leNqN5XYpayw6cXCMpdi06IQp7TPDOJLBi9cnePcCg2G
+-- \unrestrict 04TegAa8Uzd2c4ez5jWJZ7c4xXZ2sf8gD6XfmUNtMw6dEGaZ8gFRxqDNAIOUxfz
 
 RESET ALL;
