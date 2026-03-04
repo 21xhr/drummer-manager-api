@@ -204,6 +204,36 @@ ALTER SEQUENCE "public"."challenges_challenge_id_seq" OWNED BY "public"."challen
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."perennial_tokens" (
+    "token_id" integer NOT NULL,
+    "token" "text" NOT NULL,
+    "user_id" integer NOT NULL,
+    "platform_id" "text" NOT NULL,
+    "platform_name" "public"."PlatformName" NOT NULL,
+    "is_active" boolean DEFAULT true NOT NULL,
+    "created_at" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE "public"."perennial_tokens" OWNER TO "postgres";
+
+
+CREATE SEQUENCE IF NOT EXISTS "public"."perennial_tokens_token_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE "public"."perennial_tokens_token_id_seq" OWNER TO "postgres";
+
+
+ALTER SEQUENCE "public"."perennial_tokens_token_id_seq" OWNED BY "public"."perennial_tokens"."token_id";
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."pushes" (
     "push_id" integer NOT NULL,
     "challenge_id" integer NOT NULL,
@@ -351,6 +381,10 @@ ALTER TABLE ONLY "public"."challenges" ALTER COLUMN "challenge_id" SET DEFAULT "
 
 
 
+ALTER TABLE ONLY "public"."perennial_tokens" ALTER COLUMN "token_id" SET DEFAULT "nextval"('"public"."perennial_tokens_token_id_seq"'::"regclass");
+
+
+
 ALTER TABLE ONLY "public"."pushes" ALTER COLUMN "push_id" SET DEFAULT "nextval"('"public"."pushes_push_id_seq"'::"regclass");
 
 
@@ -375,6 +409,11 @@ ALTER TABLE ONLY "public"."accounts"
 
 ALTER TABLE ONLY "public"."challenges"
     ADD CONSTRAINT "challenges_pkey" PRIMARY KEY ("challenge_id");
+
+
+
+ALTER TABLE ONLY "public"."perennial_tokens"
+    ADD CONSTRAINT "perennial_tokens_pkey" PRIMARY KEY ("token_id");
 
 
 
@@ -407,6 +446,10 @@ CREATE UNIQUE INDEX "accounts_platform_id_platform_name_key" ON "public"."accoun
 
 
 
+CREATE UNIQUE INDEX "perennial_tokens_token_key" ON "public"."perennial_tokens" USING "btree" ("token");
+
+
+
 ALTER TABLE ONLY "public"."accounts"
     ADD CONSTRAINT "accounts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON UPDATE CASCADE ON DELETE RESTRICT;
 
@@ -414,6 +457,11 @@ ALTER TABLE ONLY "public"."accounts"
 
 ALTER TABLE ONLY "public"."challenges"
     ADD CONSTRAINT "challenges_proposer_user_id_fkey" FOREIGN KEY ("proposer_user_id") REFERENCES "public"."users"("user_id") ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+
+ALTER TABLE ONLY "public"."perennial_tokens"
+    ADD CONSTRAINT "perennial_tokens_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 
