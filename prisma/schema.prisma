@@ -59,7 +59,8 @@ model Account {
   lastLiveActivityTimestamp DateTime?       @map("last_live_activity_timestamp")
   
   // RELATIONSHIP
-  user                      User            @relation("UserAccounts", fields: [userId], references: [id])
+  perennialTokens           PerennialToken[] @relation("AccountToPerennial")
+  user                      User             @relation("UserAccounts", fields: [userId], references: [id])
 
   // CRITICAL UNIQUE CONSTRAINT
   @@unique([platformId, platformName])
@@ -74,24 +75,24 @@ model User {
 
   // TIMESTAMPS
   // NOTE: the activity timestamps are moved to the account level for accuracy!
-  lastActivityTimestamp                 DateTime?   @map("last_activity_timestamp") // Keeping for *overall* user activity
-  lastLiveActivityTimestamp             DateTime?   @map("last_live_activity_timestamp") // Keeping for *overall* user activity
+  lastActivityTimestamp                   DateTime?   @map("last_activity_timestamp") // Keeping for *overall* user activity
+  lastLiveActivityTimestamp               DateTime?   @map("last_live_activity_timestamp") // Keeping for *overall* user activity
   
   // WATERMARKS
-  lastSeenStreamDay                     Int       @default(0) @map("last_seen_stream_day")
-  lastProcessedDay                      Int       @default(0) // Internal: Tracks daysSinceInception checked by Cron
-  lastSeenDay                           Int       @default(0) // Stat: Tracks the last Real-World Day user was active
+  lastSeenStreamDay                      Int       @default(0) @map("last_seen_stream_day")
+  lastProcessedDay                       Int       @default(0) // Internal: Tracks daysSinceInception checked by Cron
+  lastSeenDay                            Int       @default(0) // Stat: Tracks the last Real-World Day user was active
 
   // COUNTERS
-  activeOfflineDaysCount                Int       @default(0) @map("active_offline_days_count")
-  activeStreamDaysCount                 Int       @default(0) @map("active_stream_days_count")
+  activeOfflineDaysCount                 Int       @default(0) @map("active_offline_days_count")
+  activeStreamDaysCount                  Int       @default(0) @map("active_stream_days_count")
   
   // All total/game-wide stats remain here
-  totalNumbersSpentGameWide             BigInt       @default(0) @map("total_numbers_spent_game_wide")
-  totalNumbersReturnedFromRemovalsGameWide BigInt    @default(0) @map("total_numbers_returned_from_removals_game_wide")
-  totalCausedByRemovals                 BigInt    @default(0) @map("total_caused_by_removals")
-  totalToCommunityChest                 BigInt    @default(0) @map("total_to_community_chest")
-  totalToPushers                        BigInt    @default(0) @map("total_to_pushers")
+  totalNumbersSpentGameWide              BigInt    @default(0) @map("total_numbers_spent_game_wide")
+  totalNumbersReturnedFromRemovalsGameWide BigInt  @default(0) @map("total_numbers_returned_from_removals_game_wide")
+  totalCausedByRemovals                  BigInt    @default(0) @map("total_caused_by_removals")
+  totalToCommunityChest                  BigInt    @default(0) @map("total_to_community_chest")
+  totalToPushers                         BigInt    @default(0) @map("total_to_pushers")
 
   // Game Metrics (User)
   lastExplorerDeduction                 DateTime? @map("last_explorer_deduction")
@@ -100,7 +101,7 @@ model User {
   totalChallengesSubmitted              Int       @default(0) @map("total_challenges_submitted")
   totalRemovalsExecuted                 Int       @default(0) @map("total_removals_executed")
   totalReceivedFromRemovals             Int       @default(0) @map("total_received_from_removals")
-  totalNumbersSpent                     BigInt       @default(0) @map("total_numbers_spent")
+  totalNumbersSpent                     BigInt    @default(0) @map("total_numbers_spent")
   totalDigoutsExecuted                  Int       @map("total_digouts_executed") @default(0)
   totalPushesExecuted                   Int       @default(0)
   totalDisruptsExecuted                 Int       @default(0)
@@ -110,6 +111,7 @@ model User {
   pushes                                Push[]
   tempQuotes                            TempQuote[]
   accounts                              Account[] @relation("UserAccounts")
+  perennialTokens                       PerennialToken[]
 
   @@map("users")
 }
@@ -166,7 +168,7 @@ model Challenge {
   // Session Fields
   totalSessions             Int             @map("total_sessions") 
   currentSessionCount       Int @default(0) @map("current_session_count")
-  sessionStartTimestamp     DateTime?    @map("session_start_timestamp") // Tracks when the current 21-min session began
+  sessionStartTimestamp     DateTime?       @map("session_start_timestamp") // Tracks when the current 21-min session began
 
   pushes                    Push[]
   tempQuotes                TempQuote[]
@@ -227,4 +229,24 @@ model Stream {
   totalRemovalsInSession                    Int       @default(0) @map("total_removals_in_session")
 
   @@map("streams")
+}
+
+/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+model PerennialToken {
+  id           Int          @id @default(autoincrement()) @map("token_id")
+  token        String       @unique
+  userId       Int          @map("user_id")
+  platformId   String       @map("platform_id")
+  platformName PlatformName @map("platform_name")
+  isActive     Boolean      @default(true) @map("is_active")
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  // Link to User for stats
+  user         User         @relation(fields: [userId], references: [id])
+  
+  // Link to Account for the username/identity
+  account      Account      @relation("AccountToPerennial", fields: [platformId, platformName], references: [platformId, platformName])
+
+  @@map("perennial_tokens")
 }

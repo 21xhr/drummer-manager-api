@@ -877,6 +877,17 @@ export async function processChallengeSubmission(
             }
         });
 
+        // SAFETY CHECK: This should never happen because the user must have an account to get a token, but we check again here before proceeding with the transaction.
+        if (!accountContext) { 
+            throw new Error(`Account not found for platform ${platformName}.`); 
+        }
+
+        // THE GUARD RAIL: Ensure the account belongs to the user making the submission. This prevents any possibility of cross-account manipulation, even if the token is somehow misused.
+        if (accountContext.userId !== userId) {
+            logger.error(`Security Alert: User ${userId} attempted to use account belonging to User ${accountContext.userId}`);
+            throw new Error("Unauthorized: Platform account does not match user identity.");
+        }
+
         // 3. Validation
         // If the user was just created in authMiddleware, the account is guaranteed to exist.
         if (!accountContext) { throw new Error(`Account not found for user ${userId} on platform ${platformName}.`); }

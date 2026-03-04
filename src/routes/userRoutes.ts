@@ -117,7 +117,8 @@ router.post('/submit/web', async (req: Request, res: Response) => {
             return res.status(401).json({ error: "Missing authentication token." });
         }
         
-        const payload = verifyToken(token); // Throws if invalid/expired
+        const payload = await verifyToken(token); // Throws if invalid/expired
+        
         userId = payload.userId;
         platformId = payload.platformId;
         platformName = payload.platformName as PlatformName;        

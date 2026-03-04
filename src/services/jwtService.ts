@@ -3,6 +3,7 @@
 import jwt, { Secret, SignOptions, JwtPayload } from 'jsonwebtoken'; 
 import logger from '../logger'; 
 import { MAX_TOKEN_DURATION_MINUTES } from '../config/gameConfig';
+import prisma from '../prisma';
 
 const JWT_SECRET: Secret = process.env.JWT_SECRET || 'your_fallback_secret_for_dev_ONLY';
 // Note: Security risk of the fallback = None (only happens during broken local dev, never in Prod as Vercel has the JWT_SECRET).
@@ -32,13 +33,51 @@ export function generateToken(payload: TokenPayload, duration: string = '21m'): 
 }
 
 
+
+
+
+
+
 /**
- * Verifies the JWT and returns the payload if valid. Throws error if invalid or expired.
+ * Verifies a JWT and returns the decoded payload.
+ * First checks the static token whitelist, then falls back to normal JWT verification.
+ * @param token The token string to verify.
+ * @returns The decoded token payload if valid.
+ * @throws An error if the token is invalid or expired.
  */
-export function verifyToken(token: string): TokenPayload {
-    // The verify function will throw an error if the token is invalid or expired
+export async function verifyToken(token: string): Promise<TokenPayload> {
+    try {
+        const dbToken = await prisma.perennialToken.findUnique({
+            where: { token, isActive: true },
+            include: { 
+                account: {
+                    select: { username: true } 
+                }
+            }
+        });
+
+        if (dbToken && dbToken.account) {
+            logger.info(`Auth: Perennial token [${token}] used by UserID: ${dbToken.userId}`);
+            return {
+                userId: dbToken.userId,
+                platformId: dbToken.platformId,
+                platformName: dbToken.platformName as any,
+                username: dbToken.account.username || "Demo User", 
+            };
+        }
+    } catch (dbError) {
+        logger.error("Database error during token verification:", dbError);
+    }
+
+    // Standard JWT check
     return jwt.verify(token, JWT_SECRET) as TokenPayload;
 }
+
+
+
+
+
+
 
 // Validation logic for dynamic duration, used by tokenRoutes.ts
 const DEFAULT_TOKEN_DURATION = '21m'; // Keep this one local as it's a default, not a rule. 

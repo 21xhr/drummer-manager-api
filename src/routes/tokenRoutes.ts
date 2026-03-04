@@ -26,7 +26,7 @@ router.post('/verify-challengesubmitform', async (req: Request, res: Response) =
     }
 
     try {
-        const payload = verifyToken(token); // This throws if invalid or expired
+        const payload = await verifyToken(token); // This throws if invalid or expired
         
         logger.info(`TOKEN Verification Success: User ${payload.platformId} verified.`, {
             platformId: payload.platformId,
@@ -102,7 +102,7 @@ router.post('/verify-explorer', async (req: Request, res: Response) => {
     if (!token) return res.status(400).json({ message: 'Token is missing.' });
 
     try {
-        const payload = verifyToken(token);
+        const payload = await verifyToken(token);
         
         // 1. Fetch user to check merit and last deduction
         const user = await prisma.user.findUnique({
