@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict 0T3Mb6INUULNpHpL5k1y7Gv9XzX3y6spVQWBLBaB92MMyuxI6IBZ9aqOUNoka8s
+-- \restrict HL0gVdbHaRbXOXD6tEGzAaUzYabojATcDda015ZkQfOEoI2R0pPA9WvjEJKJaxO
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -215,6 +215,7 @@ fd6ec8e8-4ce1-415d-9dd3-a0ce0325eea6	f383664ac2466d0ba3601ae905dfb9ba039dc998e8b
 708aa1e2-6920-413b-b0d1-50bd3ad6ee0f	822d1e230d706234da1e00d6407b560e26ef17f717d04e5e65ca09e84a7514ba	2025-12-30 21:57:34.501589+00	20251230215733_add_user_watermarks	\N	\N	2025-12-30 21:57:34.135564+00	1
 afccbf26-dc6d-44bf-b97a-0d2e753cd441	6ed63d159c7b3999c98a6c4c5a431297900c7bf665ece8128789b7e4bea5d620	2026-01-26 21:17:17.519627+00	20260126211717_add_last_explorer_deduction	\N	\N	2026-01-26 21:17:17.276953+00	1
 4c444378-a434-42de-9da8-c1e4aa6186f8	3f1ba522983e6a7351225dc2062b9a2d4764cad351513b6e5f4a01ad9b4f3996	2026-03-04 17:48:15.543247+00	20260304174815_add_perennial_tokens	\N	\N	2026-03-04 17:48:15.272229+00	1
+64cb8f0f-6457-4a9c-80b3-95cb8c875dd7	403b0d8385162a8a3d097d968579b22f1c15d5821217c19d3fa6d9f6c99cb6f6	2026-03-04 21:49:40.323658+00	20260304214939_link_perennial_tokens_to_accounts	\N	\N	2026-03-04 21:49:40.084726+00	1
 \.
 
 
@@ -223,9 +224,27 @@ afccbf26-dc6d-44bf-b97a-0d2e753cd441	6ed63d159c7b3999c98a6c4c5a431297900c7bf665e
 --
 
 COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity_timestamp", "last_seen_stream_day", "active_offline_days_count", "active_stream_days_count", "daily_challenge_reset_at", "total_numbers_spent_game_wide", "total_challenges_submitted", "total_numbers_returned_from_removals_game_wide", "total_numbers_spent", "total_received_from_removals", "total_removals_executed", "total_digouts_executed", "totalPushesExecuted", "totalDisruptsExecuted", "daily_submission_count", "total_caused_by_removals", "total_to_community_chest", "total_to_pushers", "lastProcessedDay", "lastSeenDay", "last_explorer_deduction") FROM stdin;
-5	2026-03-02 23:10:32.929	\N	0	0	0	2026-03-04 21:00:00	0	13	0	13440	0	0	0	0	0	0	0	0	0	0	0	2026-03-04 11:43:28.831
-1	\N	\N	3	0	0	2025-12-20 18:29:22	56125430	0	0	0	0	0	0	0	0	0	0	0	0	18	0	\N
-21	2026-03-04 18:31:56.303	\N	5	13	1	2026-03-05 21:00:00	0	369	0	56133536	0	0	1	6	1	0	0	0	0	18	18	2026-01-27 21:32:39.478
+12	\N	\N	0	0	0	2026-03-05 21:26:13.408	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+13	\N	\N	0	0	0	2026-03-05 21:26:13.746	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+14	\N	\N	0	0	0	2026-03-05 21:26:14.082	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+15	\N	\N	0	0	0	2026-03-05 21:26:14.42	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+16	\N	\N	0	0	0	2026-03-05 21:26:14.757	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+17	\N	\N	0	0	0	2026-03-05 21:26:15.092	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+18	\N	\N	0	0	0	2026-03-05 21:26:15.429	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+19	\N	\N	0	0	0	2026-03-05 21:26:15.765	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+20	\N	\N	0	0	0	2026-03-05 21:26:16.117	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+21	\N	\N	0	0	0	2026-03-05 21:26:16.452	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+1	\N	\N	3	0	0	2025-12-20 18:29:22	56125640	0	0	0	0	0	0	0	0	0	0	0	0	18	0	\N
+2	\N	\N	0	0	0	2026-03-05 21:26:09.723	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+3	\N	\N	0	0	0	2026-03-05 21:26:10.309	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+4	\N	\N	0	0	0	2026-03-05 21:26:10.696	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+5	\N	\N	0	0	0	2026-03-05 21:26:11.034	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+6	\N	\N	0	0	0	2026-03-05 21:26:11.373	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+7	\N	\N	0	0	0	2026-03-05 21:26:11.721	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+8	\N	\N	0	0	0	2026-03-05 21:26:12.058	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+9	\N	\N	0	0	0	2026-03-05 21:26:12.395	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+10	\N	\N	0	0	0	2026-03-05 21:26:12.733	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+11	\N	\N	0	0	0	2026-03-05 21:26:13.071	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
 \.
 
 
@@ -234,9 +253,38 @@ COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity
 --
 
 COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name", "current_balance", "last_balance_update", "last_activity_timestamp", "last_live_activity_timestamp", "username") FROM stdin;
-20	21	686071308	KICK	21000000	\N	\N	\N	21xhr
-21	21	686071308	TWITCH	99994749	\N	2026-03-04 21:30:24.527	2025-12-09 21:40:20.228	Unknown
-5	5	999888	TWITCH	99999789	\N	2026-03-04 18:22:24.38	2026-01-31 22:39:20.644	21xhr
+6	2	bot_tw_2	TWITCH	21000000	\N	\N	\N	Bot_Linked_2
+7	2	bot_kk_2	KICK	21000000	\N	\N	\N	Bot_Linked_2
+8	3	bot_solo_3	KICK	21000000	\N	\N	\N	Bot_Solo_3
+9	4	bot_tw_4	TWITCH	21000000	\N	\N	\N	Bot_Linked_4
+10	4	bot_kk_4	KICK	21000000	\N	\N	\N	Bot_Linked_4
+11	5	bot_solo_5	KICK	21000000	\N	\N	\N	Bot_Solo_5
+12	6	bot_tw_6	TWITCH	21000000	\N	\N	\N	Bot_Linked_6
+13	6	bot_kk_6	KICK	21000000	\N	\N	\N	Bot_Linked_6
+14	7	bot_solo_7	KICK	21000000	\N	\N	\N	Bot_Solo_7
+15	8	bot_tw_8	TWITCH	21000000	\N	\N	\N	Bot_Linked_8
+16	8	bot_kk_8	KICK	21000000	\N	\N	\N	Bot_Linked_8
+17	9	bot_solo_9	KICK	21000000	\N	\N	\N	Bot_Solo_9
+18	10	bot_tw_10	TWITCH	21000000	\N	\N	\N	Bot_Linked_10
+19	10	bot_kk_10	KICK	21000000	\N	\N	\N	Bot_Linked_10
+20	11	bot_solo_11	KICK	21000000	\N	\N	\N	Bot_Solo_11
+21	12	bot_tw_12	TWITCH	21000000	\N	\N	\N	Bot_Linked_12
+22	12	bot_kk_12	KICK	21000000	\N	\N	\N	Bot_Linked_12
+23	13	bot_solo_13	KICK	21000000	\N	\N	\N	Bot_Solo_13
+24	14	bot_tw_14	TWITCH	21000000	\N	\N	\N	Bot_Linked_14
+25	14	bot_kk_14	KICK	21000000	\N	\N	\N	Bot_Linked_14
+26	15	bot_solo_15	KICK	21000000	\N	\N	\N	Bot_Solo_15
+27	16	bot_tw_16	TWITCH	21000000	\N	\N	\N	Bot_Linked_16
+28	16	bot_kk_16	KICK	21000000	\N	\N	\N	Bot_Linked_16
+29	17	bot_solo_17	KICK	21000000	\N	\N	\N	Bot_Solo_17
+30	18	bot_tw_18	TWITCH	21000000	\N	\N	\N	Bot_Linked_18
+31	18	bot_kk_18	KICK	21000000	\N	\N	\N	Bot_Linked_18
+32	19	bot_solo_19	KICK	21000000	\N	\N	\N	Bot_Solo_19
+33	20	bot_tw_20	TWITCH	21000000	\N	\N	\N	Bot_Linked_20
+34	20	bot_kk_20	KICK	21000000	\N	\N	\N	Bot_Linked_20
+35	21	686071308	TWITCH	21000000	\N	\N	\N	21xhr
+36	21	53255028	KICK	21000000	\N	\N	\N	21xhr
+37	21	dTQg5JKFl-YiPzg0UQdqng	YOUTUBE	21000000	\N	\N	\N	21xhr
 \.
 
 
@@ -245,44 +293,6 @@ COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name
 --
 
 COPY "public"."challenges" ("challenge_id", "category", "proposer_user_id", "status", "is_executing", "has_been_auctioned", "has_been_digged_out", "auction_cost", "disrupt_count", "numbers_raised", "total_numbers_spent", "total_push", "stream_days_since_activation", "timestamp_submitted", "timestamp_last_activation", "timestamp_completed", "unique_pusher", "push_base_cost", "timestampLastStreamDayTicked", "current_session_count", "session_start_timestamp", "total_sessions", "duration_type", "failure_reason", "cadence_period_start", "cadence_progress_counter", "cadence_unit", "session_cadence_text", "cadence_required_count", "timestamp_last_session_tick", "submission_cost", "challenge_text") FROM stdin;
-21	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 15:50:55.656	2026-01-22 15:50:55.656	\N	0	21	2026-01-22 15:50:55.985	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	"sdf&lt;sdf&lt;df"
-22	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 15:51:50.351	2026-01-22 15:51:50.351	\N	0	21	2026-01-22 15:51:50.632	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	999810	"lot of money"
-23	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 18:12:24.052	2026-01-22 18:12:24.052	\N	0	21	2026-01-22 18:12:24.742	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1029000	"sgdfsdfsgfw"
-385	General	5	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-01 18:55:38.025	2026-03-01 18:55:38.025	\N	0	21	2026-03-01 18:55:38.423	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	"test 10 11 12"
-24	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 18:29:49.842	2026-01-22 18:29:49.842	\N	0	21	2026-01-22 18:29:50.477	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1058610	"&lt;sdf&lt;qdfs&lt;qdf"
-386	General	5	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-01 19:22:44.378	2026-03-01 19:22:44.378	\N	0	21	2026-03-01 19:22:44.645	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	840	"fqsfdqsdfqsfd"
-382	General	5	ACTIVE	f	f	f	0	0	0	0	21	0	2026-02-26 21:51:04.91	2026-02-26 21:51:04.91	\N	0	21	2026-02-26 21:51:05.216	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	840	"line1  http://192.168.1.37:5500/challengesubmitform/index.html?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsInBsYXRmb3JtSWQiOiI5OTk4ODgiLCJwbGF0Zm9ybU5hbWUiOiJUV0lUQ0giLCJ1c2VybmFtZSI6IjIxeGhyIiwiaWF0IjoxNzcyMTQyNTM2LCJleHAiOjE3NzIxNDM3OTZ9.Mn_M30hrnC5KMilulzel9MBg63Au3QArljOPe1NZgtY<div>line2 http://192.168.1.37:5500/challengesubmitform/index.html?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsInBsYXRmb3JtSWQiOiI5OTk4ODgiLCJwbGF0Zm9ybU5hbWUiOiJUV0lUQ0giLCJ1c2VybmFtZSI6IjIxeGhyIiwiaWF0IjoxNzcyMTQyNTM2LCJleHAiOjE3NzIxNDM3OTZ9.Mn_M30hrnC5KMilulzel9MBg63Au3QArljOPe1NZgtY</div><div>line3 http://192.168.1.37:5500/challengesubmitform/index.html?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsInBsYXRmb3JtSWQiOiI5OTk4ODgiLCJwbGF0Zm9ybU5hbWUiOiJUV0lUQ0giLCJ1c2VybmFtZSI6IjIxeGhyIiwiaWF0IjoxNzcyMTQyNTM2LCJleHAiOjE3NzIxNDM3OTZ9.Mn_M30hrnC5KMilulzel9MBg63Au3QArljOPe1NZgtY</div><div>line4 http://192.168.1.37:5500/challengesubmitform/index.html?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsInBsYXRmb3JtSWQiOiI5OTk4ODgiLCJwbGF0Zm9ybU5hbWUiOiJUV0lUQ0giLCJ1c2VybmFtZSI6IjIxeGhyIiwiaWF0IjoxNzcyMTQyNTM2LCJleHAiOjE3NzIxNDM3OTZ9.Mn_M30hrnC5KMilulzel9MBg63Au3QArljOPe1NZgtY</div>"
-383	General	5	ACTIVE	f	f	f	0	0	0	0	0	0	2026-02-27 14:59:58.485	2026-02-27 14:59:58.485	\N	0	21	2026-02-27 14:59:58.803	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1890	"line 1:&nbsp;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.<div><br></div><div>line 2:&nbsp;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.</div><div><br></div><div>line 3:&nbsp;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.<div style=\\"--tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ;\\"><br style=\\"--tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ;\\"></div><div style=\\"--tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ;\\">line 4:&nbsp;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.</div></div>"
-25	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 19:06:47.165	2026-01-22 19:06:47.165	\N	0	21	2026-01-22 19:06:47.456	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1088640	"&lt;sd&lt;dfs&lt;qdff"
-3342	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 19:07:17.777	2026-01-22 19:07:17.777	\N	0	21	2026-01-22 19:07:18.1	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1119090	"wsdvwxcvwxcv"
-387	General	5	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-01 19:28:41.691	2026-03-01 19:28:41.691	\N	0	21	2026-03-01 19:28:41.959	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1890	"fvcwxcvwsvcwsv"
-384	General	5	ACTIVE	f	f	f	0	0	0	0	0	0	2026-02-27 15:30:50.978	2026-02-27 15:30:50.978	\N	0	21	2026-02-27 15:30:51.247	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	3360	"<div>Why do we use it?</div><div>It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. Various versions have evolved over the years, sometimes by accident, sometimes on purpose (injected humour and the like).</div><div><br></div><div><br></div><div>Where does it come from?</div><div>Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of \\"de Finibus Bonorum et Malorum\\" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. The first line of Lorem Ipsum, \\"Lorem ipsum dolor sit amet..\\", comes from a line in section 1.10.32.</div><div><br></div><div>The standard chunk of Lorem Ipsum used since the 1500s is reproduced below for those interested. Sections 1.10.32 and 1.10.33 from \\"de Finibus Bonorum et Malorum\\" by Cicero are also reproduced in their exact original form, accompanied by English versions from the 1914 translation by H. Rackham.</div><div><br></div><div>Where can I get some?</div><div>There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text. All the Lorem Ipsum generators on the Internet tend to repeat predefined chunks as necessary, making this the first true generator on the Internet. It uses a dictionary of over 200 Latin words, combined with a handful of model sentence structures, to generate Lorem Ipsum which looks reasonable. The generated Lorem Ipsum is therefore always free from repetition, injected humour, or non-characteristic words etc.</div>"
-3356	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 19:07:37.279	2026-01-22 19:07:37.279	\N	0	21	2026-01-22 19:07:37.613	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1149960	"qscqscscxc"
-388	General	5	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-01 21:06:07.756	2026-03-01 21:06:07.756	\N	0	21	2026-03-01 21:06:08.112	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	"wsdwsdfwsdfwsdf&nbsp;wsdwsdfwsdfwsdf&nbsp;wsdwsdfwsdfwsdf&nbsp;wsdwsdfwsdfwsdf&nbsp;wsdwsdfwsdfwsdf&nbsp;wsdwsdfwsdfwsdf&nbsp;wsdwsdfwsdfwsdf&nbsp;wsdwsdfwsdfwsdf&nbsp;wsdwsdfwsdfwsdf&nbsp;wsdwsdfwsdfwsdf&nbsp;wsdwsdfwsdfwsdf&nbsp;wsdwsdfwsdfwsdf&nbsp;wsdwsdfwsdfwsdf&nbsp;wsdwsdfwsdfwsdf&nbsp;wsdwsdfwsdfwsdf&nbsp;wsdwsdfwsdfwsdf&nbsp;wsdwsdfwsdfwsdf<div>wsdwsdfwsdfwsdf wsdwsdfwsdfwsdf wsdwsdfwsdfwsdf wsdwsdfwsdfwsdf wsdwsdfwsdfwsdf wsdwsdfwsdfwsdf wsdwsdfwsdfwsdf wsdwsdfwsdfwsdf wsdwsdfwsdfwsdf wsdwsdfwsdfwsdf wsdwsdfwsdfwsdf wsdwsdfwsdfwsdf</div><div><br></div><div><br></div><div><br></div><div>wsdwsdfwsdfwsdf wsdwsdfwsdfwsdf wsdwsdfwsdfwsdf wsdwsdfwsdfwsdf wsdwsdfwsdfwsdf wsdwsdfwsdfwsdf wsdwsdfwsdfwsdf wsdwsdfwsdfwsdf</div>"
-3336	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 19:08:38.145	2026-01-22 19:08:38.145	\N	0	21	2026-01-22 19:08:38.422	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1181250	"&lt;wswdfswdf"
-389	General	5	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-02 15:19:49.808	2026-03-02 15:19:49.808	\N	0	21	2026-03-02 15:19:50.128	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	840	"&lt;sdcwsdwsdv"
-3374	General	21	ARCHIVED	f	f	f	0	0	0	0	0	0	2026-01-22 19:11:41.703	2026-01-22 19:11:41.703	\N	0	21	2026-01-22 19:11:41.928	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	840	"wsdfwsdfsf"
-390	General	5	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-02 19:32:53.751	2026-03-02 19:32:53.751	\N	0	21	2026-03-02 19:32:54.567	0	\N	2	RECURRING	\N	\N	0	DAILY	1 session per day for 2 days	1	\N	1890	"<span style=\\"font-size: 13.44px;\\">sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscvwxcvwsvwdwsdvwsdvwsdv</span><span style=\\"font-size: 13.44px;\\">&nbsp;sdfwdscv</span>"
-1338	General	21	AUCTIONED	f	f	f	0	0	0	0	0	0	2026-01-22 19:12:14.237	2026-01-22 19:12:14.237	\N	0	21	2026-01-22 19:12:14.5	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1890	"wsdfwsdfwsdf"
-391	General	5	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-02 22:57:08.257	2026-03-02 22:57:08.257	\N	0	21	2026-03-02 22:57:08.582	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	"wsvwsvwsvvwvbwdfb"
-3339	General	21	COMPLETED	f	f	f	0	0	0	0	0	0	2026-01-22 21:00:52.508	2026-01-22 21:00:52.508	\N	0	21	2026-01-22 21:00:52.806	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	"wsdfwsdfswdf"
-392	General	5	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-02 23:10:32.929	2026-03-02 23:10:32.929	\N	0	21	2026-03-02 23:10:33.24	0	\N	42	RECURRING	\N	\N	0	CUSTOM_DAYS	21 sessions every 2 days for 2 times	21	\N	840	"wsdvwsvwsfvwsfv"
-393	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-04 15:43:15.514	2026-03-04 15:43:15.514	\N	0	21	2026-03-04 15:43:16.333	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	"Eat a lemon on stream"
-346	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:21:52.697	2026-01-22 21:21:52.697	\N	0	21	2026-01-22 21:21:52.943	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	13440	"swdfswdfff"
-341	General	21	COMPLETED	f	f	f	0	0	0	0	0	0	2026-01-22 21:17:20.697	2026-01-22 21:17:20.697	\N	0	21	2026-01-22 21:17:21.355	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1890	"wsdfwsdfwsdf"
-343	General	21	REMOVED	f	f	f	0	0	0	0	0	0	2026-01-22 21:19:10.669	2026-01-22 21:19:10.669	\N	0	21	2026-01-22 21:19:10.963	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	5250	"wsdfwsdfff"
-394	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-04 16:14:24.432	2026-03-04 16:14:24.432	\N	0	21	2026-03-04 16:14:25.106	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	840	"Eat a lemon on stream"
-395	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-04 16:14:48.75	2026-03-04 16:14:48.75	\N	0	21	2026-03-04 16:14:49.038	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1890	"Eat a lemon on stream"
-396	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-04 18:20:52.961	2026-03-04 18:20:52.961	\N	0	21	2026-03-04 18:20:53.28	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	3360	"gxfbxvbxdfbdxbvxvb"
-348	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:22:24.309	2026-01-22 21:22:24.309	\N	0	21	2026-01-22 21:22:24.993	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	21000	"wsdfswdfff"
-342	General	21	FAILED	f	f	f	0	0	0	0	0	0	2026-01-22 21:18:41.232	2026-01-22 21:18:41.232	\N	0	21	2026-01-22 21:18:41.534	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	3360	"wsdfwsdfsf"
-347	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:22:09.344	2026-01-22 21:22:09.344	\N	0	21	2026-01-22 21:22:09.591	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	17010	"cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsInBsYXRmb3JtSWQiOiI5OTk4ODgiLCJwbGF0Zm9ybU5hbWUiOiJUV0lUQ0giLCJ1c2VybmFtZSI6IjIxeGhyIiwiaWF0IjoxNzcyMTQyNTM2LCJleHAiOjE3NzIxNDM3OTZcCI6IkpXVCJeyJ1c2VySWQiOjUsInBsYXRmb3JtSWQiOiI5OTk4ODgiLCJwbGF0Zm9ybU5hbWUiOiJUV0lUQ0giLCJ1c2VybmFtZSI6IjIxeGhyIiwiaWF0IjoxNzcyMTQyNTM2LCJleHAiOjE3NzIxNDM3OTZ9.cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsInBsYXRmb3JtSWQiOiI5OTk4ODgiLCJwbGF0Zm9ybU5hbWUiOiJUV0lUQ0giLCJ1c2VybmFtZSI6IjIxeGhyIiwiaWF0IjoxNzcyMTQyNTM2LCJleHAiOjE3NzIxNDM3OTZ9.cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsInBsYXRmb3JtSWQiOiI5OTk4ODgiLCJwbGF0Zm9ybU5hbWUiOiJUV0lUQ0giLCJ1c2VybmFtZSI6IjIxeGhyIiwiaWF0IjoxNzcyMTQyNTM2LCJleHAiOjE3NzIxNDM3OTZ9NTM2LCJleHAiOjE3NzIxNDM3OTZ9.cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsInBsYXRmb3JtSWQiOiI5OTk4ODgiLCJwbGF0Zm9ybU5hbWUiOiJUV0lUQ0giLCJ1c2VybmFNTM2LCJleHAiOjE3NzIxNDM3OTZ9.cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsInBsYXRmb3JtSWQiOiI5OTk4ODgiLCJwbGF0Zm9ybU5hbWUiOiJUV0lUQ0giLCJ1c2VybmFNTM2LCJleHAiOjE3NzIxNDM3OTZ9.cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsInBsYXRmb3JtSWQiOiI5OTk4ODgiLCJwbGF0Zm9ybU5hbWUiOiJUV0lUQ0giLCJ1c2VybmFNTM2LCJleHAiOjE3NzIxNDM3OTZ9.cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsInBsYXRmb3JtSWQiOiI5OTk4ODgiLCJwbGF0Zm9ybU5hbWUiOiJUV0lUQ0giLCJ1c2VybmFNTM2LCJleHAiOjE3NzIxNDM3OTZ9.cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsInBsYXRmb3JtSWQiOiI5OTk4ODgiLCJwbGF0Zm9ybU5hbWUiOiJUV0lUQ0giLCJ1c2VybmF21"
-345	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:21:21.558	2026-01-22 21:21:21.558	\N	0	21	2026-01-22 21:21:21.822	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	10290	"line 1:&nbsp;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.<div><br></div><div>line 2:&nbsp;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.</div><div><br></div><div>line 3:&nbsp;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.<div style=\\"--tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ;\\"><br style=\\"--tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ;\\"></div><div style=\\"--tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ;\\">line 4:&nbsp;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.</div></div>"
-1	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-22 21:20:59.62	2026-01-22 21:20:59.62	\N	0	21	2026-01-22 21:20:59.871	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	7560	"wsdfwsdfwf"
-397	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-04 18:31:56.303	2026-03-04 18:31:56.303	\N	0	21	2026-03-04 18:31:56.574	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	5250	"wwsdvwsvwsvwsv"
-4	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-01-21 17:18:59.659	2026-01-21 17:18:59.659	\N	0	21	2026-01-21 17:18:59.981	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	"wd&lt;sd&lt;sc&lt;sc"
-2	General	21	ACTIVE	f	f	f	0	0	0	0	0	1	2026-01-20 16:18:22.721	2026-01-20 16:18:22.721	\N	0	21	2026-01-21 17:49:29.597	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	30240	{"Commitment": {"goal": "Livestream ≥ 21 days/month, 3 hours/day minimum.", "schedule": "Determined and expanded by community milestones.", "principle": "Reliability and consistency as core to community trust."}, "Core Concepts": {"ethos": "Transparency is a key ethos of the project, with a focus on interactive live entertainment and educational content, ensuring accessibility regardless of financial support.", "overview": "The Drummer Manager Game is founded on a principle of deep community involvement through gamification, where influence is earned, not just given. This system ensures every participant''s action—from suggesting a challenge to promoting one—is meaningful, strategic, and balanced against the community''s collective will.", "automation": "The commitment to system automation (e.g., automated profiling of new challenge suggestions, real-time leaderboard ranking) is a core design pillar aimed at minimizing administrative burden, ensuring project transparency, and maximizing the time \\"21\\" can dedicate to drumming and content creation.", "play_modes": "The game is playable online and offline, with the livestream experience being fully gamified. It features an evolutionary design with integrated community and a feedback loop. Chat commands serve as the main, simple, and fast interface.", "collaboration": "This collaborative approach ensures that the community is not just an audience, but an active participant in guiding, disrupting, and shaping the progress of \\"21\\" (the creator).", "primary_objective": "The primary objective of this project is to deeply involve the community in the entire creative process, offering a stark contrast to the often-unseen struggles behind high-level media showcases.", "Unified Identity (Cross-Platform Synchronization)": {"features": ["Aggregated Influence: NUMBERS earned on one platform are accessible on all others.", "Persistent History: Tiers, Pushes, and legacy achievements follow the user.", "Atomic Watermarking: Every action updates a single global activity watermark."], "description": "DMG utilizes a Unified User Identity resolving Kick, Twitch, YouTube, and Discord into a single DMG User ID."}}}
-3	General	21	ACTIVE	f	f	f	0	0	0	0	0	1	2026-01-20 16:22:15.141	2026-01-20 16:22:15.141	\N	0	21	2026-01-21 17:49:29.597	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	35490	{"Growth": {"hub": "Discord", "platforms": ["TikTok", "Trovo", "Soulbound.tv", "Abstract"], "incentives": "NUMBERS-based outreach"}, "Details": {"Challenge Time": {"Session Timer": "21 minutes", "Commitment Window": "21 days"}, "Challenge Types": {"ONE_OFF": "Single stream completion", "RECURRING": "Multi-session"}, "Execution Slots": "Predefined 21-minute blocks", "Two Watermark Clock": {"Real Days": "Heartbeat cadence clock", "Stream Days": "Counts effort days"}}, "Commitment": {"goal": "Livestream ≥ 21 days/month, 3 hours/day minimum.", "schedule": "Determined and expanded by community milestones.", "principle": "Reliability and consistency as core to community trust."}, "Tech Setup": {"Tools": ["Lumia Stream", "Social Stream Ninja"], "Cameras": ["GoPro HERO 8", "GoPro HERO 7"], "Hardware": "MacBook Pro 2019", "Internet": "376.8 Mbps down / 279.6 Mbps up", "Streaming": ["OBS Studio", "Aitum"]}, "Core Concepts": {"ethos": "Transparency is a key ethos of the project, with a focus on interactive live entertainment and educational content, ensuring accessibility regardless of financial support.", "overview": "The Drummer Manager Game is founded on a principle of deep community involvement through gamification, where influence is earned, not just given. This system ensures every participant's action—from suggesting a challenge to promoting one—is meaningful, strategic, and balanced against the community's collective will.", "automation": "The commitment to system automation (e.g., automated profiling of new challenge suggestions, real-time leaderboard ranking) is a core design pillar aimed at minimizing administrative burden, ensuring project transparency, and maximizing the time \\"21\\" can dedicate to drumming and content creation.", "play_modes": "The game is playable online and offline, with the livestream experience being fully gamified. It features an evolutionary design with integrated community and a feedback loop. Chat commands serve as the main, simple, and fast interface.", "collaboration": "This collaborative approach ensures that the community is not just an audience, but an active participant in guiding, disrupting, and shaping the progress of \\"21\\" (the creator).", "primary_objective": "The primary objective of this project is to deeply involve the community in the entire creative process, offering a stark contrast to the often-unseen struggles behind high-level media showcases.", "Unified Identity (Cross-Platform Synchronization)": {"features": ["Aggregated Influence: NUMBERS earned on one platform are accessible on all others.", "Persistent History: Tiers, Pushes, and legacy achievements follow the user.", "Atomic Watermarking: Every action updates a single global activity watermark."], "description": "DMG utilizes a Unified User Identity resolving Kick, Twitch, YouTube, and Discord into a single DMG User ID."}}, "Auction System": {"purpose": "NUMBERS sink + quality validation", "threshold": "Defined by 21"}, "Bonus Mechanic": {"community_chest": "Giftable NUMBERS and perks"}, "Voting (!push)": {"logic": "Quadratic", "ranking": "Total NUMBERS spent", "platforms": ["Kick", "Trovo", "Twitch", "YouTube", "Discord"]}, "Project Pillars": {"Branding": {"tone": "Respectful yet mildly sarcastic", "basis": "Authenticity with sarcastic edge", "ethos": "Interactive live entertainment and educational content, ensuring accessibility regardless of financial support.", "fonts": ["DM Sans", "Roboto", "Arial"], "symbolism": "21 defines identity and rewards", "visual_style": "Neon borders, Las Vegas-style minimalism, motion + readability"}, "Gamification Pillar: Earning Influence": {"Core Loop": {"Execution": "21 selects based on rank, mood, physical ability, and project needs", "Push Mechanic": "NUMBERS spent determines ranking", "21 Most Promoted Challenges": "Eligibility pool"}, "foundation": "Community moves from passive viewers to co-managers", "Game Structure": {"Scaling": "Revenue milestones unlock more stream time", "Dual Pace": "24/7 engagement", "Interface": "Chat commands", "Sacred Number": 21}, "Managerial Override": "21 retains final authority over all challenges", "Strategic Overrides": {"Digout Mechanic": "Revives archived challenges at 21% historical cost", "Auction Mechanic": "High threshold instant execution"}, "Engine: Currency and Strategic Cost": {"NUMBERS": "Loyalty points used for all actions", "Quadratic Logic": {"Challenge Promotion": "Cost increases per-user per-challenge, never resets", "Challenge Submission": "Cost increases per-user daily"}}}}, "Quadratic Logic": {"push": "Per-user per-challenge permanent", "purpose": "Enforce consensus over domination", "submission": "Per-user daily"}, "Tiers of Access": ["Seat Filler", "Intern", "Middle Manager", "Big Shot Producer", "Evil Executive"], "Challenge Status": ["Active", "In Progress", "Completed", "Archived", "Auctioning", "Removed"], "Dual Pace System": {"Passive Pace": "Discord bot outside streams", "Livestream Pace": "Full control via chat"}, "Spending NUMBERS": ["Submit challenge", "Push challenge", "Disrupt", "Auction bids", "Live alerts", "Raffles"], "Subscriber Tiers": {"Producer 21+": "€21/month", "Producer 42+": "€42/month", "Producer 2.1+": "€2.1/month", "Producer 210+": "€210/month"}, "Community Strategy": {"hub": "Discord", "reminder": "Viewers shape the stream", "visibility": "Highlights + Starboard"}}
 \.
 
 
@@ -291,7 +301,26 @@ COPY "public"."challenges" ("challenge_id", "category", "proposer_user_id", "sta
 --
 
 COPY "public"."perennial_tokens" ("token_id", "token", "user_id", "platform_id", "platform_name", "is_active", "created_at") FROM stdin;
-1	21perennialtokendevtest	21	686071308	TWITCH	t	2026-03-04 19:08:32
+1	test_token_2	2	bot_tw_2	TWITCH	t	2026-03-05 21:26:10.21
+2	test_token_3	3	bot_solo_3	KICK	t	2026-03-05 21:26:10.647
+3	test_token_4	4	bot_tw_4	TWITCH	t	2026-03-05 21:26:10.986
+4	test_token_5	5	bot_solo_5	KICK	t	2026-03-05 21:26:11.324
+5	test_token_6	6	bot_tw_6	TWITCH	t	2026-03-05 21:26:11.672
+6	test_token_7	7	bot_solo_7	KICK	t	2026-03-05 21:26:12.01
+7	test_token_8	8	bot_tw_8	TWITCH	t	2026-03-05 21:26:12.346
+8	test_token_9	9	bot_solo_9	KICK	t	2026-03-05 21:26:12.684
+9	test_token_10	10	bot_tw_10	TWITCH	t	2026-03-05 21:26:13.022
+10	test_token_11	11	bot_solo_11	KICK	t	2026-03-05 21:26:13.359
+11	test_token_12	12	bot_tw_12	TWITCH	t	2026-03-05 21:26:13.697
+12	test_token_13	13	bot_solo_13	KICK	t	2026-03-05 21:26:14.033
+13	test_token_14	14	bot_tw_14	TWITCH	t	2026-03-05 21:26:14.37
+14	test_token_15	15	bot_solo_15	KICK	t	2026-03-05 21:26:14.708
+15	test_token_16	16	bot_tw_16	TWITCH	t	2026-03-05 21:26:15.043
+16	test_token_17	17	bot_solo_17	KICK	t	2026-03-05 21:26:15.381
+17	test_token_18	18	bot_tw_18	TWITCH	t	2026-03-05 21:26:15.716
+18	test_token_19	19	bot_solo_19	KICK	t	2026-03-05 21:26:16.069
+19	test_token_20	20	bot_tw_20	TWITCH	t	2026-03-05 21:26:16.405
+20	master_demo_token	21	686071308	TWITCH	t	2026-03-05 21:26:16.767
 \.
 
 
@@ -333,9 +362,6 @@ COPY "public"."streams" ("stream_session_id", "current_stream_number", "start_ti
 --
 
 COPY "public"."temp_quotes" ("quote_id", "user_id", "challenge_id", "quantity", "quoted_cost", "timestamp_created", "is_locked") FROM stdin;
-3be03f90-1b22-4f2a-a9db-c9c6253b2745	21	22	20	60270	2026-01-22 16:02:54.76	f
-ad47f36b-e4e0-4081-8720-3d11443aa042	21	22	68	2249814	2026-01-22 16:03:03.338	f
-b464ab18-9e7c-4e0e-a8c8-eadf6418ec3f	21	22	20	60270	2026-01-22 16:04:03.609	f
 \.
 
 
@@ -414,21 +440,21 @@ SELECT pg_catalog.setval('"auth"."refresh_tokens_id_seq"', 1, false);
 -- Name: accounts_account_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."accounts_account_id_seq"', 5, true);
+SELECT pg_catalog.setval('"public"."accounts_account_id_seq"', 37, true);
 
 
 --
 -- Name: challenges_challenge_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 397, true);
+SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 398, true);
 
 
 --
 -- Name: perennial_tokens_token_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."perennial_tokens_token_id_seq"', 1, false);
+SELECT pg_catalog.setval('"public"."perennial_tokens_token_id_seq"', 20, true);
 
 
 --
@@ -456,6 +482,6 @@ SELECT pg_catalog.setval('"public"."users_user_id_seq"', 5, true);
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict 0T3Mb6INUULNpHpL5k1y7Gv9XzX3y6spVQWBLBaB92MMyuxI6IBZ9aqOUNoka8s
+-- \unrestrict HL0gVdbHaRbXOXD6tEGzAaUzYabojATcDda015ZkQfOEoI2R0pPA9WvjEJKJaxO
 
 RESET ALL;

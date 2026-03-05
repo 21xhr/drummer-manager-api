@@ -461,6 +461,11 @@ ALTER TABLE ONLY "public"."challenges"
 
 
 ALTER TABLE ONLY "public"."perennial_tokens"
+    ADD CONSTRAINT "perennial_tokens_platform_id_platform_name_fkey" FOREIGN KEY ("platform_id", "platform_name") REFERENCES "public"."accounts"("platform_id", "platform_name") ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+
+ALTER TABLE ONLY "public"."perennial_tokens"
     ADD CONSTRAINT "perennial_tokens_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
