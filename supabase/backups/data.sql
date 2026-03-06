@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict HL0gVdbHaRbXOXD6tEGzAaUzYabojATcDda015ZkQfOEoI2R0pPA9WvjEJKJaxO
+-- \restrict LgTyBrggXT7ZT6as6khsxsZUjPoHNBWazJhUANrewKmorAOoYfW2H2fimQdRdly
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -224,27 +224,27 @@ afccbf26-dc6d-44bf-b97a-0d2e753cd441	6ed63d159c7b3999c98a6c4c5a431297900c7bf665e
 --
 
 COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity_timestamp", "last_seen_stream_day", "active_offline_days_count", "active_stream_days_count", "daily_challenge_reset_at", "total_numbers_spent_game_wide", "total_challenges_submitted", "total_numbers_returned_from_removals_game_wide", "total_numbers_spent", "total_received_from_removals", "total_removals_executed", "total_digouts_executed", "totalPushesExecuted", "totalDisruptsExecuted", "daily_submission_count", "total_caused_by_removals", "total_to_community_chest", "total_to_pushers", "lastProcessedDay", "lastSeenDay", "last_explorer_deduction") FROM stdin;
-12	\N	\N	0	0	0	2026-03-05 21:26:13.408	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
-13	\N	\N	0	0	0	2026-03-05 21:26:13.746	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
-14	\N	\N	0	0	0	2026-03-05 21:26:14.082	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
-15	\N	\N	0	0	0	2026-03-05 21:26:14.42	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
-16	\N	\N	0	0	0	2026-03-05 21:26:14.757	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
-17	\N	\N	0	0	0	2026-03-05 21:26:15.092	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
-18	\N	\N	0	0	0	2026-03-05 21:26:15.429	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
-19	\N	\N	0	0	0	2026-03-05 21:26:15.765	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
-20	\N	\N	0	0	0	2026-03-05 21:26:16.117	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
-21	\N	\N	0	0	0	2026-03-05 21:26:16.452	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
-1	\N	\N	3	0	0	2025-12-20 18:29:22	56125640	0	0	0	0	0	0	0	0	0	0	0	0	18	0	\N
-2	\N	\N	0	0	0	2026-03-05 21:26:09.723	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
-3	\N	\N	0	0	0	2026-03-05 21:26:10.309	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
-4	\N	\N	0	0	0	2026-03-05 21:26:10.696	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
-5	\N	\N	0	0	0	2026-03-05 21:26:11.034	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
-6	\N	\N	0	0	0	2026-03-05 21:26:11.373	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
-7	\N	\N	0	0	0	2026-03-05 21:26:11.721	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
-8	\N	\N	0	0	0	2026-03-05 21:26:12.058	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
-9	\N	\N	0	0	0	2026-03-05 21:26:12.395	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
-10	\N	\N	0	0	0	2026-03-05 21:26:12.733	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
-11	\N	\N	0	0	0	2026-03-05 21:26:13.071	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+1	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+21	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+2	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+3	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+4	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+5	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+6	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+7	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+8	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+9	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+10	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+11	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+12	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+13	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+14	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+15	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+16	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+17	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+18	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+19	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+20	\N	\N	0	0	0	2026-03-05 22:15:19.96	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
 \.
 
 
@@ -253,38 +253,48 @@ COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity
 --
 
 COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name", "current_balance", "last_balance_update", "last_activity_timestamp", "last_live_activity_timestamp", "username") FROM stdin;
-6	2	bot_tw_2	TWITCH	21000000	\N	\N	\N	Bot_Linked_2
-7	2	bot_kk_2	KICK	21000000	\N	\N	\N	Bot_Linked_2
-8	3	bot_solo_3	KICK	21000000	\N	\N	\N	Bot_Solo_3
-9	4	bot_tw_4	TWITCH	21000000	\N	\N	\N	Bot_Linked_4
-10	4	bot_kk_4	KICK	21000000	\N	\N	\N	Bot_Linked_4
-11	5	bot_solo_5	KICK	21000000	\N	\N	\N	Bot_Solo_5
-12	6	bot_tw_6	TWITCH	21000000	\N	\N	\N	Bot_Linked_6
-13	6	bot_kk_6	KICK	21000000	\N	\N	\N	Bot_Linked_6
-14	7	bot_solo_7	KICK	21000000	\N	\N	\N	Bot_Solo_7
-15	8	bot_tw_8	TWITCH	21000000	\N	\N	\N	Bot_Linked_8
-16	8	bot_kk_8	KICK	21000000	\N	\N	\N	Bot_Linked_8
-17	9	bot_solo_9	KICK	21000000	\N	\N	\N	Bot_Solo_9
-18	10	bot_tw_10	TWITCH	21000000	\N	\N	\N	Bot_Linked_10
-19	10	bot_kk_10	KICK	21000000	\N	\N	\N	Bot_Linked_10
-20	11	bot_solo_11	KICK	21000000	\N	\N	\N	Bot_Solo_11
-21	12	bot_tw_12	TWITCH	21000000	\N	\N	\N	Bot_Linked_12
-22	12	bot_kk_12	KICK	21000000	\N	\N	\N	Bot_Linked_12
-23	13	bot_solo_13	KICK	21000000	\N	\N	\N	Bot_Solo_13
-24	14	bot_tw_14	TWITCH	21000000	\N	\N	\N	Bot_Linked_14
-25	14	bot_kk_14	KICK	21000000	\N	\N	\N	Bot_Linked_14
-26	15	bot_solo_15	KICK	21000000	\N	\N	\N	Bot_Solo_15
-27	16	bot_tw_16	TWITCH	21000000	\N	\N	\N	Bot_Linked_16
-28	16	bot_kk_16	KICK	21000000	\N	\N	\N	Bot_Linked_16
-29	17	bot_solo_17	KICK	21000000	\N	\N	\N	Bot_Solo_17
-30	18	bot_tw_18	TWITCH	21000000	\N	\N	\N	Bot_Linked_18
-31	18	bot_kk_18	KICK	21000000	\N	\N	\N	Bot_Linked_18
-32	19	bot_solo_19	KICK	21000000	\N	\N	\N	Bot_Solo_19
-33	20	bot_tw_20	TWITCH	21000000	\N	\N	\N	Bot_Linked_20
-34	20	bot_kk_20	KICK	21000000	\N	\N	\N	Bot_Linked_20
-35	21	686071308	TWITCH	21000000	\N	\N	\N	21xhr
-36	21	53255028	KICK	21000000	\N	\N	\N	21xhr
-37	21	dTQg5JKFl-YiPzg0UQdqng	YOUTUBE	21000000	\N	\N	\N	21xhr
+1	21	686071308	TWITCH	21000000	\N	\N	\N	21xhr
+2	21	53255028	KICK	21000000	\N	\N	\N	21xhr
+3	21	dTQg5JKFl-YiPzg0UQdqng	YOUTUBE	21000000	\N	\N	\N	21xhr
+4	2	linked_kick_2	KICK	21000000	\N	\N	\N	Duo_KICK_2
+5	2	linked_youtube_2	YOUTUBE	21000000	\N	\N	\N	Duo_YOUTUBE_2
+6	3	linked_twitch_3	TWITCH	21000000	\N	\N	\N	Triple_TWITCH_3
+7	3	linked_youtube_3	YOUTUBE	21000000	\N	\N	\N	Triple_YOUTUBE_3
+8	3	linked_kick_3	KICK	21000000	\N	\N	\N	Triple_KICK_3
+9	4	linked_youtube_4	YOUTUBE	21000000	\N	\N	\N	Triple_YOUTUBE_4
+10	4	linked_kick_4	KICK	21000000	\N	\N	\N	Triple_KICK_4
+11	4	linked_twitch_4	TWITCH	21000000	\N	\N	\N	Triple_TWITCH_4
+12	5	linked_kick_5	KICK	21000000	\N	\N	\N	Triple_KICK_5
+13	5	linked_twitch_5	TWITCH	21000000	\N	\N	\N	Triple_TWITCH_5
+14	5	linked_youtube_5	YOUTUBE	21000000	\N	\N	\N	Triple_YOUTUBE_5
+15	6	linked_twitch_6	TWITCH	21000000	\N	\N	\N	Duo_TWITCH_6
+16	6	linked_kick_6	KICK	21000000	\N	\N	\N	Duo_KICK_6
+17	7	linked_twitch_7	TWITCH	21000000	\N	\N	\N	Triple_TWITCH_7
+18	7	linked_kick_7	KICK	21000000	\N	\N	\N	Triple_KICK_7
+19	7	linked_youtube_7	YOUTUBE	21000000	\N	\N	\N	Triple_YOUTUBE_7
+20	8	linked_twitch_8	TWITCH	21000000	\N	\N	\N	Duo_TWITCH_8
+21	8	linked_kick_8	KICK	21000000	\N	\N	\N	Duo_KICK_8
+22	9	linked_twitch_9	TWITCH	21000000	\N	\N	\N	Triple_TWITCH_9
+23	9	linked_kick_9	KICK	21000000	\N	\N	\N	Triple_KICK_9
+24	9	linked_youtube_9	YOUTUBE	21000000	\N	\N	\N	Triple_YOUTUBE_9
+25	10	linked_kick_10	KICK	21000000	\N	\N	\N	Duo_KICK_10
+26	10	linked_twitch_10	TWITCH	21000000	\N	\N	\N	Duo_TWITCH_10
+27	11	linked_youtube_11	YOUTUBE	21000000	\N	\N	\N	Triple_YOUTUBE_11
+28	11	linked_kick_11	KICK	21000000	\N	\N	\N	Triple_KICK_11
+29	11	linked_twitch_11	TWITCH	21000000	\N	\N	\N	Triple_TWITCH_11
+30	12	linked_kick_12	KICK	21000000	\N	\N	\N	Duo_KICK_12
+31	12	linked_twitch_12	TWITCH	21000000	\N	\N	\N	Duo_TWITCH_12
+32	13	linked_twitch_13	TWITCH	21000000	\N	\N	\N	Triple_TWITCH_13
+33	13	linked_kick_13	KICK	21000000	\N	\N	\N	Triple_KICK_13
+34	13	linked_youtube_13	YOUTUBE	21000000	\N	\N	\N	Triple_YOUTUBE_13
+35	14	linked_twitch_14	TWITCH	21000000	\N	\N	\N	Duo_TWITCH_14
+36	14	linked_youtube_14	YOUTUBE	21000000	\N	\N	\N	Duo_YOUTUBE_14
+37	15	solo_youtube_15	YOUTUBE	21000000	\N	\N	\N	Solo_YOUTUBE_15
+38	16	solo_twitch_16	TWITCH	21000000	\N	\N	\N	Solo_TWITCH_16
+39	17	solo_twitch_17	TWITCH	21000000	\N	\N	\N	Solo_TWITCH_17
+40	18	solo_youtube_18	YOUTUBE	21000000	\N	\N	\N	Solo_YOUTUBE_18
+41	19	solo_twitch_19	TWITCH	21000000	\N	\N	\N	Solo_TWITCH_19
+42	20	solo_twitch_20	TWITCH	21000000	\N	\N	\N	Solo_TWITCH_20
 \.
 
 
@@ -301,26 +311,26 @@ COPY "public"."challenges" ("challenge_id", "category", "proposer_user_id", "sta
 --
 
 COPY "public"."perennial_tokens" ("token_id", "token", "user_id", "platform_id", "platform_name", "is_active", "created_at") FROM stdin;
-1	test_token_2	2	bot_tw_2	TWITCH	t	2026-03-05 21:26:10.21
-2	test_token_3	3	bot_solo_3	KICK	t	2026-03-05 21:26:10.647
-3	test_token_4	4	bot_tw_4	TWITCH	t	2026-03-05 21:26:10.986
-4	test_token_5	5	bot_solo_5	KICK	t	2026-03-05 21:26:11.324
-5	test_token_6	6	bot_tw_6	TWITCH	t	2026-03-05 21:26:11.672
-6	test_token_7	7	bot_solo_7	KICK	t	2026-03-05 21:26:12.01
-7	test_token_8	8	bot_tw_8	TWITCH	t	2026-03-05 21:26:12.346
-8	test_token_9	9	bot_solo_9	KICK	t	2026-03-05 21:26:12.684
-9	test_token_10	10	bot_tw_10	TWITCH	t	2026-03-05 21:26:13.022
-10	test_token_11	11	bot_solo_11	KICK	t	2026-03-05 21:26:13.359
-11	test_token_12	12	bot_tw_12	TWITCH	t	2026-03-05 21:26:13.697
-12	test_token_13	13	bot_solo_13	KICK	t	2026-03-05 21:26:14.033
-13	test_token_14	14	bot_tw_14	TWITCH	t	2026-03-05 21:26:14.37
-14	test_token_15	15	bot_solo_15	KICK	t	2026-03-05 21:26:14.708
-15	test_token_16	16	bot_tw_16	TWITCH	t	2026-03-05 21:26:15.043
-16	test_token_17	17	bot_solo_17	KICK	t	2026-03-05 21:26:15.381
-17	test_token_18	18	bot_tw_18	TWITCH	t	2026-03-05 21:26:15.716
-18	test_token_19	19	bot_solo_19	KICK	t	2026-03-05 21:26:16.069
-19	test_token_20	20	bot_tw_20	TWITCH	t	2026-03-05 21:26:16.405
-20	master_demo_token	21	686071308	TWITCH	t	2026-03-05 21:26:16.767
+1	master_demo_token	21	686071308	TWITCH	t	2026-03-05 22:15:20.414
+2	test_token_2	2	linked_kick_2	KICK	t	2026-03-05 22:15:20.861
+3	test_token_3	3	linked_twitch_3	TWITCH	t	2026-03-05 22:15:21.171
+4	test_token_4	4	linked_youtube_4	YOUTUBE	t	2026-03-05 22:15:21.482
+5	test_token_5	5	linked_kick_5	KICK	t	2026-03-05 22:15:21.791
+6	test_token_6	6	linked_twitch_6	TWITCH	t	2026-03-05 22:15:22.102
+7	test_token_7	7	linked_twitch_7	TWITCH	t	2026-03-05 22:15:22.413
+8	test_token_8	8	linked_twitch_8	TWITCH	t	2026-03-05 22:15:22.721
+9	test_token_9	9	linked_twitch_9	TWITCH	t	2026-03-05 22:15:23.033
+10	test_token_10	10	linked_kick_10	KICK	t	2026-03-05 22:15:23.343
+11	test_token_11	11	linked_youtube_11	YOUTUBE	t	2026-03-05 22:15:23.656
+12	test_token_12	12	linked_kick_12	KICK	t	2026-03-05 22:15:23.969
+13	test_token_13	13	linked_twitch_13	TWITCH	t	2026-03-05 22:15:24.288
+14	test_token_14	14	linked_twitch_14	TWITCH	t	2026-03-05 22:15:24.597
+15	test_token_15	15	solo_youtube_15	YOUTUBE	t	2026-03-05 22:15:24.955
+16	test_token_16	16	solo_twitch_16	TWITCH	t	2026-03-05 22:15:25.268
+17	test_token_17	17	solo_twitch_17	TWITCH	t	2026-03-05 22:15:25.592
+18	test_token_18	18	solo_youtube_18	YOUTUBE	t	2026-03-05 22:15:25.906
+19	test_token_19	19	solo_twitch_19	TWITCH	t	2026-03-05 22:15:26.225
+20	test_token_20	20	solo_twitch_20	TWITCH	t	2026-03-05 22:15:26.539
 \.
 
 
@@ -440,14 +450,14 @@ SELECT pg_catalog.setval('"auth"."refresh_tokens_id_seq"', 1, false);
 -- Name: accounts_account_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."accounts_account_id_seq"', 37, true);
+SELECT pg_catalog.setval('"public"."accounts_account_id_seq"', 42, true);
 
 
 --
 -- Name: challenges_challenge_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 398, true);
+SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 1, false);
 
 
 --
@@ -461,7 +471,7 @@ SELECT pg_catalog.setval('"public"."perennial_tokens_token_id_seq"', 20, true);
 -- Name: pushes_push_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."pushes_push_id_seq"', 2, true);
+SELECT pg_catalog.setval('"public"."pushes_push_id_seq"', 1, false);
 
 
 --
@@ -475,13 +485,13 @@ SELECT pg_catalog.setval('"public"."streams_stream_session_id_seq"', 8, true);
 -- Name: users_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."users_user_id_seq"', 5, true);
+SELECT pg_catalog.setval('"public"."users_user_id_seq"', 1, false);
 
 
 --
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict HL0gVdbHaRbXOXD6tEGzAaUzYabojATcDda015ZkQfOEoI2R0pPA9WvjEJKJaxO
+-- \unrestrict LgTyBrggXT7ZT6as6khsxsZUjPoHNBWazJhUANrewKmorAOoYfW2H2fimQdRdly
 
 RESET ALL;
