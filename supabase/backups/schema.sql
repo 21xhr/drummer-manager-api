@@ -71,7 +71,8 @@ CREATE TYPE "public"."ChallengeStatus" AS ENUM (
     'COMPLETED',
     'FAILED',
     'IN_PROGRESS',
-    'REMOVED'
+    'REMOVED',
+    'UNDER_REVIEW'
 );
 
 
