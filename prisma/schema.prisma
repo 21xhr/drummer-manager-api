@@ -17,6 +17,7 @@ enum ChallengeStatus {
   FAILED
   IN_PROGRESS
   REMOVED
+  UNDER_REVIEW
 }
 
 enum DurationType {
