@@ -1,16 +1,5 @@
 // src/services/challengeService.ts
 
-import { Account, Challenge, ChallengeStatus, CadenceUnit, DurationType, PlatformName, User } from '@prisma/client';
-import prisma from '../prisma';
-import logger from '../logger';
-import { convertDurationToMinutes } from '../utils/jwtUtils'; 
-import { publishChallengeEvent, ChallengeEvents } from './eventService';
-import { generateToken, validateDuration } from './jwtService';
-import { addNumbersViaLumia, deductNumbersViaLumia } from './lumiaService';
-import { isStreamLive, getCurrentStreamSessionId} from './streamService';
-import { recordUserActivity } from './userService';
-
-// --- CONFIGURATION IMPORTS ---
 import {
     LIVE_DISCOUNT_MULTIPLIER,
     SUBMISSION_BASE_COST,
@@ -22,7 +11,21 @@ import {
     DISCOUNT_DIVISOR,
     DIGOUT_PERCENTAGE_NUMERATOR
 } from '../config/gameConfig'; 
-// --- END CONFIGURATION IMPORTS ---
+import { TRUSTED_SOURCES, isTrustedUrl } from '../config/sourcesConfig';
+
+import { Account, Challenge, ChallengeStatus, CadenceUnit, DurationType, PlatformName, User } from '@prisma/client';
+import logger from '../logger';
+import prisma from '../prisma';
+
+import { publishChallengeEvent, ChallengeEvents } from './eventService';
+import { generateToken, validateDuration } from './jwtService';
+import { addNumbersViaLumia, deductNumbersViaLumia } from './lumiaService';
+import { isStreamLive, getCurrentStreamSessionId} from './streamService';
+import { recordUserActivity } from './userService';
+
+import { convertDurationToMinutes } from '../utils/jwtUtils'; 
+
+
 
 export type RefundOption = 'community_forfeit' | 'author_and_chest' | 'author_and_pushers';
 
@@ -161,8 +164,16 @@ export async function processSubmissionLinkGeneration(
 
 
 
-// ------------------------------------------------------------------
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
 // EXPLORER ACCESS LOGIC
+////////////////////////////////////////////////////////////////////////////////
 export async function processExplorerLinkGeneration(
     userId: number, 
     platformId: string, 
@@ -207,6 +218,68 @@ export async function processExplorerLinkGeneration(
 
 
 
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// CHALLENGE VALIDATION & ENRICHMENT LOGIC
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * Modular logic for DMG Challenge "Automated Profiling".
+ * Validates references, checks for whitelists, and marks for review if necessary.
+ * Version 2.1: Supports structured JSON and reference-level details.
+ */
+export const validateAndEnrichChallenge = (rawJson: any) => {
+  const version = "2.1";
+  let requiresReview = false;
+
+  // 1. Basic Content Sanitization (Simple regex to strip any HTML-like tags)
+  const sanitize = (text: string) => (typeof text === 'string' ? text.replace(/<[^>]*>?/gm, '') : "");
+
+  const structuredData = {
+    goal: sanitize(rawJson.goal),
+    instructions: sanitize(rawJson.instructions),
+    constraints: (Array.isArray(rawJson.constraints) ? rawJson.constraints : [])
+      .map((c: string) => sanitize(c))
+      .filter((c: string) => c.length > 0),
+    references: (Array.isArray(rawJson.references) ? rawJson.references : []).map((ref: any) => {
+      // Default to OTHER if type is missing
+      const type = (ref.type || "OTHER").toUpperCase();
+      const trusted = isTrustedUrl(type, ref.url);
+      
+      // SECURITY: 
+      // 1. Always flag Images and Docs (Drive/Dropbox) for manual review.
+      // 2. Flag any link not in the Trusted Sources whitelist.
+      if (type === 'IMAGE' || type === 'DOCS' || !trusted) {
+        requiresReview = true;
+      }
+
+      return {
+        type: type,
+        url: ref.url || null,
+        label: sanitize(ref.label || ""),
+        details: sanitize(ref.details || ""), // For timecodes, page numbers, or extra context
+        isTrusted: trusted
+      };
+    }),
+    system: {
+      requiresReview,
+      version
+    }
+  };
+
+  return structuredData;
+};
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// AUTOMATIC SESSION TICK LOGIC
+////////////////////////////////////////////////////////////////////////////////
 /**
  * Checks the currently executing challenge for session completion via timestamp.
  * If the 21-minute duration has elapsed, it increments the session count and updates the status.
@@ -288,9 +361,9 @@ export async function processAutomaticSessionTick(): Promise<SessionTickResult |
 }
 
 
-// ------------------------------------------------------------------
+////////////////////////////////////////////////////////////////////////////////
 // CORE SUBMISSION CONTEXT
-// ------------------------------------------------------------------
+////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Retrieves the user's current daily submission context, performing a reset
@@ -347,9 +420,9 @@ export async function getCurrentDailySubmissionContext(userId: number | string):
 }
 
 
-// ------------------------------------------------------------------
+////////////////////////////////////////////////////////////////////////////////
 // CORE COST CALCULATIONS
-// ------------------------------------------------------------------
+////////////////////////////////////////////////////////////////////////////////
 /**
  * Calculates the quadratic cost for submitting a new challenge, based on the user's
  * daily submission count. Applies live stream discount if applicable.
@@ -391,6 +464,11 @@ function applyLiveDiscount(cost: bigint): bigint {
   }
   return cost;
 }
+
+
+
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -492,6 +570,11 @@ export async function processPushQuote(
 
     return { quoteId, quotedCost, challenge };
 }
+
+
+
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -611,7 +694,7 @@ export async function processPushConfirm(
       where: { challengeId: challenge.challengeId },
       data: {
         totalPush: { increment: quote.quantity },
-        totalNumbersSpent: { increment: BigInt(pushTransactionCost) }, // Wrap in BigInt()
+        totalNumbersSpent: { increment: BigInt(pushTransactionCost) },
       },
     });
 
@@ -651,7 +734,7 @@ export async function processPushConfirm(
     await tx.user.updateMany({
         where: { id: 1 }, 
         data: {
-            totalNumbersSpentGameWide: { increment: BigInt(pushTransactionCost) }, // Wrap in BigInt()
+            totalNumbersSpentGameWide: { increment: BigInt(pushTransactionCost) },
         }
     });
 
@@ -673,6 +756,11 @@ export async function processPushConfirm(
     return { updatedChallenge, transactionCost: pushTransactionCost, quantity: quote.quantity, updatedAccount: updatedAccount as Account };
   });
 }
+
+
+
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -787,7 +875,7 @@ export async function processDigout(
         await tx.user.updateMany({
             where: { id: 1 }, 
             data: {
-                totalNumbersSpentGameWide: { increment: BigInt(digoutTransactionCost) }, // Wrap in BigInt()
+                totalNumbersSpentGameWide: { increment: BigInt(digoutTransactionCost) },
             }
         });
 
@@ -831,6 +919,11 @@ export async function processDigout(
 }
 
 
+
+
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////
 // PROCESS CHALLENGE SUBMISSION
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -854,14 +947,17 @@ export async function processChallengeSubmission(
     if (totalSessions < 1) {
         throw new Error("totalSessions must be 1 or greater.");
     }
-    // VALIDATION: sessionCadenceText is mandatory for Recurring challenges
+    
     if (durationType === DurationType.RECURRING && !sessionCadenceText) {
     throw new Error("sessionCadenceText is required for Recurring challenges.");
     }
 
-    // Note: The webform should handle the ONE_OFF session limit (e.g., max 21) before sending.
     return prisma.$transaction(async (tx) => {
         
+        // 0. ENRICH & VALIDATE STRUCTURED DATA
+        // Pass the raw challengeText through our processor to handle whitelists and sanitization.
+        const structuredChallenge = validateAndEnrichChallenge(challengeText);
+
         // 1. Get Submission Context (handles conditional reset and returns cost for N daily submission)
         const { dailySubmissionCount: N, baseCostPerSession: submissionCost } = 
             await getCurrentDailySubmissionContext(userId); 
@@ -923,9 +1019,11 @@ export async function processChallengeSubmission(
         // 5. Create the new Challenge record
         const newChallenge = await tx.challenge.create({
             data: {
-                challengeText: challengeText, // Required field
+                challengeText: structuredChallenge as any, // Required field
                 proposerUserId: userId, // Required field
-                status: ChallengeStatus.ACTIVE, // Required field (Always starts Active)
+                status: structuredChallenge.system.requiresReview 
+                ? "UNDER_REVIEW" 
+                : "ACTIVE", // Required field with conditional logic
                 category: "General", // Required field (Defaulted here)
                 durationType: durationType, // Required field
                 pushBaseCost: PUSH_BASE_COST,
@@ -1021,6 +1119,11 @@ export async function processChallengeSubmission(
 }
 
 
+
+
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////
 // HANDLES ARCHIVAL LOGIC
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -1050,6 +1153,11 @@ export async function archiveExpiredChallenges(): Promise<number> {
     console.log(`[ChallengeService] Archived ${result} challenges.`);
     return result;
 }
+
+
+
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -1099,6 +1207,11 @@ export async function finalizeInProgressChallenge(): Promise<Challenge | null> {
 
     return completedChallenge;
 }
+
+
+
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -1176,6 +1289,11 @@ export async function processExecuteChallenge(challengeId: number): Promise<Exec
 }
 
 
+
+
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////
 // FETCH ACTIVE CHALLENGES
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -1188,6 +1306,11 @@ export async function getActiveChallenges() {
         orderBy: { totalNumbersSpent: 'desc' },
     });
 }
+
+
+
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -1485,6 +1608,11 @@ export async function processRemove(
 }
 
 
+
+
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////
 // PROCESS DISRUPT (Placeholder for Future Chaos) (No changes needed)
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -1592,6 +1720,11 @@ export async function processDisrupt(
         );
     });
 }
+
+
+
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
