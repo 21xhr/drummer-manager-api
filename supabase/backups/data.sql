@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict sQYr3nfphfpoFI4VN3wVztzuWpwZGE90c5tTfsQUQwog4GSnggc9FCtNEcLp57k
+-- \restrict VfJ8g7oO8IHbK3JphJGyQxkdPw5LGnFVHNdx79sNwdZLS3V4WVDeczSbCwJBoNz
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -236,14 +236,14 @@ COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity
 16	2026-03-07 21:28:03.864	\N	0	0	0	2026-03-08 21:00:00	0	4	0	78104	0	0	0	1	0	4	0	0	0	0	0	\N
 17	2026-03-07 21:28:05.504	\N	0	0	0	2026-03-08 21:00:00	0	3	0	129089	0	0	0	1	0	3	0	0	0	0	0	\N
 18	\N	\N	0	0	0	2026-03-07 21:27:22.094	0	0	0	7722655	0	0	0	40	0	0	0	0	0	0	0	\N
-1	\N	\N	0	0	0	2026-03-07 21:27:22.094	29679413	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
 19	\N	\N	0	0	0	2026-03-07 21:27:22.094	0	0	0	6769096	0	0	0	42	0	0	0	0	0	0	0	\N
 12	2026-03-07 21:27:55.037	\N	0	0	0	2026-03-08 21:00:00	0	4	0	6300	0	0	0	0	0	4	0	0	0	0	0	\N
-21	2026-03-08 17:33:04.685	\N	0	0	0	2026-03-08 21:00:00	0	1	0	210	0	0	0	0	0	1	0	0	0	0	0	2026-03-08 18:24:33.631
+21	2026-03-08 22:33:59.185	\N	0	0	0	2026-03-10 21:00:00	0	6	0	11760	0	0	0	0	0	0	0	0	0	0	0	2026-03-09 18:25:03.656
 20	\N	\N	0	0	0	2026-03-07 21:27:22.094	0	0	0	9374089	0	0	0	41	0	0	0	0	0	0	0	\N
 15	2026-03-07 21:28:01.645	\N	0	0	0	2026-03-08 21:00:00	0	4	0	6300	0	0	0	0	0	4	0	0	0	0	0	\N
 2	2026-03-07 21:27:32.654	\N	0	0	0	2026-03-08 21:00:00	0	4	0	910239	0	0	0	21	0	4	0	0	0	0	0	\N
 3	2026-03-07 21:27:34.865	\N	0	0	0	2026-03-08 21:00:00	0	4	0	78105	0	0	0	1	0	4	0	0	0	0	0	\N
+1	\N	\N	0	0	0	2026-03-07 21:27:22.094	29690963	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
 4	2026-03-07 21:27:37.042	\N	0	0	0	2026-03-08 21:00:00	0	4	0	1119240	0	0	0	20	0	4	0	0	0	0	0	\N
 5	2026-03-07 21:27:39.241	\N	0	0	0	2026-03-08 21:00:00	0	4	0	185474	0	0	0	2	0	4	0	0	0	0	0	\N
 \.
@@ -282,6 +282,7 @@ COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name
 9	5	solo_twitch_5	TWITCH	99996639	\N	\N	\N	Solo_TWITCH_5
 30	17	solo_twitch_17	TWITCH	99998109	\N	\N	\N	Solo_TWITCH_17
 10	6	solo_twitch_6	TWITCH	99996639	\N	\N	\N	Solo_TWITCH_6
+1	21	686071308	TWITCH	99994749	\N	2026-03-09 21:28:36.152	\N	21xhr
 11	7	linked_twitch_7	TWITCH	99996639	\N	\N	\N	Duo_TWITCH_7
 13	8	solo_twitch_8	TWITCH	99996639	\N	\N	\N	Solo_TWITCH_8
 14	9	linked_youtube_9	YOUTUBE	99996639	\N	\N	\N	Triple_YOUTUBE_9
@@ -289,7 +290,6 @@ COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name
 18	11	linked_twitch_11	TWITCH	99996639	\N	\N	\N	Triple_TWITCH_11
 21	12	linked_youtube_12	YOUTUBE	99996639	\N	\N	\N	Duo_YOUTUBE_12
 23	13	solo_youtube_13	YOUTUBE	99996639	\N	\N	\N	Solo_YOUTUBE_13
-1	21	686071308	TWITCH	99999789	\N	2026-03-08 18:23:34.904	\N	21xhr
 \.
 
 
@@ -362,6 +362,11 @@ COPY "public"."challenges" ("challenge_id", "category", "proposer_user_id", "sta
 62	General	17	ARCHIVED	f	f	f	0	0	0	0	0	7	2026-03-07 21:28:04.977	2026-03-07 21:28:04.977	\N	0	21	2026-03-07 21:28:05.192	0	\N	21	RECURRING	\N	\N	0	DAILY	1 session per day for 21 days	1	\N	840	{"goal": "[DIVERSIFIED] Build endurance for high-velocity metal drumming.", "references": [{"url": "https://en.wikipedia.org/wiki/George_Kollias", "type": "musician", "label": "George Kollias (Wikipedia)"}], "constraints": ["Traditional grip for snare hand optional"], "instructions": "Practice fast, alternating hits between your kick and snare. Focus on staying relaxed so you don't tense up and slow down. Start at 120bpm and aim for stability over speed."}
 63	General	17	COMPLETED	f	f	f	0	0	0	0	0	14	2026-03-07 21:28:05.504	2026-03-07 21:28:05.504	2026-03-07 21:28:06.358	0	21	2026-03-07 21:28:05.718	0	\N	7	RECURRING	\N	\N	0	DAILY	1 session per day for 7 days	1	\N	1890	{"goal": "[DIVERSIFIED] Master the 'empty' first beat of reggae (One-Drop).", "references": [{"url": "https://en.wikipedia.org/wiki/Carlton_Barrett", "type": "musician", "label": "Carlton Barrett (Wikipedia)"}, {"url": "https://open.spotify.com/track/one-drop-bob-marley", "type": "song", "label": "One Drop - Bob Marley"}], "constraints": ["Kick only on beat 3", "Cross-stick snare only"], "instructions": "In this style, the kick drum only hits on the 3rd beat. Keep the hi-hats eighth notes steady and the rim-click crisp. Use a cross-stick on the snare for that authentic woody sound."}
 64	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-08 17:33:04.685	2026-03-08 17:33:04.685	\N	0	21	2026-03-08 17:33:04.947	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	{"goal": "Ø", "system": {"version": "2.1", "requiresReview": false}, "references": [{"url": "https://www.youtube.com/@21xhr", "type": "VIDEO", "label": "Video Label", "details": "", "isTrusted": true}], "constraints": ["Ø"], "instructions": "ØØØØØØØØØ"}
+65	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-08 21:25:23.479	2026-03-08 21:25:23.479	\N	0	21	2026-03-08 21:25:23.782	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	{"goal": "Core Goal", "system": {"version": "2.1", "requiresReview": false}, "references": [], "constraints": ["constraints 1"], "instructions": "Instructions"}
+66	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-08 21:42:20.846	2026-03-08 21:42:20.846	\N	0	21	2026-03-08 21:42:21.068	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	840	{"goal": "qsd", "system": {"version": "2.1", "requiresReview": false}, "references": [], "constraints": [], "instructions": "qsdqsdqsd"}
+67	General	21	UNDER_REVIEW	f	f	f	0	0	0	0	0	0	2026-03-08 21:43:18.726	2026-03-08 21:43:18.726	\N	0	21	2026-03-08 21:43:18.985	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1890	{"goal": "", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "type": "VIDEO", "label": "", "details": "", "isTrusted": false}, {"url": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "type": "VIDEO", "label": "", "details": "", "isTrusted": false}, {"url": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "type": "VIDEO", "label": "", "details": "", "isTrusted": false}], "constraints": ["sdc"], "instructions": ""}
+68	General	21	UNDER_REVIEW	f	f	f	0	0	0	0	0	0	2026-03-08 22:01:43.677	2026-03-08 22:01:43.677	\N	0	21	2026-03-08 22:01:43.936	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	3360	{"goal": "", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "type": "VIDEO", "label": "", "details": "", "isTrusted": false}, {"url": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "type": "VIDEO", "label": "", "details": "", "isTrusted": false}], "constraints": ["qsccqsc"], "instructions": "wsvsvwsvwsvwv"}
+69	General	21	UNDER_REVIEW	f	f	f	0	0	0	0	0	0	2026-03-08 22:33:59.185	2026-03-08 22:33:59.185	\N	0	21	2026-03-08 22:33:59.773	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	5250	{"goal": "qsdqsqsdq", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "https://translate.google.com/details?sl=fr&tl=en&text=efface%20l%27url&op=translate", "type": "VIDEO", "label": "", "details": "", "isTrusted": false}, {"url": null, "type": "VIDEO", "label": "", "details": "", "isTrusted": true}, {"url": null, "type": "WIKI", "label": "", "details": "", "isTrusted": true}], "constraints": [], "instructions": "q"}
 \.
 
 
@@ -658,7 +663,7 @@ SELECT pg_catalog.setval('"public"."accounts_account_id_seq"', 36, true);
 -- Name: challenges_challenge_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 64, true);
+SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 69, true);
 
 
 --
@@ -693,6 +698,6 @@ SELECT pg_catalog.setval('"public"."users_user_id_seq"', 1, false);
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict sQYr3nfphfpoFI4VN3wVztzuWpwZGE90c5tTfsQUQwog4GSnggc9FCtNEcLp57k
+-- \unrestrict VfJ8g7oO8IHbK3JphJGyQxkdPw5LGnFVHNdx79sNwdZLS3V4WVDeczSbCwJBoNz
 
 RESET ALL;
