@@ -1,17 +1,40 @@
 // prisma/seedPushes.ts
-
-// prisma/seedPushes.ts
+/**
+ * Push Seeding Script
+ * This script seeds push activity across the challenge pool using a weighted distribution of user types
+ * (whales, regulars, lurkers) and challenge groups (trending, niche, and selected diversified entries).
+ * It also synchronizes aggregate counters on both Challenge and User records so the Explorer reflects the seeded activity accurately.
+ */
 
 import { PrismaClient } from '@prisma/client';
 import logger from '../src/logger';
 
-/**
- * Push Seeding Script
- * This script populates the 'pushes' table and SYNCHRONIZES the aggregate 
- * counters on Challenges and Users to ensure the Explorer UI reflects the data.
- */
 
 const prisma = new PrismaClient();
+
+const getSeedPushQuantity = (): number => {
+  const roll = Math.random();
+
+  if (roll > 0.92) return Math.floor(Math.random() * 8) + 5; // 5-12
+  if (roll > 0.72) return Math.floor(Math.random() * 3) + 2; // 2-4
+  return 1;
+};
+
+const calculateSeedPushCost = (
+  pushBaseCost: number,
+  currentUserPushCount: number,
+  quantity: number
+): number => {
+  let totalCost = BigInt(0);
+  const baseCost = BigInt(pushBaseCost);
+
+  for (let i = 1; i <= quantity; i++) {
+    const incrementalCount = BigInt(currentUserPushCount + i);
+    totalCost += baseCost * (incrementalCount * incrementalCount);
+  }
+
+  return Number(totalCost);
+};
 
 export async function main() {
   logger.info('🚀 SEED: Starting PUSH (Activity) Seeding...');
@@ -22,7 +45,11 @@ export async function main() {
     include: { accounts: true }
   });
 
-  const challenges = await prisma.challenge.findMany();
+  const challenges = await prisma.challenge.findMany({
+    orderBy: { challengeId: 'asc' }
+  });
+
+  const userChallengePushCounts: Record<string, number> = {};
 
   if (users.length === 0 || challenges.length === 0) {
     logger.error('❌ Missing dependencies. Run User and Challenge seeds first.');
@@ -34,8 +61,38 @@ export async function main() {
   const regulars = users.slice(3, 8);
   const lurkers = users.slice(8);
 
-  const trendingChallenges = challenges.slice(0, 5);
-  const nicheChallenges = challenges.slice(5, 20);
+  const activeChallenges = challenges.filter(c => c.status === 'ACTIVE');
+  const executionTierChallenges = challenges.filter(c =>
+    c.status === 'IN_PROGRESS' ||
+    c.status === 'COMPLETED' ||
+    c.status === 'FAILED'
+  );
+  const archivedChallenges = challenges.filter(c => c.status === 'ARCHIVED');
+  const auctionedChallenges = challenges.filter(c => c.status === 'AUCTIONED');
+  const removedChallenges = challenges.filter(c => c.status === 'REMOVED');
+  const underReviewChallenges = challenges.filter(c => c.status === 'UNDER_REVIEW');
+
+  const diversifiedChallenges = challenges.filter(c => {
+    const goal =
+      typeof c.challengeText === 'object' && c.challengeText && 'goal' in c.challengeText
+        ? String((c.challengeText as any).goal || '')
+        : '';
+    return goal.startsWith('[DIVERSIFIED]');
+  });
+
+  const trendingChallenges = [
+    ...activeChallenges.slice(0, 4),
+    ...executionTierChallenges.slice(0, 6)
+  ];
+
+  const nicheChallenges = [
+    ...activeChallenges.slice(4, 12),
+    ...archivedChallenges.slice(0, 5),
+    ...auctionedChallenges.slice(0, 3),
+    ...removedChallenges.slice(0, 3),
+    ...underReviewChallenges.slice(0, 2),
+    ...diversifiedChallenges.slice(0, 8)
+  ];
 
   const pushesToCreate = 150;
   let createdCount = 0;
@@ -52,12 +109,30 @@ export async function main() {
                  lurkers[Math.floor(Math.random() * lurkers.length)];
 
     const challengeRoll = Math.random();
-    let targetChallenge = challengeRoll > 0.3 ? trendingChallenges[Math.floor(Math.random() * trendingChallenges.length)] :
-                          nicheChallenges[Math.floor(Math.random() * nicheChallenges.length)];
+    let targetPool = nicheChallenges;
 
-    const baseAmount = roll > 0.4 ? 500000 : 100000;
-    const cost = Math.floor(Math.random() * baseAmount) + 50000;
-    const quantity = Math.random() > 0.8 ? Math.floor(Math.random() * 4) + 2 : 1;
+    if (challengeRoll > 0.55) {
+      targetPool = trendingChallenges;
+    } else if (challengeRoll > 0.25) {
+      targetPool = nicheChallenges;
+    } else if (challengeRoll > 0.12 && underReviewChallenges.length) {
+      targetPool = underReviewChallenges;
+    } else if (challengeRoll > 0.06 && removedChallenges.length) {
+      targetPool = removedChallenges;
+    } else if (auctionedChallenges.length) {
+      targetPool = auctionedChallenges;
+    }
+
+    const targetChallenge = targetPool[Math.floor(Math.random() * targetPool.length)];
+
+    const quantity = getSeedPushQuantity();
+    const trackerKey = `${sender.id}-${targetChallenge.challengeId}`;
+    const currentUserPushCount = userChallengePushCounts[trackerKey] ?? 0;
+    const cost = calculateSeedPushCost(
+      targetChallenge.pushBaseCost,
+      currentUserPushCount,
+      quantity
+    );
     const timestamp = new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000);
 
     try {
@@ -70,6 +145,8 @@ export async function main() {
           timestamp
         }
       });
+
+      userChallengePushCounts[trackerKey] = currentUserPushCount + quantity;
 
       // Update memory trackers for the Sync Phase
       const cId = targetChallenge.challengeId;

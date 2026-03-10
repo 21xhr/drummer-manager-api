@@ -1,14 +1,17 @@
 // prisma/seed.ts
-import { PrismaClient } from '@prisma/client';
 
 /**
  * Master Seed Orchestrator
  * This script coordinates the execution of specialized seed scripts.
  * * Order of operations:
  * 1. seedUsers: Performs a destructive TRUNCATE and creates 21 Users / 42 Accounts.
- * 2. seedChallenges: Submits the 42 drumming challenges using the identities created in step 1.
- * 3. seedPushes: Populates the activity feed with simulated push notifications.
- */
+ * 2. seedChallenges: Submits the 63 Challenges that form the basis of the Explorer content.
+ * 3. seedPushes: Populates the 'pushes' table and synchronizes aggregate counters on Challenges and Users to reflect activity in the Explorer UI.
+ * 
+ * Each seed script is designed to be idempotent and can be run independently for testing purposes, but this master script ensures the correct order and handles any dependencies between them.
+*/
+
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 

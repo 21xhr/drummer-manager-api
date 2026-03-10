@@ -1,6 +1,6 @@
 // config/sourcesConfig.ts
 /**
- * TRUSTED_SOURCES defines the whitelist for the DMG Automated Profiling system.
+ * TRUSTED_SOURCES defines the whitelist for the Automated Profiling system.
  * Links from these domains are automatically approved and may trigger metadata fetching.
  */
 export const TRUSTED_SOURCES = {
@@ -24,7 +24,7 @@ export const TRUSTED_SOURCES = {
     'wikipedia.org',
     'britannica.com'
   ],
-  DOCS: [
+  DOCUMENT: [
     'drive.google.com',
     'dropbox.com'
   ]

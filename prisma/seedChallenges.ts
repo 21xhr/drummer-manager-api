@@ -4,6 +4,7 @@
  * simulating user submissions through the service layer to ensure all business logic 
  * and validations (including financial accounting) are applied.
  */
+
 import { PrismaClient, PlatformName, DurationType, CadenceUnit, ChallengeStatus } from '@prisma/client';
 import * as challengeService from '../src/services/challengeService'; 
 import logger from '../src/logger';
@@ -542,24 +543,80 @@ export async function main() {
         );
 
         const cId = result.newChallenge.challengeId;
-        const daysSinceActivation = Math.floor(Math.random() * 21);
 
-        // Explicitly type status as ChallengeStatus to avoid TS2322
+
         let finalStatus: ChallengeStatus = ChallengeStatus.ACTIVE;
         let completionDate: Date | null = null;
+        let failureReason: string | null = null;
 
         if (!isOriginal42) {
           const roll = Math.random();
-          if (roll > 0.6) {
+
+          if (roll > 0.78) {
             finalStatus = ChallengeStatus.COMPLETED;
             completionDate = new Date();
-          } else if (roll > 0.4) {
+          } else if (roll > 0.62) {
             finalStatus = ChallengeStatus.FAILED;
-          } else if (roll > 0.2) {
-            finalStatus = ChallengeStatus.ARCHIVED;
-          } else {
+
+            const failureReasons = [
+              'Insufficient execution consistency across sessions.',
+              'Challenge pacing was not sustained over time.',
+              'Constraints were repeatedly broken during execution.',
+              'Technical validation failed during review.',
+              'Challenge was abandoned before completion.'
+            ];
+
+            failureReason = failureReasons[Math.floor(Math.random() * failureReasons.length)];
+          } else if (roll > 0.46) {
             finalStatus = ChallengeStatus.IN_PROGRESS;
+          } else if (roll > 0.30) {
+            finalStatus = ChallengeStatus.ARCHIVED;
+          } else if (roll > 0.20) {
+            finalStatus = ChallengeStatus.AUCTIONED;
+          } else if (roll > 0.10) {
+            finalStatus = ChallengeStatus.REMOVED;
+          } else {
+            finalStatus = ChallengeStatus.UNDER_REVIEW;
           }
+        }
+
+        let daysSinceActivation = 0;
+
+        switch (finalStatus) {
+          case ChallengeStatus.ACTIVE:
+            daysSinceActivation = Math.floor(Math.random() * 20); // 0-19
+            break;
+
+          case ChallengeStatus.IN_PROGRESS:
+            daysSinceActivation = Math.floor(Math.random() * 20); // 0-19
+            break;
+
+          case ChallengeStatus.ARCHIVED:
+            daysSinceActivation = 21;
+            break;
+
+          case ChallengeStatus.COMPLETED:
+            daysSinceActivation = Math.floor(Math.random() * 20) + 1; // 1-20
+            break;
+
+          case ChallengeStatus.FAILED:
+            daysSinceActivation = Math.floor(Math.random() * 20) + 1; // 1-20
+            break;
+
+          case ChallengeStatus.AUCTIONED:
+            daysSinceActivation = Math.floor(Math.random() * 20); // 0-19
+            break;
+
+          case ChallengeStatus.REMOVED:
+            daysSinceActivation = Math.floor(Math.random() * 20); // 0-19
+            break;
+
+          case ChallengeStatus.UNDER_REVIEW:
+            daysSinceActivation = 0;
+            break;
+
+          default:
+            daysSinceActivation = 0;
         }
 
         await prisma.challenge.update({
@@ -567,7 +624,8 @@ export async function main() {
           data: {
             status: finalStatus,
             streamDaysSinceActivation: daysSinceActivation,
-            timestampCompleted: completionDate
+            timestampCompleted: completionDate,
+            failureReason
           }
         });
 

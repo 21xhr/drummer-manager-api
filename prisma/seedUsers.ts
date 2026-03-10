@@ -2,12 +2,7 @@
 /**
  * Database Seed Script for development and testing purposes. 
  * This script performs a destructive reset of the database, wiping all existing data and resetting ID counters to ensure a clean slate. 
- * It then seeds 42 strategic identities (bots) with randomized platform associations and account configurations.
- *
- * Key Features:
- * Hard Reset: It uses TRUNCATE ... RESTART IDENTITY which wipes the data and forces IDs back to 1 in a single move.
- * True Randomness: Instead of a predictable cycle, it uses a random shuffle. Bots can now have 1, 2, or 3 accounts across any platform.
- * Balanced Chaos: It ensures YouTube, Kick, and Twitch are all represented in both Solo and Linked formats.
+ * It then creates a predefined set of 21 users and 42 accounts with specific relationships to facilitate testing of various scenarios in the application.
  */
 
 import { PrismaClient, PlatformName } from '@prisma/client';
