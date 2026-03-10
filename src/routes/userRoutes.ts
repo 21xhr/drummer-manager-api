@@ -12,6 +12,11 @@ import { PlatformName } from '@prisma/client';
 const router = Router();
 
 
+
+
+
+
+
 // -----------------------------------------------------------
 // 1. CHALLENGE SUBMISSION (LEGACY/CHAT) - CONSISTENCY UPDATE
 // -----------------------------------------------------------
@@ -50,12 +55,17 @@ router.post('/submit', authenticateUser, async (req: Request, res: Response) => 
             cadenceUnit
         );
         
-        // AUDIT LOG (Success) - ENHANCED DETAIL
+        // AUDIT LOG (Success)
+        const challengeData = newChallenge.challengeText as any;
+        const references = Array.isArray(challengeData?.references) ? challengeData.references : [];
+        const trustedReferenceCount = references.filter((ref: any) => ref.isTrusted).length;
+        const untrustedReferenceCount = references.length - trustedReferenceCount;
+
         logger.info(`SUBMIT Success: #${newChallenge.challengeId} by User ${userId}`, {
             challengeId: newChallenge.challengeId,
             cost: cost,
-            pushBaseCost: newChallenge.pushBaseCost, 
-            totalSessions: newChallenge.totalSessions, 
+            pushBaseCost: newChallenge.pushBaseCost,
+            totalSessions: newChallenge.totalSessions,
             category: newChallenge.category,
             durationType: newChallenge.durationType,
             sessionCadenceText: newChallenge.sessionCadenceText,
@@ -63,10 +73,15 @@ router.post('/submit', authenticateUser, async (req: Request, res: Response) => 
             platformId: req.platformId,
             platformName: req.platformName,
             action: 'submission_success',
-            cadence: `${newChallenge.cadenceRequiredCount} per ${newChallenge.cadenceUnit}` 
+            status: newChallenge.status,
+            requiresReview: challengeData?.system?.requiresReview ?? false,
+            referenceCount: references.length,
+            trustedReferenceCount,
+            untrustedReferenceCount,
+            cadence: `${newChallenge.cadenceRequiredCount} per ${newChallenge.cadenceUnit}`
         });
 
-        // RETURN RESPONSE - ENHANCED DETAIL
+        // RETURN RESPONSE
         return res.status(200).json({
             message: `Challenge #${newChallenge.challengeId} submitted successfully for a cost of ${cost} NUMBERS.`,
             action: 'submission_success',
@@ -95,6 +110,11 @@ router.post('/submit', authenticateUser, async (req: Request, res: Response) => 
         });
     }
 });
+
+
+
+
+
 
 
 // -----------------------------------------------------------
@@ -192,23 +212,33 @@ router.post('/submit/web', async (req: Request, res: Response) => {
             cadenceUnit         
         );
         
-        // AUDIT LOG (Success) - ENHANCED DETAIL
+        // AUDIT LOG (Success)
+        const challengeData = newChallenge.challengeText as any;
+        const references = Array.isArray(challengeData?.references) ? challengeData.references : [];
+        const trustedReferenceCount = references.filter((ref: any) => ref.isTrusted).length;
+        const untrustedReferenceCount = references.length - trustedReferenceCount;
+
         logger.info(`SUBMIT Success: #${newChallenge.challengeId} by User ${userId}`, {
             challengeId: newChallenge.challengeId,
             cost: cost,
-            pushBaseCost: newChallenge.pushBaseCost, 
+            pushBaseCost: newChallenge.pushBaseCost,
             totalSessions: newChallenge.totalSessions,
             category: newChallenge.category,
             durationType: newChallenge.durationType,
-            sessionCadenceText: newChallenge.sessionCadenceText, 
+            sessionCadenceText: newChallenge.sessionCadenceText,
             proposerUserId: userId,
             platformId: platformId,
             platformName: platformName,
             action: 'submission_success',
+            status: newChallenge.status,
+            requiresReview: challengeData?.system?.requiresReview ?? false,
+            referenceCount: references.length,
+            trustedReferenceCount,
+            untrustedReferenceCount,
             cadence: `${newChallenge.cadenceRequiredCount} per ${newChallenge.cadenceUnit}`
         });
 
-        // RETURN RESPONSE - ENHANCED DETAIL
+        // RETURN RESPONSE
         return res.status(200).json({
             message: `Challenge #${newChallenge.challengeId} submitted successfully for a cost of ${cost} NUMBERS.`,
             action: 'submission_success',
@@ -245,6 +275,11 @@ router.post('/submit/web', async (req: Request, res: Response) => {
         });
     }
 });
+
+
+
+
+
 
 
 // -----------------------------------------------------------
@@ -351,6 +386,11 @@ router.post('/push/confirm', authenticateUser, async (req: Request, res: Respons
 });
 
 
+
+
+
+
+
 // -----------------------------------------------------------
 // 4. DIGOUT
 // -----------------------------------------------------------
@@ -446,6 +486,12 @@ router.post('/disrupt', authenticateUser, async (req: Request, res: Response) =>
     }
 });
 
+
+
+
+
+
+
 // -----------------------------------------------------------
 // GET ACTIVE CHALLENGES (No auth required)
 // -----------------------------------------------------------
@@ -475,6 +521,11 @@ router.get('/challenge/active', async (req: Request, res: Response) => {
         });
     }
 });
+
+
+
+
+
 
 
 // -----------------------------------------------------------

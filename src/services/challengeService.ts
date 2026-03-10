@@ -11,7 +11,7 @@ import {
     DISCOUNT_DIVISOR,
     DIGOUT_PERCENTAGE_NUMERATOR
 } from '../config/gameConfig'; 
-import { TRUSTED_SOURCES, isTrustedUrl } from '../config/sourcesConfig';
+import { isTrustedUrl } from '../config/sourcesConfig';
 
 import { Account, Challenge, ChallengeStatus, CadenceUnit, DurationType, PlatformName, User } from '@prisma/client';
 import logger from '../logger';
@@ -226,15 +226,15 @@ export async function processExplorerLinkGeneration(
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * Modular logic for DMG Challenge "Automated Profiling".
- * Validates references, checks for whitelists, and marks for review if necessary.
- * Version 2.1: Supports structured JSON and reference-level details.
+ * Validates references, checks trusted domains, sanitizes content,
+ * and marks submissions for review when needed.
  */
 export const validateAndEnrichChallenge = (rawJson: any) => {
   const version = "2.1";
   let requiresReview = false;
 
-  // 1. Basic Content Sanitization (Simple regex to strip any HTML-like tags)
-  const sanitize = (text: string) => (typeof text === 'string' ? text.replace(/<[^>]*>?/gm, '') : "");
+  const sanitize = (text: string) =>
+    typeof text === "string" ? text.replace(/<[^>]*>?/gm, "").trim() : "";
 
   const structuredData = {
     goal: sanitize(rawJson.goal),
@@ -242,26 +242,27 @@ export const validateAndEnrichChallenge = (rawJson: any) => {
     constraints: (Array.isArray(rawJson.constraints) ? rawJson.constraints : [])
       .map((c: string) => sanitize(c))
       .filter((c: string) => c.length > 0),
-    references: (Array.isArray(rawJson.references) ? rawJson.references : []).map((ref: any) => {
-      // Default to OTHER if type is missing
-      const type = (ref.type || "OTHER").toUpperCase();
-      const trusted = isTrustedUrl(type, ref.url);
-      
-      // SECURITY: 
-      // 1. Always flag Images and Docs (Drive/Dropbox) for manual review.
-      // 2. Flag any link not in the Trusted Sources whitelist.
-      if (type === 'IMAGE' || type === 'DOCS' || !trusted) {
-        requiresReview = true;
-      }
 
-      return {
-        type: type,
-        url: ref.url || null,
-        label: sanitize(ref.label || ""),
-        details: sanitize(ref.details || ""), // For timecodes, page numbers, or extra context
-        isTrusted: trusted
-      };
-    }),
+    references: (Array.isArray(rawJson.references) ? rawJson.references : [])
+      .map((ref: any) => {
+        const type = (ref.type || "OTHER").toUpperCase();
+        const trusted = isTrustedUrl(type, ref.url);
+
+        // Always review DOCUMENT references and any untrusted link
+        if (type === "DOCUMENT" || !trusted) {
+          requiresReview = true;
+        }
+
+        return {
+          type,
+          url: ref.url || null,
+          title: sanitize(ref.title || ""),
+          note: sanitize(ref.note || ""),
+          isTrusted: trusted
+        };
+      })
+      .filter((ref: any) => ref.url || ref.title || ref.note),
+
     system: {
       requiresReview,
       version
