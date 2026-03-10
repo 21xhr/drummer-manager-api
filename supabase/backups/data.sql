@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict VfJ8g7oO8IHbK3JphJGyQxkdPw5LGnFVHNdx79sNwdZLS3V4WVDeczSbCwJBoNz
+-- \restrict xTzjwTald9gV9S2Dqr4UMevgjGuLOczCUguSfWhjMVbcP6Dze1FkxGeb3zzCzE6
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -238,12 +238,12 @@ COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity
 18	\N	\N	0	0	0	2026-03-07 21:27:22.094	0	0	0	7722655	0	0	0	40	0	0	0	0	0	0	0	\N
 19	\N	\N	0	0	0	2026-03-07 21:27:22.094	0	0	0	6769096	0	0	0	42	0	0	0	0	0	0	0	\N
 12	2026-03-07 21:27:55.037	\N	0	0	0	2026-03-08 21:00:00	0	4	0	6300	0	0	0	0	0	4	0	0	0	0	0	\N
-21	2026-03-08 22:33:59.185	\N	0	0	0	2026-03-10 21:00:00	0	6	0	11760	0	0	0	0	0	0	0	0	0	0	0	2026-03-09 18:25:03.656
 20	\N	\N	0	0	0	2026-03-07 21:27:22.094	0	0	0	9374089	0	0	0	41	0	0	0	0	0	0	0	\N
+1	\N	\N	0	0	0	2026-03-07 21:27:22.094	29733803	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
+21	2026-03-10 18:07:02.285	\N	0	0	0	2026-03-11 21:00:00	0	14	0	54600	0	0	0	0	0	0	0	0	0	0	0	2026-03-10 21:08:44.364
 15	2026-03-07 21:28:01.645	\N	0	0	0	2026-03-08 21:00:00	0	4	0	6300	0	0	0	0	0	4	0	0	0	0	0	\N
 2	2026-03-07 21:27:32.654	\N	0	0	0	2026-03-08 21:00:00	0	4	0	910239	0	0	0	21	0	4	0	0	0	0	0	\N
 3	2026-03-07 21:27:34.865	\N	0	0	0	2026-03-08 21:00:00	0	4	0	78105	0	0	0	1	0	4	0	0	0	0	0	\N
-1	\N	\N	0	0	0	2026-03-07 21:27:22.094	29690963	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
 4	2026-03-07 21:27:37.042	\N	0	0	0	2026-03-08 21:00:00	0	4	0	1119240	0	0	0	20	0	4	0	0	0	0	0	\N
 5	2026-03-07 21:27:39.241	\N	0	0	0	2026-03-08 21:00:00	0	4	0	185474	0	0	0	2	0	4	0	0	0	0	0	\N
 \.
@@ -282,7 +282,6 @@ COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name
 9	5	solo_twitch_5	TWITCH	99996639	\N	\N	\N	Solo_TWITCH_5
 30	17	solo_twitch_17	TWITCH	99998109	\N	\N	\N	Solo_TWITCH_17
 10	6	solo_twitch_6	TWITCH	99996639	\N	\N	\N	Solo_TWITCH_6
-1	21	686071308	TWITCH	99994749	\N	2026-03-09 21:28:36.152	\N	21xhr
 11	7	linked_twitch_7	TWITCH	99996639	\N	\N	\N	Duo_TWITCH_7
 13	8	solo_twitch_8	TWITCH	99996639	\N	\N	\N	Solo_TWITCH_8
 14	9	linked_youtube_9	YOUTUBE	99996639	\N	\N	\N	Triple_YOUTUBE_9
@@ -290,6 +289,7 @@ COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name
 18	11	linked_twitch_11	TWITCH	99996639	\N	\N	\N	Triple_TWITCH_11
 21	12	linked_youtube_12	YOUTUBE	99996639	\N	\N	\N	Duo_YOUTUBE_12
 23	13	solo_youtube_13	YOUTUBE	99996639	\N	\N	\N	Solo_YOUTUBE_13
+1	21	686071308	TWITCH	99986559	\N	2026-03-10 21:08:37.733	\N	21xhr
 \.
 
 
@@ -367,6 +367,14 @@ COPY "public"."challenges" ("challenge_id", "category", "proposer_user_id", "sta
 67	General	21	UNDER_REVIEW	f	f	f	0	0	0	0	0	0	2026-03-08 21:43:18.726	2026-03-08 21:43:18.726	\N	0	21	2026-03-08 21:43:18.985	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1890	{"goal": "", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "type": "VIDEO", "label": "", "details": "", "isTrusted": false}, {"url": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "type": "VIDEO", "label": "", "details": "", "isTrusted": false}, {"url": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "type": "VIDEO", "label": "", "details": "", "isTrusted": false}], "constraints": ["sdc"], "instructions": ""}
 68	General	21	UNDER_REVIEW	f	f	f	0	0	0	0	0	0	2026-03-08 22:01:43.677	2026-03-08 22:01:43.677	\N	0	21	2026-03-08 22:01:43.936	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	3360	{"goal": "", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "type": "VIDEO", "label": "", "details": "", "isTrusted": false}, {"url": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "type": "VIDEO", "label": "", "details": "", "isTrusted": false}], "constraints": ["qsccqsc"], "instructions": "wsvsvwsvwsvwv"}
 69	General	21	UNDER_REVIEW	f	f	f	0	0	0	0	0	0	2026-03-08 22:33:59.185	2026-03-08 22:33:59.185	\N	0	21	2026-03-08 22:33:59.773	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	5250	{"goal": "qsdqsqsdq", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "https://translate.google.com/details?sl=fr&tl=en&text=efface%20l%27url&op=translate", "type": "VIDEO", "label": "", "details": "", "isTrusted": false}, {"url": null, "type": "VIDEO", "label": "", "details": "", "isTrusted": true}, {"url": null, "type": "WIKI", "label": "", "details": "", "isTrusted": true}], "constraints": [], "instructions": "q"}
+70	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-10 12:05:14.152	2026-03-10 12:05:14.152	\N	0	21	2026-03-10 12:05:14.473	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	{"goal": "sdfswdf", "system": {"version": "2.1", "requiresReview": false}, "references": [], "constraints": [], "instructions": "wsdf"}
+71	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-10 12:05:47.68	2026-03-10 12:05:47.68	\N	0	21	2026-03-10 12:05:47.953	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	840	{"goal": "sdzzd", "system": {"version": "2.1", "requiresReview": false}, "references": [], "constraints": [], "instructions": "sdsdsds"}
+72	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-10 15:24:31.184	2026-03-10 15:24:31.184	\N	0	21	2026-03-10 15:24:31.825	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	1890	{"goal": "https://www.youtube.com/watch?v=sj6o4cxWgl8", "system": {"version": "2.1", "requiresReview": false}, "references": [{"url": "https://www.youtube.com/watch?v=sj6o4cxWgl", "note": "Notes", "type": "VIDEO", "title": "ridge", "isTrusted": true}], "constraints": ["wsdv"], "instructions": "https://www.youtube.com/watch?v=sj6o4cxWgl8"}
+73	General	21	UNDER_REVIEW	f	f	f	0	0	0	0	0	0	2026-03-10 15:45:04.304	2026-03-10 15:45:04.304	\N	0	21	2026-03-10 15:45:04.938	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	3360	{"goal": "QDQSD", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "note": ".btn-locked {     pointer-events: none !important;     opacity: 0.15;     filter: grayscale(1) brightness(0.5);     transition: none; }", "type": "VIDEO", "title": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "isTrusted": false}, {"url": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "note": "", "type": "VIDEO", "title": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "isTrusted": false}], "constraints": ["{   \\"goal\\": \\"\\",   \\"system\\": {     \\"version\\": \\"2.1\\",     \\"requiresReview\\": true   },   \\"references\\": [     {       \\"url\\": \\"http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token\\",       \\"type\\": \\"VIDEO\\",       \\"label\\": \\"\\",       \\"details\\": \\"\\",       \\"isTrusted\\": false     },     {       \\"url\\": \\"http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token\\",       \\"type\\": \\"VIDEO\\",       \\"label\\": \\"\\",       \\"details\\": \\"\\",       \\"isTrusted\\": false     },     {       \\"url\\": \\"http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token\\",       \\"type\\": \\"VIDEO\\",       \\"label\\": \\"\\",       \\"details\\": \\"\\",       \\"isTrusted\\": false     }   ],   \\"constraints\\": [     \\"sdc\\"   ],   \\"instructions\\": \\"\\" }1", "2", "3", "4", "5", "6", "7"], "instructions": "wxcvwxcv"}
+74	General	21	UNDER_REVIEW	f	f	f	0	0	0	0	0	0	2026-03-10 15:46:42.765	2026-03-10 15:46:42.765	\N	0	21	2026-03-10 15:46:43.037	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	5250	{"goal": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "note": "", "type": "VIDEO", "title": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "isTrusted": false}], "constraints": ["http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token"], "instructions": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token"}
+75	General	21	UNDER_REVIEW	f	f	f	0	0	0	0	0	0	2026-03-10 15:59:19.172	2026-03-10 15:59:19.172	\N	0	21	2026-03-10 15:59:19.484	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	7560	{"goal": "tupProgressiveList('referencesList', 'reference-item-block", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "note": "", "type": "VIDEO", "title": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "isTrusted": false}], "constraints": [], "instructions": "tupProgressiveList('referencesList', 'reference-item-block"}
+76	General	21	UNDER_REVIEW	f	f	f	0	0	0	0	0	0	2026-03-10 16:11:58.777	2026-03-10 16:11:58.777	\N	0	21	2026-03-10 16:11:59.09	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	10290	{"goal": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "note": "", "type": "VIDEO", "title": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "isTrusted": false}], "constraints": ["http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token"], "instructions": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token"}
+77	General	21	UNDER_REVIEW	f	f	f	0	0	0	0	0	0	2026-03-10 18:07:02.285	2026-03-10 18:07:02.285	\N	0	21	2026-03-10 18:07:02.562	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	13440	{"goal": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "note": "", "type": "VIDEO", "title": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "isTrusted": false}], "constraints": [], "instructions": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token"}
 \.
 
 
@@ -663,7 +671,7 @@ SELECT pg_catalog.setval('"public"."accounts_account_id_seq"', 36, true);
 -- Name: challenges_challenge_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 69, true);
+SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 77, true);
 
 
 --
@@ -698,6 +706,6 @@ SELECT pg_catalog.setval('"public"."users_user_id_seq"', 1, false);
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict VfJ8g7oO8IHbK3JphJGyQxkdPw5LGnFVHNdx79sNwdZLS3V4WVDeczSbCwJBoNz
+-- \unrestrict xTzjwTald9gV9S2Dqr4UMevgjGuLOczCUguSfWhjMVbcP6Dze1FkxGeb3zzCzE6
 
 RESET ALL;
