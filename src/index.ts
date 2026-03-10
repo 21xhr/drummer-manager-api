@@ -24,6 +24,7 @@ import adminRoutes from './routes/adminRoutes';
 import challengeRoutes from './routes/challengeRoutes';
 import clockRoutes from './routes/clockRoutes';
 import gamemasterRoutes from './routes/gamemasterRoutes';
+import referenceRoutes from './routes/referenceRoutes';
 import streamRoutes from './routes/streamRoutes';
 import tokenRoutes from './routes/tokenRoutes';
 import userRoutes from './routes/userRoutes'; 
@@ -91,6 +92,7 @@ app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/challenge', challengeRoutes)
 app.use('/api/v1/clock', clockRoutes);
 app.use('/api/v1/gamemaster', gamemasterRoutes);
+app.use('/api/v1/references', referenceRoutes);
 app.use('/api/v1/stream', streamRoutes);
 app.use('/api/v1/token', tokenRoutes);
 app.use('/api/v1/user', userRoutes); 
