@@ -20,6 +20,23 @@ function getHostname(url: string): string {
     return new URL(url).hostname.replace(/^www\./, '').toLowerCase();
 }
 
+/*/////////////////////////////////////////////////////////////////////////////////
+    Reference Metadata Fetching Logic
+/////////////////////////////////////////////////////////////////////////////////*/
+function isYouTubeHost(hostname: string): boolean {
+    return hostname.includes('youtube.com') || hostname.includes('youtu.be');
+}
+
+function isVimeoHost(hostname: string): boolean {
+    return hostname.includes('vimeo.com');
+}
+
+function isSoundCloudHost(hostname: string): boolean {
+    return hostname.includes('soundcloud.com');
+}
+/*/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////*/
+
 function decodeHtmlEntities(text: string): string {
     return text
         .replace(/&amp;/g, '&')
@@ -127,6 +144,9 @@ async function getGenericHtmlTitle(url: string): Promise<string | null> {
     return cleanTitle(titleTag);
 }
 
+/*//////////////////////////////////////////////////////////////////////////////////
+    Main Reference Title Fetching Function
+//////////////////////////////////////////////////////////////////////////////////*/
 export async function getReferenceTitle(url: string): Promise<ReferenceTitleResult> {
     if (!isHttpUrl(url)) {
         return { title: null, source: 'invalid_url' };
@@ -134,27 +154,24 @@ export async function getReferenceTitle(url: string): Promise<ReferenceTitleResu
 
     const hostname = getHostname(url);
 
-    if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
+    if (isYouTubeHost(hostname)) {
         const title = await getOEmbedTitle(
             `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(url)}`
         );
-
         return { title, source: 'youtube' };
     }
 
-    if (hostname.includes('vimeo.com')) {
+    if (isVimeoHost(hostname)) {
         const title = await getOEmbedTitle(
             `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`
         );
-
         return { title, source: 'vimeo' };
     }
 
-    if (hostname.includes('soundcloud.com')) {
+    if (isSoundCloudHost(hostname)) {
         const title = await getOEmbedTitle(
             `https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(url)}`
         );
-
         return { title, source: 'soundcloud' };
     }
 
