@@ -1,8 +1,13 @@
 // src/middleware/authMiddleware.ts
-/** * This is the authentication layer for API endpoints (e.g., /api/v1/user/submit). 
- * It establishes req.userId for the Express route handler. 
- * It's a completely separate flow from the chat dispatcher which justifies why findOrCreateUser use does not constitute redundancy.
- */ 
+/**
+ * Authentication and identity-resolution middleware for API routes.
+ * Resolves the external platform identity (platformId + platformName)
+ * into the internal central userId and attaches it to req.userId.
+ *
+ * This is not redundant with dispatchCommand:
+ * middleware handles identity resolution and request context,
+ * while the dispatcher only routes already-authenticated commands.
+ */
 import { Request, Response, NextFunction } from 'express';
 import { findOrCreateUser } from '../services/userService'; 
 import logger from '../logger';
@@ -14,10 +19,10 @@ const ADMIN_USER_ID = 21;
 // Middleware to standardize user input and ensure user registration
 export const authenticateUser = async (req: Request, res: Response, next: NextFunction) => {
     // These values are guaranteed to be the external identity the user used.
-    // Destructure the required fields directly from the expected structure.
-    const platformId = req.body.user?.userId;
-    const username = req.body.user?.username || platformId; // Use username for display, fall back to ID
-    const platformName = req.body.platform?.name; 
+    const { user, platform } = req.body;
+    const platformId = user?.platformId;
+    const username = user?.username || platformId;
+    const platformName = platform?.name;
 
     if (!platformId || !platformName) {
         return res.status(400).json({ error: "Missing platformId or platformName in request body." });
@@ -25,17 +30,15 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
 
     try {
         // 1. Find or Create the central User and the corresponding Account record.
-        // The refactored findOrCreateUser handles the new schema correctly.
-        const user = await findOrCreateUser({ 
+        const centralUser = await findOrCreateUser({ 
             platformId, 
             platformName: platformName as PlatformName,
-            username: username // Pass a fallback value to satisfy the upsert logic
+            username: username  // guaranteed non-null (fallback to platformId if username missing)
         });
         
         // 2. Attach identity to the request object.
-        req.userId = user.id; 
-        // 3. CRITICAL: Use the original platform identity from the request body,
-        // as the 'user' object no longer contains these fields.
+        req.userId = centralUser.id; // centralUserId (internal DMG identity)
+        // 3. Use the original platform identity from the request body
         req.platformId = platformId; 
         req.platformName = platformName as PlatformName; 
         
@@ -61,10 +64,8 @@ export const authenticateGameMaster = (req: Request, res: Response, next: NextFu
     authenticateUser(req, res, () => {
         // 2. Enforce Game Master ID check
         if (req.userId === ADMIN_USER_ID) {
-            // User is authenticated and is the Game Master.
             next();
         } else {
-            // User is authenticated but is NOT the Game Master.
             return res.status(403).json({ 
                 message: "Access Denied. This endpoint is restricted to the administrator (User ID 21).",
                 action: 'authorization_failure'

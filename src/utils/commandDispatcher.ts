@@ -14,9 +14,9 @@ import { PlatformName } from '@prisma/client';
 interface CommandPayload {
     command: string; // e.g., "!push", "!challengesubmit"
     user: {
-        userId: string;       // Unique platform ID (immutable)
-        username: string;     // The user's login / channel name
-        displayname?: string; // The display name
+        platformId: string;   // Unique platform account ID (immutable)
+        username: string;     // Platform username / login
+        displayName?: string; // Display name
     };
     platform: {
         name: string; // e.g., "TWITCH"
@@ -42,7 +42,7 @@ function parseArgs(argsString: string | null): string[] {
  * User resolution is handled by the upstream Express middleware (authenticateUser).
  */
 export async function dispatchCommand(
-    dbUserId: number, // <-- The resolved database User ID
+    centralUserId: number, // <-- The resolved database User ID
     payload: CommandPayload, 
     hostname: string
 ) {
@@ -51,16 +51,19 @@ export async function dispatchCommand(
     const parsedArgs = parseArgs(args);
     
     // We rely on the CommandPayload to provide the platform context for transactional calls.
-    const platformId: string = user.userId;
+    const platformId: string = user.platformId;
     const platformName: PlatformName = platform.name as PlatformName;
-    const usernameToStore: string = user.displayname || user.username || platformId;
+    const usernameToStore: string = user.displayName || user.username || platformId;
 
     try {
+        // ------------------------------------------------------------------
         // MANDATORY STEP 1: User resolution is now handled upstream.
+        // ------------------------------------------------------------------
+        // The dispatcher receives the resolved centralUserId from the middleware.
         // We log using the resolved ID.
 
         logger.info(`Dispatching API command`, {
-            userId: dbUserId, // Use the resolved ID
+            userId: centralUserId, // Use the resolved ID
             platformId: platformId,
             fullCommand: fullCommand,
             context: 'DISPATCHER_START'
@@ -81,7 +84,7 @@ export async function dispatchCommand(
                 const quoteId = parsedArgs[1]; // quoteId is optional
                 
                 const result = await challengeService.processPushConfirm(
-                    dbUserId, 
+                    centralUserId, 
                     platformId, 
                     platformName, 
                     quoteId
@@ -102,7 +105,7 @@ export async function dispatchCommand(
             }
             
             const result = await challengeService.processPushQuote(
-                dbUserId, 
+                centralUserId, 
                 platformId, 
                 platformName, 
                 challengeId, 
@@ -124,7 +127,7 @@ export async function dispatchCommand(
                 const durationArg = parsedArgs[0];
                 
                 const linkResult = await challengeService.processSubmissionLinkGeneration(
-                    dbUserId, 
+                    centralUserId, 
                     platformId,
                     platformName, 
                     usernameToStore,
@@ -145,7 +148,7 @@ export async function dispatchCommand(
                 const tierArg = parsedArgs[0]; 
                 
                 const explorerResult = await challengeService.processExplorerLinkGeneration(
-                    dbUserId, 
+                    centralUserId, 
                     platformId,
                     platformName, 
                     usernameToStore,
@@ -171,7 +174,7 @@ export async function dispatchCommand(
                 }
 
                 const digoutResult = await challengeService.processDigout(
-                    dbUserId, 
+                    centralUserId, 
                     platformId, 
                     platformName, 
                     digoutChallengeId
@@ -193,7 +196,7 @@ export async function dispatchCommand(
                     };
                 }
                 
-                const removeResult = await challengeService.processRemove(dbUserId, removeChallengeId, removeOption);
+                const removeResult = await challengeService.processRemove(centralUserId, removeChallengeId, removeOption);
                 
                 let removeMessage = `🗑️ Challenge #${removeChallengeId} removed by author. A total of ${removeResult.totalRefundsAmount} NUMBERS (21%) was refunded.`;
                 if (removeResult.fundsSink === 'Community Chest') {
@@ -207,7 +210,7 @@ export async function dispatchCommand(
             case '!disrupt':
                 // COMMAND: !disrupt
                 const disruptMessage = await challengeService.processDisrupt(
-                    dbUserId, 
+                    centralUserId, 
                     platformId, 
                     platformName
                 );
@@ -220,7 +223,7 @@ export async function dispatchCommand(
             
             case '!mystats':
                 // COMMAND: !mystats
-                const statsMessage = await userService.processUserStats(dbUserId);
+                const statsMessage = await userService.processUserStats(centralUserId);
                 return {
                     message: statsMessage
                 };
@@ -235,15 +238,15 @@ export async function dispatchCommand(
     } catch (error) {
         // Central error handling for any failure in the service layer
         logger.error(`Critical Dispatch Error for command: ${fullCommand}`, {
-            userId: dbUserId || 'N/A',
-            platformId: user.userId, // This is the unique platform ID from Lumia
+            userId: centralUserId || 'N/A',
+            platformId: user.platformId, // This is the unique platform ID from Lumia
             error: error instanceof Error ? error.message : 'Unknown error',
             stack: error instanceof Error ? error.stack : undefined,
             context: 'DISPATCHER_ERROR'
         });
 
         // Return a generic error message to the user, using the specific error message if it's a game-logic error
-        const userFriendlyError = error instanceof Error ? error.message : 'A server error occurred while processing your command.';
+        const userFriendlyError = error instanceof Error ? error.message : 'A server error occurred while processing your command. Not your fault! Please try again later.';
         
         return {
             message: `⛔ ERROR: ${userFriendlyError}`,
