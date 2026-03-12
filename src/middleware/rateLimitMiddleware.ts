@@ -27,7 +27,12 @@ export const rateLimitUserCommands = async (req: Request, res: Response, next: N
         // Use the database User ID as the unique identifier for rate limiting
         const key = userId.toString(); 
         
+        const start = Date.now();
         const { success, limit, remaining, reset } = await commandRatelimit.limit(key);
+
+        logger.debug("Rate limit check", {
+            durationMs: Date.now() - start
+        });
 
         if (!success) {
             const retryAfter = Math.ceil((reset - Date.now()) / 1000);

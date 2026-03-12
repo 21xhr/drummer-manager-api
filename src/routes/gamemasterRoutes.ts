@@ -50,21 +50,37 @@ router.post(
         return res.status(400).json({ error: 'Missing required field (command).' });
     }
 
-    // Call the central dispatcher function
-    // The dispatcher handles validation, user lookup, and routing the logic.
+    const start = Date.now();
+
     const result = await dispatchCommand(
-        req.userId,
-        {
-            command,
-            user,
-            platform,
-            args: args || null, // Pass args, ensuring it's null if undefined
-        }, 
-        req.hostname
+    req.userId,
+    {
+        command,
+        user,
+        platform,
+        args: args || null,
+    },
+    req.hostname
     );
 
-    // Send the structured result back to the client
-    return res.status(200).json(result); 
+    const durationMs = Date.now() - start;
+
+    logger.info("Command execution time", {
+    command,
+    userId: req.userId,
+    durationMs,
+    });
+
+    if (durationMs > 1000) {
+    logger.warn("Slow command detected", {
+        command,
+        userId: req.userId,
+        durationMs,
+        endpoint: req.originalUrl,
+    });
+    }
+
+    return res.status(200).json(result);
 });
 
 

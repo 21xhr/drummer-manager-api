@@ -29,11 +29,17 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
     }
 
     try {
+        const start = Date.now();
         // 1. Find or Create the central User and the corresponding Account record.
         const centralUser = await findOrCreateUser({ 
             platformId, 
             platformName: platformName as PlatformName,
             username: username  // guaranteed non-null (fallback to platformId if username missing)
+        });
+        logger.debug("User resolution time", {
+            platformId,
+            platformName,
+            durationMs: Date.now() - start
         });
         
         // 2. Attach identity to the request object.
