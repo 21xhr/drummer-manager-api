@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict zWhWUzPFTMvXPSRJ4bQlRa9KSlVk4PihRKvnRWrdjsTjQQBl40MsQYisWChmb6f
+-- \restrict Mdrnn1I19dFWle37OjNBg9LciEMtFakk3V0AE9uvF7E5USmCbaio27X18NUXnPO
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -235,15 +235,15 @@ COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity
 15	2026-03-10 22:37:02.073	\N	0	0	0	2026-03-11 21:00:00	0	4	0	6321	0	0	0	1	0	4	0	0	0	0	0	\N
 16	2026-03-10 22:37:04.374	\N	0	0	0	2026-03-11 21:00:00	0	4	0	9261	0	0	0	8	0	4	0	0	0	0	0	\N
 17	2026-03-10 22:37:06.101	\N	0	0	0	2026-03-11 21:00:00	0	3	0	2961	0	0	0	1	0	3	0	0	0	0	0	\N
+1	\N	\N	0	0	0	2026-03-10 22:36:19.865	1242108	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
 18	\N	\N	0	0	0	2026-03-10 22:36:19.865	0	0	0	15330	0	0	0	47	0	0	0	0	0	0	0	\N
 19	\N	\N	0	0	0	2026-03-10 22:36:19.865	0	0	0	7035	0	0	0	39	0	0	0	0	0	0	0	\N
 14	2026-03-10 22:36:59.306	\N	0	0	0	2026-03-11 21:00:00	0	4	0	6300	0	0	0	0	0	4	0	0	0	0	0	\N
-1	\N	\N	0	0	0	2026-03-10 22:36:19.865	340473	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
 20	\N	\N	0	0	0	2026-03-10 22:36:19.865	0	0	0	30828	0	0	0	60	0	0	0	0	0	0	0	\N
-21	2026-03-11 14:35:36.135	\N	0	0	0	2026-03-11 21:00:00	0	12	0	136500	0	0	0	0	0	12	0	0	0	0	0	2026-03-11 16:35:44.472
 7	2026-03-10 22:36:43.035	\N	0	0	0	2026-03-11 21:00:00	0	4	0	6300	0	0	0	0	0	4	0	0	0	0	0	\N
 2	2026-03-10 22:36:31.561	\N	0	0	0	2026-03-11 21:00:00	0	4	0	18375	0	0	0	25	0	4	0	0	0	0	0	\N
 3	2026-03-10 22:36:33.881	\N	0	0	0	2026-03-11 21:00:00	0	4	0	6363	0	0	0	3	0	4	0	0	0	0	0	\N
+21	2026-03-12 21:22:44.564	\N	0	0	0	2026-03-12 21:00:00	0	13	0	1038135	0	0	0	50	0	1	0	0	0	0	0	2026-03-12 21:12:05.522
 4	2026-03-10 22:36:36.166	\N	0	0	0	2026-03-11 21:00:00	0	4	0	20916	0	0	0	23	0	4	0	0	0	0	0	\N
 5	2026-03-10 22:36:38.463	\N	0	0	0	2026-03-11 21:00:00	0	4	0	7224	0	0	0	7	0	4	0	0	0	0	0	\N
 \.
@@ -279,12 +279,12 @@ COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name
 7	3	linked_twitch_3	TWITCH	99996639	\N	\N	\N	Duo_TWITCH_3
 26	15	linked_youtube_15	YOUTUBE	99996639	\N	\N	\N	Duo_YOUTUBE_15
 9	4	linked_twitch_4	TWITCH	99996639	\N	\N	\N	Triple_TWITCH_4
+1	21	686071308	TWITCH	99098574	\N	2026-03-12 21:22:44.336	\N	21xhr
 28	16	solo_twitch_16	TWITCH	99996639	\N	\N	\N	Solo_TWITCH_16
 12	5	solo_kick_5	KICK	99996639	\N	\N	\N	Solo_KICK_5
 29	17	solo_twitch_17	TWITCH	99998109	\N	\N	\N	Solo_TWITCH_17
 13	6	linked_twitch_6	TWITCH	99996639	\N	\N	\N	Duo_TWITCH_6
 15	7	linked_twitch_7	TWITCH	99996639	\N	\N	\N	Duo_TWITCH_7
-1	21	686071308	TWITCH	99969759	\N	2026-03-11 16:20:57.094	\N	21xhr
 17	8	solo_youtube_8	YOUTUBE	99996639	\N	\N	\N	Solo_YOUTUBE_8
 18	9	solo_kick_9	KICK	99996639	\N	\N	\N	Solo_KICK_9
 19	10	linked_youtube_10	YOUTUBE	99996639	\N	\N	\N	Triple_YOUTUBE_10
@@ -300,8 +300,8 @@ COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name
 
 COPY "public"."challenges" ("challenge_id", "category", "proposer_user_id", "status", "is_executing", "has_been_auctioned", "has_been_digged_out", "auction_cost", "disrupt_count", "numbers_raised", "total_numbers_spent", "total_push", "stream_days_since_activation", "timestamp_submitted", "timestamp_last_activation", "timestamp_completed", "unique_pusher", "push_base_cost", "timestampLastStreamDayTicked", "current_session_count", "session_start_timestamp", "total_sessions", "duration_type", "failure_reason", "cadence_period_start", "cadence_progress_counter", "cadence_unit", "session_cadence_text", "cadence_required_count", "timestamp_last_session_tick", "submission_cost", "challenge_text") FROM stdin;
 2	General	2	ACTIVE	f	f	f	0	0	0	987	12	17	2026-03-10 22:36:30.011	2026-03-10 22:36:30.011	\N	6	21	2026-03-10 22:36:30.241	0	\N	14	RECURRING	\N	\N	0	DAILY	1 session per day for 14 days	1	\N	840	{"goal": "Balance ghost notes and backbeats in a funk pocket.", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "https://en.wikipedia.org/wiki/Clyde_Stubblefield", "note": "", "type": "MUSICIAN", "title": "", "isTrusted": false}, {"url": "https://open.spotify.com/track/6M6v3Tid69FhO7z3", "note": "", "type": "SONG", "title": "", "isTrusted": false}], "constraints": ["Metronome set to 90bpm", "No cymbals, hi-hat only"], "instructions": "Play a funk groove where your ghost notes are barely audible 'whispers' on the snare, while your backbeats stay crisp and loud. Use the 'tip' of the stick for ghosts and the 'shoulder' for backbeats. Record yourself to ensure the volume gap is wide enough."}
-3	General	2	ACTIVE	f	f	f	0	0	0	14637	22	8	2026-03-10 22:36:30.569	2026-03-10 22:36:30.569	\N	6	21	2026-03-10 22:36:30.799	0	\N	10	RECURRING	\N	\N	0	DAILY	1 session per day for 10 days	1	\N	1890	{"goal": "Solidify your Jazz Swing Feel and Ride placement.", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "https://en.wikipedia.org/wiki/Elvin_Jones", "note": "", "type": "MUSICIAN", "title": "", "isTrusted": false}, {"url": "https://www.youtube.com/watch?v=PWBn7uuxSgk", "note": "", "type": "CONCEPT", "title": "", "isTrusted": false}], "constraints": ["Feathered kick drum mandatory", "Brushes or light sticks only"], "instructions": "Play the standard 'spang-a-lang' jazz pattern. Keep the ride cymbal dancing and add occasional light snare comping. Try to 'feather' the bass drum on every quarter note so softly that it is felt rather than heard."}
 4	General	2	ACTIVE	f	f	f	0	0	0	1596	12	3	2026-03-10 22:36:31.561	2026-03-10 22:36:31.561	\N	5	21	2026-03-10 22:36:31.791	0	\N	21	RECURRING	\N	\N	0	DAILY	1 session per day for 21 days	1	\N	3360	{"goal": "Double Stroke Roll speed and consistency (32nd notes).", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "https://example.com/stick-control", "note": "", "type": "BOOK", "title": "", "isTrusted": false}, {"url": "https://youtube.com/finger-control-technique", "note": "", "type": "VIDEO", "title": "", "isTrusted": true}], "constraints": ["Must maintain 85bpm minimum", "Practice on a practice pad"], "instructions": "This is a stamina drill. Play continuous 32nd note double strokes for 30 seconds, then rest for 30 seconds. Use the 'Finger Control' method for the second stroke of each double. Start at 80bpm and increase by 5bpm every two minutes."}
+3	General	2	ACTIVE	f	f	f	0	0	0	916062	72	8	2026-03-10 22:36:30.569	2026-03-10 22:36:30.569	\N	6	21	2026-03-10 22:36:30.799	0	\N	10	RECURRING	\N	\N	0	DAILY	1 session per day for 10 days	1	\N	1890	{"goal": "Solidify your Jazz Swing Feel and Ride placement.", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "https://en.wikipedia.org/wiki/Elvin_Jones", "note": "", "type": "MUSICIAN", "title": "", "isTrusted": false}, {"url": "https://www.youtube.com/watch?v=PWBn7uuxSgk", "note": "", "type": "CONCEPT", "title": "", "isTrusted": false}], "constraints": ["Feathered kick drum mandatory", "Brushes or light sticks only"], "instructions": "Play the standard 'spang-a-lang' jazz pattern. Keep the ride cymbal dancing and add occasional light snare comping. Try to 'feather' the bass drum on every quarter note so softly that it is felt rather than heard."}
 20	General	6	ACTIVE	f	f	f	0	0	0	0	0	18	2026-03-10 22:36:40.744	2026-03-10 22:36:40.744	\N	0	21	2026-03-10 22:36:40.973	0	\N	21	RECURRING	\N	\N	0	DAILY	1 session per day for 21 days	1	\N	3360	{"goal": "Build endurance for high-velocity metal drumming.", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "https://en.wikipedia.org/wiki/George_Kollias", "note": "", "type": "MUSICIAN", "title": "", "isTrusted": false}], "constraints": ["Traditional grip for snare hand optional"], "instructions": "Practice fast, alternating hits between your kick and snare. Focus on staying relaxed so you don't tense up and slow down. Start at 120bpm and aim for stability over speed."}
 21	General	7	ACTIVE	f	f	f	0	0	0	0	0	8	2026-03-10 22:36:41.301	2026-03-10 22:36:41.301	\N	0	21	2026-03-10 22:36:41.578	0	\N	7	RECURRING	\N	\N	0	DAILY	1 session per day for 7 days	1	\N	210	{"goal": "Master the 'empty' first beat of reggae (One-Drop).", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "https://en.wikipedia.org/wiki/Carlton_Barrett", "note": "", "type": "MUSICIAN", "title": "", "isTrusted": false}, {"url": "https://open.spotify.com/track/one-drop-bob-marley", "note": "", "type": "SONG", "title": "", "isTrusted": false}], "constraints": ["Kick only on beat 3", "Cross-stick snare only"], "instructions": "In this style, the kick drum only hits on the 3rd beat. Keep the hi-hats eighth notes steady and the rim-click crisp. Use a cross-stick on the snare for that authentic woody sound."}
 22	General	7	ACTIVE	f	f	f	0	0	0	0	0	2	2026-03-10 22:36:41.904	2026-03-10 22:36:41.904	\N	0	21	2026-03-10 22:36:42.133	0	\N	14	RECURRING	\N	\N	0	DAILY	1 session per day for 14 days	1	\N	840	{"goal": "Keep a steady 'baion' foot pattern (Bossa Nova).", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "https://open.spotify.com/track/girl-from-ipanema", "note": "", "type": "SONG", "title": "", "isTrusted": false}], "constraints": ["Consistent ride cymbal mandatory"], "instructions": "Keep your feet playing a constant '1... (and) 2' pattern (dotted 8th, 16th) while your hands play syncopated rim-clicks. It requires perfect timing between feet and hands."}
@@ -374,6 +374,7 @@ COPY "public"."challenges" ("challenge_id", "category", "proposer_user_id", "sta
 73	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-11 12:14:56.224	2026-03-11 12:14:56.224	\N	0	21	2026-03-11 12:14:56.539	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	21000	{"goal": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "system": {"version": "2.1", "requiresReview": false}, "references": [], "constraints": [], "instructions": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token"}
 74	General	21	UNDER_REVIEW	f	f	f	0	0	0	0	0	0	2026-03-11 14:34:59.27	2026-03-11 14:34:59.27	\N	0	21	2026-03-11 14:34:59.584	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	25410	{"goal": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "note": "", "type": "VIDEO", "title": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "isTrusted": false}], "constraints": [], "instructions": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token"}
 75	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-11 14:35:36.135	2026-03-11 14:35:36.135	\N	0	21	2026-03-11 14:35:36.363	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	30240	{"goal": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token", "system": {"version": "2.1", "requiresReview": false}, "references": [], "constraints": [], "instructions": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token"}
+76	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-12 12:26:49.69	2026-03-12 12:26:49.69	\N	0	21	2026-03-12 12:26:50.318	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	{"goal": "", "system": {"version": "2.1", "requiresReview": false}, "references": [], "constraints": [], "instructions": ""}
 \.
 
 
@@ -560,6 +561,7 @@ COPY "public"."pushes" ("push_id", "challenge_id", "user_id", "cost", "timestamp
 148	57	6	294	2026-02-26 08:54:34.037	3
 149	3	4	10605	2026-02-09 04:57:29.542	10
 150	3	4	3024	2026-02-18 21:10:50.731	1
+151	3	21	901425	2026-03-12 21:22:44.964	50
 \.
 
 
@@ -593,6 +595,21 @@ COPY "public"."streams" ("stream_session_id", "current_stream_number", "start_ti
 --
 
 COPY "public"."temp_quotes" ("quote_id", "user_id", "challenge_id", "quantity", "quoted_cost", "timestamp_created", "is_locked") FROM stdin;
+7043e560-4413-44d0-be01-fcd3c67371fe	21	5	1	21	2026-03-12 18:37:56.548	f
+20a22818-1a9d-402c-85bc-96819a7ff41e	21	5	1	21	2026-03-12 18:46:54.234	f
+ed309ba1-d0c7-4081-b938-3961f0ee4279	21	5	1	21	2026-03-12 18:50:32.526	f
+2ced18d2-87c6-4e45-87fe-52089acd30f9	21	5	1	21	2026-03-12 18:50:33.859	f
+bb0bcbdf-450e-44e8-9d36-ccd00d0b95c4	21	5	1	21	2026-03-12 18:50:35.379	f
+674237e0-cebc-4b0d-9229-a3bd94d40aa1	21	5	1	21	2026-03-12 18:56:38.596	f
+3652b17f-8b69-49cd-a6da-fa703cd6b860	21	5	1	21	2026-03-12 18:56:39.543	f
+ead42467-c262-45b2-84dc-a7abd58972cf	21	5	1	21	2026-03-12 18:56:40.429	f
+1fe04771-90d0-4549-8362-c3a14f35afed	21	5	1	21	2026-03-12 18:56:48.534	f
+22d30cfb-959a-484c-8231-3a293ce3a160	21	5	1	21	2026-03-12 19:14:44.098	f
+6dca6752-6780-4c8d-8fde-c613f09ae453	21	5	1	21	2026-03-12 19:14:49.049	f
+4bbeda91-0d3f-41e2-bf07-9771d99bd150	21	5	1	21	2026-03-12 19:14:51.139	f
+5818e3f6-5c22-4b7f-a7a3-527c94d28db1	21	5	1	21	2026-03-12 19:14:53.069	f
+ab8254a4-626c-404b-82ab-058a829e7936	21	5	1	21	2026-03-12 19:14:56.178	f
+65a9ae27-3664-4d91-8de8-7ebfcbd27ad8	21	5	1	21	2026-03-12 19:14:58.707	f
 \.
 
 
@@ -670,7 +687,7 @@ SELECT pg_catalog.setval('"public"."accounts_account_id_seq"', 37, true);
 -- Name: challenges_challenge_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 75, true);
+SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 76, true);
 
 
 --
@@ -684,7 +701,7 @@ SELECT pg_catalog.setval('"public"."perennial_tokens_token_id_seq"', 20, true);
 -- Name: pushes_push_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."pushes_push_id_seq"', 150, true);
+SELECT pg_catalog.setval('"public"."pushes_push_id_seq"', 151, true);
 
 
 --
@@ -698,13 +715,13 @@ SELECT pg_catalog.setval('"public"."streams_stream_session_id_seq"', 8, true);
 -- Name: users_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."users_user_id_seq"', 1, false);
+SELECT pg_catalog.setval('"public"."users_user_id_seq"', 3, true);
 
 
 --
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict zWhWUzPFTMvXPSRJ4bQlRa9KSlVk4PihRKvnRWrdjsTjQQBl40MsQYisWChmb6f
+-- \unrestrict Mdrnn1I19dFWle37OjNBg9LciEMtFakk3V0AE9uvF7E5USmCbaio27X18NUXnPO
 
 RESET ALL;
