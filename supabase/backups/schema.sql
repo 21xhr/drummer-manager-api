@@ -169,7 +169,6 @@ CREATE TABLE IF NOT EXISTS "public"."challenges" (
     "timestamp_completed" timestamp(3) without time zone,
     "unique_pusher" integer DEFAULT 0 NOT NULL,
     "push_base_cost" integer DEFAULT 21 NOT NULL,
-    "timestampLastStreamDayTicked" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     "current_session_count" integer DEFAULT 0 NOT NULL,
     "session_start_timestamp" timestamp(3) without time zone,
     "total_sessions" integer NOT NULL,
@@ -182,7 +181,10 @@ CREATE TABLE IF NOT EXISTS "public"."challenges" (
     "cadence_required_count" integer DEFAULT 1,
     "timestamp_last_session_tick" timestamp(3) without time zone,
     "submission_cost" integer NOT NULL,
-    "challenge_text" "jsonb" NOT NULL
+    "challenge_text" "jsonb" NOT NULL,
+    "timestamp_last_push_at" timestamp(3) without time zone,
+    "timestamp_last_stream_day_ticked" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "timestamp_last_activity_at" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
