@@ -600,8 +600,12 @@ export async function processPushConfirm(
   platformName: PlatformName,
   quoteId?: string 
 ): Promise<{ updatedChallenge: Challenge; transactionCost: number; quantity: number, updatedAccount: Account }> {
-    const currentStreamSessionId = getCurrentStreamSessionId(); 
+
     const transactionTimestamp = new Date().toISOString();
+    const txNow = new Date(transactionTimestamp);
+
+    const currentStreamSessionId = getCurrentStreamSessionId(); 
+
 
   return prisma.$transaction(async (tx) => {
     const EXPIRATION_TIMEOUT_MS = 30 * 1000;
@@ -709,8 +713,8 @@ export async function processPushConfirm(
         data: {
             totalPush: { increment: quote.quantity },
             totalNumbersSpent: { increment: BigInt(pushTransactionCost) },
-            timestampLastPushAt: new Date(transactionTimestamp),
-            timestampLastActivityAt: new Date(transactionTimestamp)
+            timestampLastPushAt: txNow,
+            timestampLastActivityAt: txNow
         },
     });
 
@@ -795,8 +799,10 @@ export async function processDigout(
     challengeId: number
 ): Promise<{ updatedChallenge: Challenge; updatedUser: User; updatedAccount: Account; cost: number }> {
 
-    const currentStreamSessionId = getCurrentStreamSessionId();
     const transactionTimestamp = new Date().toISOString();
+    const txNow = new Date(transactionTimestamp);
+    
+    const currentStreamSessionId = getCurrentStreamSessionId();
 
     const result = await prisma.$transaction(async (tx) => {
         // 1. Fetch Challenge and User for validation
@@ -913,8 +919,8 @@ export async function processDigout(
             data: {
                 status: ChallengeStatus.ACTIVE,
                 streamDaysSinceActivation: 0,
-                timestampLastActivation: new Date(transactionTimestamp),
-                timestampLastActivityAt: new Date(transactionTimestamp),
+                timestampLastActivation: txNow,
+                timestampLastActivityAt: txNow,
                 hasBeenDiggedOut: true,
             },
         });
@@ -954,8 +960,11 @@ export async function processChallengeSubmission(
     sessionCadenceText?: string,
     cadenceUnit?: CadenceUnit
 ): Promise<{ newChallenge: Challenge, cost: number, updatedUser: User, updatedAccount: Account }> { 
-    const currentStreamSessionId = getCurrentStreamSessionId();
+
     const transactionTimestamp = new Date().toISOString();
+    const txNow = new Date(transactionTimestamp);
+
+    const currentStreamSessionId = getCurrentStreamSessionId();
 
     // VALIDATION: Ensure required values are provided and valid
     if (!durationType || !Object.values(DurationType).includes(durationType)) {
@@ -1056,9 +1065,9 @@ export async function processChallengeSubmission(
 
                 totalSessions: totalSessions, // Required field
 
-                timestampSubmitted: new Date(transactionTimestamp), // Required field
-                timestampLastActivation: new Date(transactionTimestamp), // Required field
-                timestampLastActivityAt: new Date(transactionTimestamp), // Required field
+                timestampSubmitted: txNow, // Required field
+                timestampLastActivation: txNow, // Required field
+                timestampLastActivityAt: txNow, // Required field
             }
         });
 
@@ -1153,6 +1162,7 @@ export async function processChallengeSubmission(
 export async function archiveExpiredChallenges(): Promise<number> {
     
     const transactionTimestamp = new Date().toISOString();
+    const txNow = new Date(transactionTimestamp);
 
     // We use updateMany within a transaction block for safety, though it's not strictly necessary here.
     const result = await prisma.$transaction(async (tx) => {
@@ -1165,7 +1175,7 @@ export async function archiveExpiredChallenges(): Promise<number> {
             },
             data: {
                 status: ChallengeStatus.ARCHIVED,
-                timestampLastActivityAt: new Date(transactionTimestamp),
+                timestampLastActivityAt: txNow,
             },
         });
 
@@ -1191,6 +1201,9 @@ export async function archiveExpiredChallenges(): Promise<number> {
  * @returns The completed Challenge record, or null if none was executing.
  */
 export async function finalizeInProgressChallenge(): Promise<Challenge | null> {
+
+    const transactionTimestamp = new Date().toISOString();
+    const txNow = new Date(transactionTimestamp);
     
     // ... (find executingChallenge)
     const executingChallenge = await prisma.challenge.findFirst({
@@ -1201,8 +1214,6 @@ export async function finalizeInProgressChallenge(): Promise<Challenge | null> {
         console.log("[ChallengeService] No challenge found in 'InProgress' status to finalize.");
         return null;
     }
-    
-    const transactionTimestamp = new Date().toISOString();
 
     // LOGIC: Session OUT - Increment count, THEN check for completion
     const nextSessionCount = executingChallenge.currentSessionCount + 1;
@@ -1211,13 +1222,13 @@ export async function finalizeInProgressChallenge(): Promise<Challenge | null> {
     const updateData: any = { 
         isExecuting: false,
         currentSessionCount: nextSessionCount,
-        timestampLastActivityAt: new Date(transactionTimestamp),
+        timestampLastActivityAt: txNow,
     };
 
     if (isCompleted) {
         updateData.status = ChallengeStatus.COMPLETED;
-        updateData.timestampCompleted = new Date(transactionTimestamp);
-        updateData.timestampLastActivityAt = new Date(transactionTimestamp);
+        updateData.timestampCompleted = txNow;
+        updateData.timestampLastActivityAt = txNow;
     } 
     // Else: Status remains 'InProgress'.
 
@@ -1245,6 +1256,7 @@ export async function processExecuteChallenge(challengeId: number): Promise<Exec
     
     return prisma.$transaction(async (tx) => {
         const transactionTimestamp = new Date().toISOString();
+        const txNow = new Date(transactionTimestamp);
 
         // 1. Finalize the previously executing challenge (if any)
         const previousChallenge = await tx.challenge.findFirst({ where: { isExecuting: true } });
@@ -1260,7 +1272,7 @@ export async function processExecuteChallenge(challengeId: number): Promise<Exec
                     isExecuting: false,
                     // Clearing the tick ensures the scheduler ignores it immediately.
                     timestampLastSessionTick: null, 
-                    timestampLastActivityAt: new Date(transactionTimestamp),
+                    timestampLastActivityAt: txNow,
                 }
             });
             console.log(`[ChallengeService] Previous challenge #${previousChallenge.challengeId} manually stopped before launch.`);
@@ -1285,14 +1297,14 @@ export async function processExecuteChallenge(challengeId: number): Promise<Exec
         const updateData: any = {
             status: newStatus, 
             isExecuting: true,
-            sessionStartTimestamp: new Date(transactionTimestamp),
-            timestampLastSessionTick: new Date(transactionTimestamp), // CRITICAL: Start the 21-minute clock NOW!
-            timestampLastActivityAt: new Date(transactionTimestamp),
+            sessionStartTimestamp: txNow,
+            timestampLastSessionTick: txNow, // CRITICAL: Start the 21-minute clock NOW!
+            timestampLastActivityAt: txNow,
         };
 
         // Set cadencePeriodStart ONLY when transitioning from ACTIVE to IN_PROGRESS
         if (challenge.status === ChallengeStatus.ACTIVE && challenge.durationType === 'RECURRING') {
-            updateData.cadencePeriodStart = new Date(transactionTimestamp);
+            updateData.cadencePeriodStart = txNow;
         }
 
         // Rename the returned variable to match the return block
@@ -1379,6 +1391,7 @@ export async function processRemove(
     // Fetch the current Stream Session ID ONCE before the transaction begins
     const currentStreamSessionId = getCurrentStreamSessionId();
     const transactionTimestamp = new Date().toISOString();
+    const txNow = new Date(transactionTimestamp);
 
     // --- STEP 1: ATOMIC DATABASE TRANSACTION (Local State Change: Challenge/Global) ---
     const result: ProcessRemoveTransactionResult = await prisma.$transaction(async (tx): Promise<ProcessRemoveTransactionResult> => {
@@ -1526,7 +1539,7 @@ export async function processRemove(
             data: {
                 status: ChallengeStatus.REMOVED,
                 isExecuting: false,
-                timestampLastActivityAt: new Date(transactionTimestamp),
+                timestampLastActivityAt: txNow,
             },
         });
 
@@ -1772,17 +1785,18 @@ export async function setChallengeStatusByAdmin(
     
     // 2. Perform the update
     const transactionTimestamp = new Date().toISOString();
+    const txNow = new Date(transactionTimestamp);
 
     const updateData: any = { 
         status: newStatus,
-        timestampLastActivityAt: new Date(transactionTimestamp),
+        timestampLastActivityAt: txNow,
         // When setting to REMOVED, ARCHIVED, or FAILED, ensure it's not currently executing
         ...(newStatus !== ChallengeStatus.IN_PROGRESS && { 
             isExecuting: false 
         }),
         // Optionally, record the completion timestamp if setting to a final state
         ...(newStatus === ChallengeStatus.COMPLETED && {
-            timestampCompleted: new Date(transactionTimestamp),
+            timestampCompleted: txNow,
         })
     };
 
