@@ -131,49 +131,58 @@ model StreamStat {
 /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 model Challenge {
-  challengeId               Int         @id @default(autoincrement()) @map("challenge_id")
-  challengeText             Json        @map("challenge_text")
-  category                  String      @map("category")
-  durationType          DurationType    @map("duration_type")
-  proposerUserId            Int         @map("proposer_user_id")
-  status                ChallengeStatus @map("status")
-  failureReason             String?     @map("failure_reason")
-  isExecuting               Boolean     @default(false) @map("is_executing")
-  timestampLastSessionTick DateTime?    @map("timestamp_last_session_tick") // Tracks the last time a session tick occurred for this challenge
-  hasBeenAuctioned          Boolean     @default(false) @map("has_been_auctioned")
-  hasBeenDiggedOut          Boolean     @default(false) @map("has_been_digged_out")
-  auctionCost               Int         @default(0) @map("auction_cost")
-  disruptCount              Int         @default(0) @map("disrupt_count")
-  numbersRaised             Int         @default(0) @map("numbers_raised")
-  totalNumbersSpent         BigInt      @default(0) @map("total_numbers_spent")
-  totalPush                 Int         @default(0) @map("total_push")
-  timestampSubmitted        DateTime    @map("timestamp_submitted")
-  timestampLastActivation   DateTime    @map("timestamp_last_activation")
-  timestampCompleted        DateTime?   @map("timestamp_completed")
-  uniquePusher              Int         @default(0) @map("unique_pusher")
-  pushBaseCost              Int         @default(21) @map("push_base_cost")
-  submissionCost            Int         @map("submission_cost") // No default needed, as it's calculated on creation
-  proposer                  User        @relation("Proposer", fields: [proposerUserId], references: [id])
-  timestampLastStreamDayTicked   DateTime    @default(now()) // Tracks the last time streamDaysSinceActivation was incremented. To guard against double-ticking
-  
-  // Cadence Fields
-  sessionCadenceText      String?         @map("session_cadence_text")
-  cadenceUnit             CadenceUnit?    @map("cadence_unit")
-  cadenceProgressCounter  Int             @default(0) @map("cadence_progress_counter")
-  cadencePeriodStart      DateTime?       @map("cadence_period_start") // Will be set on FIRST EXECUTION or successful daily tick.
-  cadenceRequiredCount    Int?            @default(1) @map("cadence_required_count") 
+  challengeId              Int             @id @default(autoincrement()) @map("challenge_id")
 
-  // Lifecycle fields
-  streamDaysSinceActivation Int           @default(0) @map("stream_days_since_activation")
-  
-  // Session Fields
-  totalSessions             Int             @map("total_sessions") 
-  currentSessionCount       Int @default(0) @map("current_session_count")
-  sessionStartTimestamp     DateTime?       @map("session_start_timestamp") // Tracks when the current 21-min session began
+  // IDENTITY / CORE
+  challengeText            Json            @map("challenge_text")
+  category                 String          @map("category")
+  durationType             DurationType    @map("duration_type")
+  status                   ChallengeStatus @map("status")
+  proposerUserId           Int             @map("proposer_user_id")
+  proposer                 User            @relation("Proposer", fields: [proposerUserId], references: [id])
 
-  pushes                    Push[]
-  tempQuotes                TempQuote[]
+  // EXECUTION / LIFECYCLE FLAGS
+  isExecuting              Boolean         @default(false) @map("is_executing")
+  hasBeenAuctioned         Boolean         @default(false) @map("has_been_auctioned")
+  hasBeenDiggedOut         Boolean         @default(false) @map("has_been_digged_out")
 
+  // ECONOMY / ENGAGEMENT
+  submissionCost           Int             @map("submission_cost")
+  pushBaseCost             Int             @default(21) @map("push_base_cost")
+  totalPush                Int             @default(0) @map("total_push")
+  uniquePusher             Int             @default(0) @map("unique_pusher")
+  totalNumbersSpent        BigInt          @default(0) @map("total_numbers_spent")
+  auctionCost              Int             @default(0) @map("auction_cost")
+  numbersRaised            Int             @default(0) @map("numbers_raised")
+  disruptCount             Int             @default(0) @map("disrupt_count")
+
+  // SESSION / PROGRESSION
+  totalSessions            Int             @map("total_sessions")
+  currentSessionCount      Int             @default(0) @map("current_session_count")
+  streamDaysSinceActivation Int            @default(0) @map("stream_days_since_activation")
+
+  // CADENCE
+  cadenceUnit              CadenceUnit?    @map("cadence_unit")
+  cadenceRequiredCount     Int?            @default(1) @map("cadence_required_count")
+  sessionCadenceText       String?         @map("session_cadence_text")
+  cadenceProgressCounter   Int             @default(0) @map("cadence_progress_counter")
+  cadencePeriodStart       DateTime?       @map("cadence_period_start")
+
+  // TIMESTAMPS
+  timestampSubmitted       DateTime        @map("timestamp_submitted")
+  timestampLastActivation  DateTime        @map("timestamp_last_activation")
+  timestampLastStreamDayTicked DateTime    @default(now()) @map("timestamp_last_stream_day_ticked")
+  timestampLastSessionTick DateTime?       @map("timestamp_last_session_tick")
+  sessionStartTimestamp    DateTime?       @map("session_start_timestamp")
+  timestampLastPushAt      DateTime?       @map("timestamp_last_push_at")
+  timestampCompleted       DateTime?       @map("timestamp_completed")
+
+  // FAILURE / TERMINAL CONTEXT
+  failureReason            String?         @map("failure_reason")
+
+  // RELATIONS
+  pushes                   Push[]
+  tempQuotes               TempQuote[]
 
   @@map("challenges")
 }

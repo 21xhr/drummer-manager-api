@@ -702,11 +702,12 @@ export async function processPushConfirm(
     
     // A. Update Challenge: Increment total push count and total cost spent on the challenge.
     const updatedChallenge = await tx.challenge.update({
-      where: { challengeId: challenge.challengeId },
-      data: {
-        totalPush: { increment: quote.quantity },
-        totalNumbersSpent: { increment: BigInt(pushTransactionCost) },
-      },
+        where: { challengeId: challenge.challengeId },
+        data: {
+            totalPush: { increment: quote.quantity },
+            totalNumbersSpent: { increment: BigInt(pushTransactionCost) },
+            timestampLastPushAt: new Date(transactionTimestamp),
+        },
     });
 
     // B. Record Push: Create a historical record of this specific push transaction.

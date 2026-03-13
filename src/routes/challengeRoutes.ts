@@ -33,7 +33,8 @@ router.get('/delta', async (req: Request, res: Response) => {
                 OR: [
                     { timestampLastActivation: { gt: lastCheck } },
                     { timestampLastStreamDayTicked: { gt: lastCheck } },
-                    { timestampCompleted: { gt: lastCheck } }
+                    { timestampCompleted: { gt: lastCheck } },
+                    { timestampLastPushAt: { gt: lastCheck } }
                 ]
             },
             include: {
