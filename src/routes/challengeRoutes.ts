@@ -30,12 +30,7 @@ router.get('/delta', async (req: Request, res: Response) => {
         const lastCheck = new Date(since as string);
         const updates = await prisma.challenge.findMany({
             where: {
-                OR: [
-                    { timestampLastActivation: { gt: lastCheck } },
-                    { timestampLastStreamDayTicked: { gt: lastCheck } },
-                    { timestampCompleted: { gt: lastCheck } },
-                    { timestampLastPushAt: { gt: lastCheck } }
-                ]
+                timestampLastActivityAt: { gt: lastCheck }
             },
             include: {
                 proposer: {
@@ -46,7 +41,7 @@ router.get('/delta', async (req: Request, res: Response) => {
                     }
                 }
             },
-            orderBy: { timestampLastActivation: 'desc' }
+            orderBy: { timestampLastActivityAt: 'desc' }
         });
         return res.status(200).json(updates);
     } catch (error) {

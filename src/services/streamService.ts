@@ -106,6 +106,7 @@ export async function processStreamLiveEvent(streamStartTime: Date): Promise<voi
             data: {
                 streamDaysSinceActivation: { increment: 1 }, 
                 timestampLastStreamDayTicked: streamStartTime,
+                timestampLastActivityAt: streamStartTime,
             },
         });
 

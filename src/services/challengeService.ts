@@ -329,13 +329,16 @@ export async function processAutomaticSessionTick(): Promise<SessionTickResult |
     return prisma.$transaction(async (tx) => {
         const nextSessionCount = executingChallenge.currentSessionCount + 1;
         const isCompleted = nextSessionCount >= executingChallenge.totalSessions;
-        const txNow = new Date();
+        
+        const transactionTimestamp = new Date().toISOString();
+        const txNow = new Date(transactionTimestamp);
 
         // Build the update payload
         const updateData: any = {
             currentSessionCount: nextSessionCount,
             isExecuting: false, // Stop execution after one session
             timestampLastSessionTick: null, // Reset clock
+            timestampLastActivityAt: txNow, // Update last activity timestamp
         };
 
         // INTEGRATION: Sync with Recurring Cadence
@@ -707,6 +710,7 @@ export async function processPushConfirm(
             totalPush: { increment: quote.quantity },
             totalNumbersSpent: { increment: BigInt(pushTransactionCost) },
             timestampLastPushAt: new Date(transactionTimestamp),
+            timestampLastActivityAt: new Date(transactionTimestamp)
         },
     });
 
@@ -909,7 +913,8 @@ export async function processDigout(
             data: {
                 status: ChallengeStatus.ACTIVE,
                 streamDaysSinceActivation: 0,
-                timestampLastActivation: transactionTimestamp, 
+                timestampLastActivation: new Date(transactionTimestamp),
+                timestampLastActivityAt: new Date(transactionTimestamp),
                 hasBeenDiggedOut: true,
             },
         });
@@ -1047,11 +1052,13 @@ export async function processChallengeSubmission(
                 // Always include these for RECURRING challenges
                 cadenceRequiredCount: cadenceRequiredCount || null, // SET REQUIRED COUNT
                 cadenceProgressCounter: 0,
-                cadencePeriodStart: null, // CORRECT: Set on first execution
+                cadencePeriodStart: null, // Set on first execution
 
                 totalSessions: totalSessions, // Required field
-                timestampSubmitted: transactionTimestamp, // Required field
-                timestampLastActivation: transactionTimestamp, // Required field
+
+                timestampSubmitted: new Date(transactionTimestamp), // Required field
+                timestampLastActivation: new Date(transactionTimestamp), // Required field
+                timestampLastActivityAt: new Date(transactionTimestamp), // Required field
             }
         });
 
@@ -1145,6 +1152,8 @@ export async function processChallengeSubmission(
  */
 export async function archiveExpiredChallenges(): Promise<number> {
     
+    const transactionTimestamp = new Date().toISOString();
+
     // We use updateMany within a transaction block for safety, though it's not strictly necessary here.
     const result = await prisma.$transaction(async (tx) => {
         
@@ -1156,6 +1165,7 @@ export async function archiveExpiredChallenges(): Promise<number> {
             },
             data: {
                 status: ChallengeStatus.ARCHIVED,
+                timestampLastActivityAt: new Date(transactionTimestamp),
             },
         });
 
@@ -1200,12 +1210,14 @@ export async function finalizeInProgressChallenge(): Promise<Challenge | null> {
     
     const updateData: any = { 
         isExecuting: false,
-        currentSessionCount: nextSessionCount
+        currentSessionCount: nextSessionCount,
+        timestampLastActivityAt: new Date(transactionTimestamp),
     };
 
     if (isCompleted) {
         updateData.status = ChallengeStatus.COMPLETED;
-        updateData.timestampCompleted = transactionTimestamp;
+        updateData.timestampCompleted = new Date(transactionTimestamp);
+        updateData.timestampLastActivityAt = new Date(transactionTimestamp);
     } 
     // Else: Status remains 'InProgress'.
 
@@ -1248,6 +1260,7 @@ export async function processExecuteChallenge(challengeId: number): Promise<Exec
                     isExecuting: false,
                     // Clearing the tick ensures the scheduler ignores it immediately.
                     timestampLastSessionTick: null, 
+                    timestampLastActivityAt: new Date(transactionTimestamp),
                 }
             });
             console.log(`[ChallengeService] Previous challenge #${previousChallenge.challengeId} manually stopped before launch.`);
@@ -1272,13 +1285,14 @@ export async function processExecuteChallenge(challengeId: number): Promise<Exec
         const updateData: any = {
             status: newStatus, 
             isExecuting: true,
-            sessionStartTimestamp: transactionTimestamp,
-            timestampLastSessionTick: new Date(), // CRITICAL: Start the 21-minute clock NOW!
+            sessionStartTimestamp: new Date(transactionTimestamp),
+            timestampLastSessionTick: new Date(transactionTimestamp), // CRITICAL: Start the 21-minute clock NOW!
+            timestampLastActivityAt: new Date(transactionTimestamp),
         };
 
         // Set cadencePeriodStart ONLY when transitioning from ACTIVE to IN_PROGRESS
         if (challenge.status === ChallengeStatus.ACTIVE && challenge.durationType === 'RECURRING') {
-            updateData.cadencePeriodStart = transactionTimestamp;
+            updateData.cadencePeriodStart = new Date(transactionTimestamp);
         }
 
         // Rename the returned variable to match the return block
@@ -1361,9 +1375,6 @@ export async function processRemove(
     toExternalPushers: number,
     option: RefundOption
 }> {
-
-    const refundsToProcess: { userId: number, refundAmount: number }[] = [];
-    let totalRefundsAmount = 0; // The 21% amount
 
     // Fetch the current Stream Session ID ONCE before the transaction begins
     const currentStreamSessionId = getCurrentStreamSessionId();
@@ -1514,7 +1525,8 @@ export async function processRemove(
             where: { challengeId: challengeId },
             data: {
                 status: ChallengeStatus.REMOVED,
-                isExecuting: false
+                isExecuting: false,
+                timestampLastActivityAt: new Date(transactionTimestamp),
             },
         });
 
@@ -1759,15 +1771,18 @@ export async function setChallengeStatusByAdmin(
     }
     
     // 2. Perform the update
+    const transactionTimestamp = new Date().toISOString();
+
     const updateData: any = { 
         status: newStatus,
+        timestampLastActivityAt: new Date(transactionTimestamp),
         // When setting to REMOVED, ARCHIVED, or FAILED, ensure it's not currently executing
         ...(newStatus !== ChallengeStatus.IN_PROGRESS && { 
             isExecuting: false 
         }),
         // Optionally, record the completion timestamp if setting to a final state
         ...(newStatus === ChallengeStatus.COMPLETED && {
-            timestampCompleted: new Date().toISOString()
+            timestampCompleted: new Date(transactionTimestamp),
         })
     };
 

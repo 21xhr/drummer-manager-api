@@ -625,6 +625,9 @@ export async function main() {
             status: finalStatus,
             streamDaysSinceActivation: daysSinceActivation,
             timestampCompleted: completionDate,
+            timestampLastActivityAt: completionDate
+              ? completionDate
+              : new Date(Date.now() - Math.floor(Math.random() * 5) * 24 * 60 * 60 * 1000), // Random last activity within 5 days of completion or now
             failureReason
           }
         });

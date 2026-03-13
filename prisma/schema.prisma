@@ -175,6 +175,7 @@ model Challenge {
   timestampLastSessionTick DateTime?       @map("timestamp_last_session_tick")
   sessionStartTimestamp    DateTime?       @map("session_start_timestamp")
   timestampLastPushAt      DateTime?       @map("timestamp_last_push_at")
+  timestampLastActivityAt  DateTime        @default(now()) @map("timestamp_last_activity_at")
   timestampCompleted       DateTime?       @map("timestamp_completed")
 
   // FAILURE / TERMINAL CONTEXT

@@ -99,7 +99,6 @@ export async function checkOneOffContiguity(): Promise<number> {
         data: {
             status: ChallengeStatus.FAILED, 
             failureReason: 'Contiguity rule broken: Not completed by daily maintenance.',
-            // timestampCompleted remains unset (null), which is correct for a failure.
         }
     });
     
@@ -188,7 +187,8 @@ export async function enforceRecurringChallengeCadence(): Promise<number> {
                     data: {
                         status: ChallengeStatus.FAILED, 
                         failureReason: `Cadence rule broken: Failed to complete ${requiredCount} sessions within the ${challenge.cadenceUnit} period.`,
-                        timestampCompleted: now, 
+                        timestampCompleted: now,
+                        timestampLastActivityAt: now
                     }
                 });
             } else {
