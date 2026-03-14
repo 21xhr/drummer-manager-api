@@ -21,7 +21,7 @@ import cors from 'cors';
 
 import prisma from './prisma'; 
 import adminRoutes from './routes/adminRoutes';
-import challengeRoutes from './routes/challengeRoutes';
+import challengesRoutes from './routes/challengesRoutes';
 import clockRoutes from './routes/clockRoutes';
 import gamemasterRoutes from './routes/gamemasterRoutes';
 import referenceRoutes from './routes/referenceRoutes';
@@ -89,7 +89,7 @@ app.use(express.json());
 
 // --- Application Routers (API Endpoints) ---
 app.use('/api/v1/admin', adminRoutes);
-app.use('/api/v1/challenge', challengeRoutes)
+app.use('/api/v1/challenges', challengesRoutes)
 app.use('/api/v1/clock', clockRoutes);
 app.use('/api/v1/gamemaster', gamemasterRoutes);
 app.use('/api/v1/references', referenceRoutes);

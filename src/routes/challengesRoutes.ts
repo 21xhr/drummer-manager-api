@@ -7,7 +7,6 @@ import logger from '../logger';
 export const router = Router();
 
 // GET /api/v1/challenges
-//
 router.get('/', async (req, res) => {
     const all = await prisma.challenge.findMany({
         include: { 
