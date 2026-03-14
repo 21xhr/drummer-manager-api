@@ -184,7 +184,9 @@ CREATE TABLE IF NOT EXISTS "public"."challenges" (
     "challenge_text" "jsonb" NOT NULL,
     "timestamp_last_push_at" timestamp(3) without time zone,
     "timestamp_last_stream_day_ticked" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "timestamp_last_activity_at" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    "timestamp_last_activity_at" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "proposer_platform_name_snapshot" "public"."PlatformName",
+    "proposer_username_snapshot" "text"
 );
 
 
