@@ -9,11 +9,6 @@ export const router = Router();
 // GET /api/v1/challenges
 router.get('/', async (req, res) => {
     const all = await prisma.challenge.findMany({
-        include: { 
-            proposer: {
-                include: { accounts: true }
-            } 
-        },
         orderBy: { timestampSubmitted: 'desc' }
     });
     res.json(all);
@@ -31,15 +26,6 @@ router.get('/delta', async (req: Request, res: Response) => {
         const updates = await prisma.challenge.findMany({
             where: {
                 timestampLastActivityAt: { gt: lastCheck }
-            },
-            include: {
-                proposer: {
-                    select: {
-                        accounts: {
-                            select: { username: true, platformName: true }
-                        }
-                    }
-                }
             },
             orderBy: { timestampLastActivityAt: 'desc' }
         });

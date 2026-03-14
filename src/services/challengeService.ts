@@ -1047,6 +1047,8 @@ export async function processChallengeSubmission(
             data: {
                 challengeText: structuredChallenge as any, // Required field
                 proposerUserId: userId, // Required field
+                proposerUsernameSnapshot: accountContext.username || platformId,
+                proposerPlatformNameSnapshot: platformName,
                 status: structuredChallenge.system.requiresReview 
                 ? "UNDER_REVIEW" 
                 : "ACTIVE", // Required field with conditional logic

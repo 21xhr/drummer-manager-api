@@ -140,6 +140,8 @@ model Challenge {
   status                   ChallengeStatus @map("status")
   proposerUserId           Int             @map("proposer_user_id")
   proposer                 User            @relation("Proposer", fields: [proposerUserId], references: [id])
+  proposerUsernameSnapshot     String?       @map("proposer_username_snapshot")
+  proposerPlatformNameSnapshot PlatformName? @map("proposer_platform_name_snapshot")
 
   // EXECUTION / LIFECYCLE FLAGS
   isExecuting              Boolean         @default(false) @map("is_executing")
