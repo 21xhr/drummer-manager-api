@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict xCdZTitXJOIrl9f0B1za4sX3arsYyb6vZs0s7S1cctLdV4rI55oiOmUrnpRa4ih
+-- \restrict PApgHAuZFeUvGaRhfFLxbgNovbxWCnzBYdn2jkruwmSuuijLjLXCwgzErh03T38
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -240,10 +240,10 @@ COPY "public"."users" ("user_id", "last_activity_timestamp", "last_live_activity
 16	2026-03-13 11:58:35.387	\N	0	0	0	2026-03-13 21:00:00	0	4	0	6930	0	0	0	4	0	4	0	0	0	0	0	\N
 18	\N	\N	0	0	0	2026-03-13 11:57:53.386	0	0	0	14574	0	0	0	50	0	0	0	0	0	0	0	\N
 19	\N	\N	0	0	0	2026-03-13 11:57:53.386	0	0	0	7077	0	0	0	34	0	0	0	0	0	0	0	\N
-1	\N	\N	0	0	0	2026-03-13 11:57:53.386	214998	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
 20	\N	\N	0	0	0	2026-03-13 11:57:53.386	0	0	0	30408	0	0	0	63	0	0	0	0	0	0	0	\N
-21	2026-03-14 15:44:11.904	\N	0	0	0	2026-03-15 21:00:00	0	1	0	8610	0	0	0	14	0	0	0	0	0	0	0	2026-03-14 20:51:35.342
+21	2026-03-14 22:57:09.886	\N	0	0	0	2026-03-15 21:00:00	0	2	0	8820	0	0	0	14	0	1	0	0	0	0	0	2026-03-15 18:27:25.7
 5	2026-03-13 11:58:10.861	\N	0	0	0	2026-03-13 21:00:00	0	4	0	6300	0	0	0	0	0	4	0	0	0	0	0	\N
+1	\N	\N	0	0	0	2026-03-13 11:57:53.386	215208	0	0	0	0	0	0	0	0	0	0	0	0	0	0	\N
 17	2026-03-13 11:58:37.031	\N	0	0	0	2026-03-13 21:00:00	0	3	0	2940	0	0	0	0	0	3	0	0	0	0	0	\N
 2	2026-03-13 11:58:04.167	\N	0	0	0	2026-03-13 21:00:00	0	4	0	7182	0	0	0	13	0	4	0	0	0	0	0	\N
 3	2026-03-13 11:58:06.412	\N	0	0	0	2026-03-13 21:00:00	0	4	0	6363	0	0	0	3	0	4	0	0	0	0	0	\N
@@ -284,6 +284,7 @@ COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name
 42	20	solo_twitch_20	TWITCH	21000000	\N	\N	\N	Solo_TWITCH_20
 26	12	solo_twitch_12	TWITCH	99996639	\N	\N	\N	Solo_TWITCH_12
 4	2	linked_youtube_2	YOUTUBE	99996639	\N	\N	\N	Duo_YOUTUBE_2
+1	21	686071308	TWITCH	99999789	\N	2026-03-15 18:31:44.833	\N	21xhr
 6	3	linked_youtube_3	YOUTUBE	99996639	\N	\N	\N	Duo_YOUTUBE_3
 27	13	solo_youtube_13	YOUTUBE	99996639	\N	\N	\N	Solo_YOUTUBE_13
 8	4	solo_youtube_4	YOUTUBE	99996639	\N	\N	\N	Solo_YOUTUBE_4
@@ -298,7 +299,6 @@ COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name
 19	9	linked_kick_9	KICK	99996639	\N	\N	\N	Duo_KICK_9
 21	10	linked_youtube_10	YOUTUBE	99996639	\N	\N	\N	Duo_YOUTUBE_10
 23	11	linked_twitch_11	TWITCH	99996639	\N	\N	\N	Triple_TWITCH_11
-1	21	686071308	TWITCH	99999810	\N	2026-03-14 21:21:14.178	\N	21xhr
 \.
 
 
@@ -371,6 +371,7 @@ COPY "public"."challenges" ("challenge_id", "category", "proposer_user_id", "sta
 63	General	17	IN_PROGRESS	f	f	f	0	0	0	0	0	15	2026-03-13 11:58:37.031	2026-03-13 11:58:37.031	\N	0	21	0	\N	7	RECURRING	\N	\N	0	DAILY	1 session per day for 7 days	1	\N	1890	{"goal": "[DIVERSIFIED] Master the 'empty' first beat of reggae (One-Drop).", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "https://en.wikipedia.org/wiki/Carlton_Barrett", "note": "", "type": "MUSICIAN", "title": "", "isTrusted": false}, {"url": "https://open.spotify.com/track/one-drop-bob-marley", "note": "", "type": "SONG", "title": "", "isTrusted": false}], "constraints": ["Kick only on beat 3", "Cross-stick snare only"], "instructions": "In this style, the kick drum only hits on the 3rd beat. Keep the hi-hats eighth notes steady and the rim-click crisp. Use a cross-stick on the snare for that authentic woody sound."}	\N	2026-03-13 11:58:37.249	2026-03-13 15:28:06.78	\N	\N
 1	General	2	ACTIVE	f	f	f	0	0	0	10878	17	12	2026-03-13 11:58:01.432	2026-03-13 11:58:01.432	\N	5	21	0	\N	21	RECURRING	\N	\N	0	DAILY	1 session per day for 21 days	1	\N	210	{"goal": "Master the Moeller 'whip' technique for effortless power.", "system": {"version": "2.1", "requiresReview": true}, "references": [{"url": "https://www.youtube.com/watch?v=Zj3-Lc7UWwg", "note": "", "type": "VIDEO", "title": "", "isTrusted": true}, {"url": "https://en.wikipedia.org/wiki/Moeller_method", "note": "", "type": "CONCEPT", "title": "", "isTrusted": false}], "constraints": ["No rimshots allowed", "Must use matched grip"], "instructions": "Practice your Moeller strokes using alternating accents. Focus on the whip-like motion of the wrist and let the stick bounce naturally rather than gripping it tight. Your hand should feel like a wet towel being snapped. Focus on staying completely relaxed."}	\N	2026-03-13 11:58:02.498	2026-03-13 15:28:06.78	\N	\N
 64	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-13 18:19:45.667	2026-03-13 18:19:45.667	\N	0	21	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	{"goal": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token#", "system": {"version": "2.1", "requiresReview": false}, "references": [], "constraints": [], "instructions": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token#"}	\N	2026-03-13 18:19:45.93	2026-03-13 18:19:45.667	\N	\N
+65	General	21	ACTIVE	f	f	f	0	0	0	0	0	0	2026-03-14 22:57:09.886	2026-03-14 22:57:09.886	\N	0	21	0	\N	1	ONE_OFF	\N	\N	0	\N	\N	\N	\N	210	{"goal": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token#", "system": {"version": "2.1", "requiresReview": false}, "references": [], "constraints": ["http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token#"], "instructions": "http://192.168.1.37:5500/challengesubmitform/index.html?token=master_demo_token#"}	\N	2026-03-14 22:57:10.544	2026-03-14 22:57:09.886	TWITCH	21xhr
 \.
 
 
@@ -674,7 +675,7 @@ SELECT pg_catalog.setval('"public"."accounts_account_id_seq"', 42, true);
 -- Name: challenges_challenge_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 64, true);
+SELECT pg_catalog.setval('"public"."challenges_challenge_id_seq"', 65, true);
 
 
 --
@@ -709,6 +710,6 @@ SELECT pg_catalog.setval('"public"."users_user_id_seq"', 1, false);
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict xCdZTitXJOIrl9f0B1za4sX3arsYyb6vZs0s7S1cctLdV4rI55oiOmUrnpRa4ih
+-- \unrestrict PApgHAuZFeUvGaRhfFLxbgNovbxWCnzBYdn2jkruwmSuuijLjLXCwgzErh03T38
 
 RESET ALL;
