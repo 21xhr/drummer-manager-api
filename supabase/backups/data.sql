@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict 00Xc2fjO88029P3Zv9g78A8tGGwToYFya23MXgVsZ0CGnuDHG6j7RuzDjsH3awV
+-- \restrict tKvdy42mLBNFRwpOH3h9o1A7R1MSEeMczGfASeggjdklNHTOQWMLjFbLXSWCvvf
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -287,7 +287,6 @@ COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name
 6	3	linked_youtube_3	YOUTUBE	99996639	\N	\N	\N	Duo_YOUTUBE_3
 27	13	solo_youtube_13	YOUTUBE	99996639	\N	\N	\N	Solo_YOUTUBE_13
 8	4	solo_youtube_4	YOUTUBE	99996639	\N	\N	\N	Solo_YOUTUBE_4
-1	21	686071308	TWITCH	99994749	\N	2026-03-16 21:33:25.664	\N	21xhr
 28	14	linked_kick_14	KICK	99996639	\N	\N	\N	Triple_KICK_14
 9	5	linked_youtube_5	YOUTUBE	99996639	\N	\N	\N	Duo_YOUTUBE_5
 31	15	solo_twitch_15	TWITCH	99996639	\N	\N	\N	Solo_TWITCH_15
@@ -299,6 +298,7 @@ COPY "public"."accounts" ("account_id", "user_id", "platform_id", "platform_name
 19	9	linked_kick_9	KICK	99996639	\N	\N	\N	Duo_KICK_9
 21	10	linked_youtube_10	YOUTUBE	99996639	\N	\N	\N	Duo_YOUTUBE_10
 23	11	linked_twitch_11	TWITCH	99996639	\N	\N	\N	Triple_TWITCH_11
+1	21	686071308	TWITCH	99994749	\N	2026-03-17 15:15:31.288	\N	21xhr
 \.
 
 
@@ -716,6 +716,6 @@ SELECT pg_catalog.setval('"public"."users_user_id_seq"', 1, false);
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict 00Xc2fjO88029P3Zv9g78A8tGGwToYFya23MXgVsZ0CGnuDHG6j7RuzDjsH3awV
+-- \unrestrict tKvdy42mLBNFRwpOH3h9o1A7R1MSEeMczGfASeggjdklNHTOQWMLjFbLXSWCvvf
 
 RESET ALL;
